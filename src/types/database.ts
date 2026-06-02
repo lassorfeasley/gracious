@@ -1,0 +1,135 @@
+export type UserRole = 'owner' | 'guest';
+export type InvitationType = 'standing' | 'date_offer' | 'prix_fixe';
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+export type BookingStatus = 'requested' | 'approved' | 'declined' | 'cancelled';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  role: UserRole;
+  visible_to_coguests: boolean;
+  notification_prefs: NotificationPrefs;
+  created_at: string;
+}
+
+export interface NotificationPrefs {
+  booking_requests: boolean;
+  booking_cancelled: boolean;
+  invitation_expiring: boolean;
+}
+
+export interface Property {
+  id: string;
+  owner_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  address: string | null;
+  directions: string | null;
+  wifi_name: string | null;
+  wifi_password: string | null;
+  house_rules: string | null;
+  check_in_instructions: string | null;
+  hero_image_url: string | null;
+  created_at: string;
+}
+
+export interface PropertyManager {
+  id: string;
+  property_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface PropertyImage {
+  id: string;
+  property_id: string;
+  url: string;
+  caption: string | null;
+  display_order: number;
+}
+
+export interface Room {
+  id: string;
+  property_id: string;
+  name: string;
+  description: string | null;
+  max_occupancy: number;
+  image_url: string | null;
+  display_order: number;
+}
+
+export interface RoomAvailability {
+  id: string;
+  room_id: string;
+  start_date: string;
+  end_date: string;
+  is_blocked: boolean;
+}
+
+export interface Invitation {
+  id: string;
+  token: string;
+  property_id: string;
+  guest_email: string;
+  guest_name: string | null;
+  type: InvitationType;
+  status: InvitationStatus;
+  expires_at: string | null;
+  message: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface InvitationRoom {
+  id: string;
+  invitation_id: string;
+  room_id: string;
+}
+
+export interface InvitationWindow {
+  id: string;
+  invitation_id: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface Booking {
+  id: string;
+  invitation_id: string;
+  property_id: string;
+  guest_user_id: string;
+  status: BookingStatus;
+  party_size: number;
+  notes: string | null;
+  decline_message: string | null;
+  created_at: string;
+}
+
+export interface BookingRoom {
+  id: string;
+  booking_id: string;
+  room_id: string;
+}
+
+export interface BookingDates {
+  id: string;
+  booking_id: string;
+  check_in: string;
+  check_out: string;
+}
+
+export interface InvitationWithDetails extends Invitation {
+  property: Property;
+  rooms: Room[];
+  windows: InvitationWindow[];
+}
+
+export interface BookingWithDetails extends Booking {
+  guest: User;
+  dates: BookingDates;
+  rooms: Room[];
+  property: Property;
+  invitation: Invitation;
+}

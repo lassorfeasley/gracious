@@ -1,0 +1,150 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import type { NotificationPrefs, User } from '@/types/database';
+
+interface SettingsFormProps {
+  user: User;
+  propertyId: string;
+  managers: { id: string; user: { email: string; name: string | null } }[];
+}
+
+export function SettingsForm({ user, propertyId, managers }: SettingsFormProps) {
+  const router = useRouter();
+  const [prefs, setPrefs] = useState<NotificationPrefs>(user.notification_prefs);
+  const [managerEmail, setManagerEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function savePrefs() {
+    setLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('users')
+      .update({ notification_prefs: prefs })
+      .eq('id', user.id);
+    setLoading(false);
+    if (error) toast.error(error.message);
+    else toast.success('Preferences saved');
+  }
+
+  async function addManager() {
+    if (!managerEmail) return;
+    setLoading(true);
+    const supabase = createClient();
+
+    const { data: managerUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', managerEmail.toLowerCase())
+      .single();
+
+    if (!managerUser) {
+      toast.error('User not found. They need an account first.');
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from('property_managers').insert({
+      property_id: propertyId,
+      user_id: managerUser.id,
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Co-manager added');
+    setManagerEmail('');
+    router.refresh();
+  }
+
+  async function removeManager(id: string) {
+    const supabase = createClient();
+    await supabase.from('property_managers').delete().eq('id', id);
+    toast.success('Co-manager removed');
+    router.refresh();
+  }
+
+  return (
+    <div className="max-w-xl space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Notification preferences</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {(
+            [
+              ['booking_requests', 'New booking requests'],
+              ['booking_cancelled', 'Booking cancellations'],
+              ['invitation_expiring', 'Invitations expiring soon'],
+            ] as const
+          ).map(([key, label]) => (
+            <div key={key} className="flex items-center justify-between">
+              <Label htmlFor={key}>{label}</Label>
+              <Switch
+                id={key}
+                checked={prefs[key]}
+                onCheckedChange={(v) => setPrefs({ ...prefs, [key]: v })}
+              />
+            </div>
+          ))}
+          <Button onClick={savePrefs} disabled={loading}>
+            Save preferences
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Co-managers</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Co-managers have full access to this property only.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              type="email"
+              placeholder="co-manager@email.com"
+              value={managerEmail}
+              onChange={(e) => setManagerEmail(e.target.value)}
+            />
+            <Button onClick={addManager} disabled={loading}>
+              Add
+            </Button>
+          </div>
+          {managers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No co-managers yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {managers.map((m) => (
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+                >
+                  <span>{m.user.name ?? m.user.email}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => removeManager(m.id)}
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

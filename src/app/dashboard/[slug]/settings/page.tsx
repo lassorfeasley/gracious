@@ -1,0 +1,48 @@
+import { createClient } from '@/lib/supabase/server';
+import { requireOwner } from '@/lib/auth';
+import { SettingsForm } from '@/components/dashboard/settings-form';
+
+export default async function SettingsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const user = await requireOwner();
+  const supabase = await createClient();
+
+  const { data: property } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('slug', slug)
+    .single();
+
+  if (!property) return null;
+
+  const { data: managersRaw } = await supabase
+    .from('property_managers')
+    .select('id, user:users(email, name)')
+    .eq('property_id', property.id);
+
+  const managers = (managersRaw ?? []).map((m) => {
+    const u = Array.isArray(m.user) ? m.user[0] : m.user;
+    return {
+      id: m.id as string,
+      user: u as { email: string; name: string | null },
+    };
+  });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Settings</h1>
+        <p className="text-muted-foreground">Co-managers and notifications</p>
+      </div>
+      <SettingsForm
+        user={user}
+        propertyId={property.id}
+        managers={managers}
+      />
+    </div>
+  );
+}
