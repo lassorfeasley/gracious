@@ -10,7 +10,7 @@ interface Props {
   address?: string;
   wifiName?: string;
   wifiPassword?: string;
-  profileUrl: string;
+  profileUrl?: string;
 }
 
 export default function TripReminderEmail({
@@ -46,9 +46,11 @@ export default function TripReminderEmail({
           {wifiPassword ? ` / ${wifiPassword}` : ''}
         </Text>
       )}
-      <Button style={buttonStyle} href={profileUrl}>
-        View house details
-      </Button>
+      {profileUrl && (
+        <Button style={buttonStyle} href={profileUrl}>
+          View house details
+        </Button>
+      )}
     </EmailLayout>
   );
 }

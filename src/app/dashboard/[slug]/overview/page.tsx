@@ -1,14 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
+import { getDashboardProperty } from '@/lib/dashboard-property';
 import { formatDateRange } from '@/lib/dates';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { assignColors } from '@/lib/calendar-colors';
+import { summarizeBeds } from '@/lib/validations';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
+import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
+import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
+import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog';
+import { PropertyMap } from '@/components/dashboard/property-map';
+import { SectionNav } from '@/components/dashboard/section-nav';
+import { Pencil, Plus, MapPin, Check, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-
-async function getProperty(slug: string) {
-  const supabase = await createClient();
-  const { data } = await supabase.from('properties').select('*').eq('slug', slug).single();
-  return data;
-}
+import Image from 'next/image';
 
 export default async function OverviewPage({
   params,
@@ -16,20 +21,24 @@ export default async function OverviewPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const property = await getProperty(slug);
-  if (!property) return null;
+  const property = await getDashboardProperty(slug);
 
   const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: upcoming } = await supabase
+  const { data: rooms } = await supabase
+    .from('rooms')
+    .select('*')
+    .eq('property_id', property.id)
+    .order('display_order');
+
+  const { data: bookings } = await supabase
     .from('bookings')
     .select(
-      `*, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out), booking_rooms(room:rooms(name))`
+      `id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out)`
     )
     .eq('property_id', property.id)
-    .eq('status', 'approved')
-    .order('created_at');
+    .in('status', ['approved', 'requested']);
 
   const { count: pendingCount } = await supabase
     .from('bookings')
@@ -37,106 +46,441 @@ export default async function OverviewPage({
     .eq('property_id', property.id)
     .eq('status', 'requested');
 
-  const { count: roomCount } = await supabase
-    .from('rooms')
-    .select('*', { count: 'exact', head: true })
-    .eq('property_id', property.id);
-
   const { count: inviteCount } = await supabase
     .from('invitations')
     .select('*', { count: 'exact', head: true })
     .eq('property_id', property.id)
     .in('status', ['pending', 'accepted']);
 
-  const approvedUpcoming =
-    upcoming?.filter((b) => {
-      const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
-      return dates && dates.check_out >= today;
-    }) ?? [];
+  const normalized = (bookings ?? []).map((b) => {
+    const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
+    const guest = (Array.isArray(b.guest) ? b.guest[0] : b.guest) as
+      | { name: string | null; email: string }
+      | null;
+    const guestName =
+      guest?.name ??
+      guest?.email?.split('@')[0] ??
+      b.guest_name ??
+      b.guest_email?.split('@')[0] ??
+      'Guest';
+    return {
+      id: b.id,
+      status: b.status,
+      guestName,
+      checkIn: dates?.check_in ?? '',
+      checkOut: dates?.check_out ?? '',
+    };
+  });
+
+  const calendarBookings = assignColors(
+    normalized
+      .filter((b) => b.status === 'approved' && b.checkIn && b.checkOut)
+      .map(({ id, guestName, checkIn, checkOut }) => ({
+        id,
+        guestName,
+        checkIn,
+        checkOut,
+      }))
+  );
+
+  const upcoming = normalized
+    .filter((b) => b.status === 'approved' && b.checkOut >= today)
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+
+  const roomCount = rooms?.length ?? 0;
+  const totalGuests = (rooms ?? []).reduce(
+    (sum, r) => sum + (r.max_occupancy ?? 0),
+    0
+  );
+
+  const navSections = [
+    { id: 'calendar', label: 'Calendar' },
+    { id: 'rooms', label: 'Rooms' },
+    { id: 'about', label: 'About' },
+    { id: 'location', label: 'Location' },
+    { id: 'amenities', label: 'Amenities' },
+    { id: 'guest-info', label: 'Guest info' },
+    { id: 'upcoming', label: 'Stays' },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Overview</h1>
-        <p className="text-muted-foreground">{property.name}</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">{pendingCount ?? 0}</p>
-            {(pendingCount ?? 0) > 0 && (
-              <Link
-                href={`/dashboard/${slug}/requests`}
-                className="text-sm text-primary underline"
-              >
-                Review requests
-              </Link>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Rooms
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">{roomCount ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active invitations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">{inviteCount ?? 0}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <section>
-        <h2 className="text-lg font-semibold">Upcoming stays</h2>
-        <div className="mt-4 space-y-3">
-          {approvedUpcoming.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No upcoming approved stays.
-              </CardContent>
-            </Card>
-          ) : (
-            approvedUpcoming.map((booking) => {
-              const dates = Array.isArray(booking.dates)
-                ? booking.dates[0]
-                : booking.dates;
-              const guest = booking.guest as { name: string | null; email: string };
-              return (
-                <Card key={booking.id}>
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div>
-                      <p className="font-medium">
-                        {guest.name ?? guest.email}
-                      </p>
-                      {dates && (
-                        <p className="text-sm text-muted-foreground">
-                          {formatDateRange(dates.check_in, dates.check_out)}
-                        </p>
-                      )}
-                    </div>
-                    <Badge>Confirmed</Badge>
-                  </CardContent>
-                </Card>
-              );
-            })
+    <div className="mx-auto max-w-5xl">
+      {/* Title */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            {property.name}
+          </h1>
+          {property.address && (
+            <p className="mt-2 flex items-center gap-1.5 text-base text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              {property.address}
+            </p>
           )}
         </div>
+        <div className="flex shrink-0 gap-2">
+          <InviteGuestDialog propertyId={property.id} rooms={rooms ?? []} />
+        </div>
+      </div>
+
+      {/* House card */}
+      <div className="relative mt-8 flex h-72 w-full flex-col justify-end overflow-hidden rounded-2xl sm:h-96">
+        {property.hero_image_url ? (
+          <>
+            <Image
+              src={property.hero_image_url}
+              alt={property.name}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-linear-to-br from-slate-700 via-slate-800 to-slate-950" />
+        )}
+        <div className="absolute right-4 top-4">
+          <PropertyEditDialog
+            property={property}
+            fields={['image', 'name']}
+            title="Edit house"
+            trigger={
+              <Button variant="secondary" size="icon" aria-label="Edit house">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+        </div>
+        <div className="relative p-8">
+          <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            {property.name}
+          </h2>
+          <p className="mt-2 text-base text-white/70">
+            {roomCount} {roomCount === 1 ? 'room' : 'rooms'}
+            {totalGuests > 0 ? ` · sleeps ${totalGuests}` : ''}
+          </p>
+        </div>
+      </div>
+
+      <SectionNav sections={navSections} />
+
+      {/* Calendar (lead) */}
+      <section id="calendar" className="mt-12 scroll-mt-28">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-2xl font-semibold tracking-tight">Calendar</h2>
+          <Link
+            href={`/dashboard/${slug}/calendar`}
+            className="flex items-center gap-1 text-base text-primary hover:underline"
+          >
+            Full calendar
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="mt-8">
+          <AvailabilityCalendar bookings={calendarBookings} />
+        </div>
+      </section>
+
+      {/* Rooms */}
+      <section id="rooms" className="mt-16 scroll-mt-28 border-t pt-12">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-2xl font-semibold tracking-tight">Rooms</h2>
+          <RoomEditDialog
+            propertyId={property.id}
+            displayOrder={roomCount}
+            fields={['name', 'max_occupancy', 'beds', 'description', 'amenities']}
+            title="Add a room"
+            trigger={
+              <Button variant="outline" size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                Add room
+              </Button>
+            }
+          />
+        </div>
+        {roomCount === 0 ? (
+          <div className="mt-6">
+            <p className="text-sm text-muted-foreground">
+              No rooms yet — add your first room to start inviting guests.
+            </p>
+            <div className="mt-3">
+              <RoomEditDialog
+                propertyId={property.id}
+                displayOrder={0}
+                fields={[
+                  'name',
+                  'max_occupancy',
+                  'beds',
+                  'description',
+                  'amenities',
+                ]}
+                title="Add a room"
+                trigger={
+                  <Button size="sm">
+                    <Plus className="mr-1 h-4 w-4" />
+                    Add room
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {(rooms ?? []).map((room) => (
+              <Link
+                key={room.id}
+                href={`/dashboard/${slug}/rooms/${room.id}`}
+                className="group block"
+              >
+                {room.image_url ? (
+                  <>
+                    <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
+                      <Image
+                        src={room.image_url}
+                        alt={room.name}
+                        fill
+                        className="object-cover transition duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                    <p className="mt-4 text-lg font-medium">{room.name}</p>
+                    <p className="text-base text-muted-foreground">
+                      {summarizeBeds(room.beds)} · Up to {room.max_occupancy}{' '}
+                      guests
+                    </p>
+                  </>
+                ) : (
+                  <div className="relative flex aspect-4/3 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-5 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900">
+                    <p className="text-lg font-medium text-white">{room.name}</p>
+                    <p className="text-base text-white/70">
+                      {summarizeBeds(room.beds)} · Up to {room.max_occupancy}{' '}
+                      guests
+                    </p>
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Quick stats */}
+      <div className="mt-16 grid grid-cols-1 divide-y overflow-hidden rounded-2xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="p-7">
+          <p className="text-base text-muted-foreground">Pending requests</p>
+          <p className="mt-2 text-3xl font-semibold">{pendingCount ?? 0}</p>
+          {(pendingCount ?? 0) > 0 && (
+            <Link
+              href={`/dashboard/${slug}/requests`}
+              className="text-sm text-primary hover:underline"
+            >
+              Review requests
+            </Link>
+          )}
+        </div>
+        <div className="p-7">
+          <p className="text-base text-muted-foreground">Rooms</p>
+          <p className="mt-2 text-3xl font-semibold">{roomCount}</p>
+        </div>
+        <div className="p-7">
+          <p className="text-base text-muted-foreground">Active invitations</p>
+          <p className="mt-2 text-3xl font-semibold">{inviteCount ?? 0}</p>
+          <Link
+            href={`/dashboard/${slug}/guests`}
+            className="text-sm text-primary hover:underline"
+          >
+            Manage invitations
+          </Link>
+        </div>
+      </div>
+
+      {/* About */}
+      <section id="about" className="mt-16 scroll-mt-28 border-t pt-12">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            About this place
+          </h2>
+          <PropertyEditDialog
+            property={property}
+            fields={['description']}
+            title="Edit description"
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Edit description">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+        </div>
+        {property.description ? (
+          <p className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-foreground/90">
+            {property.description}
+          </p>
+        ) : (
+          <p className="mt-6 text-base text-muted-foreground">
+            No description yet. Add one to tell guests about your place.
+          </p>
+        )}
+      </section>
+
+      {/* Location */}
+      <section id="location" className="mt-16 scroll-mt-28 border-t pt-12">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Where you&apos;re hosting
+          </h2>
+          <PropertyEditDialog
+            property={property}
+            fields={['address', 'directions']}
+            title="Edit location"
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Edit location">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+        </div>
+        {property.address ? (
+          <div className="mt-6">
+            <PropertyMap
+              address={property.address}
+              latitude={property.latitude}
+              longitude={property.longitude}
+            />
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No address set yet. Add one to show guests where you&apos;re
+            hosting.
+          </p>
+        )}
+        {property.directions && (
+          <div className="mt-8">
+            <h3 className="text-lg font-medium">Getting there</h3>
+            <p className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+              {property.directions}
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* House amenities */}
+      <section id="amenities" className="mt-16 scroll-mt-28 border-t pt-12">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            What this place offers
+          </h2>
+          <PropertyEditDialog
+            property={property}
+            fields={['amenities']}
+            title="Edit amenities"
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Edit amenities">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+        </div>
+        {property.amenities && property.amenities.length > 0 ? (
+          <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
+            {property.amenities.map((a) => (
+              <li
+                key={a.key}
+                className="flex items-start gap-4 border-b border-border/60 pb-5 text-base"
+              >
+                <Check
+                  className="mt-0.5 h-5 w-5 shrink-0 text-foreground"
+                  strokeWidth={1.5}
+                />
+                <span>
+                  {a.label}
+                  {a.note ? (
+                    <span className="block text-sm text-muted-foreground">
+                      {a.note}
+                    </span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-6 text-sm text-muted-foreground">
+            No house amenities yet. Use the edit button above to add them.
+          </p>
+        )}
+      </section>
+
+      {/* Guest information */}
+      <section id="guest-info" className="mt-16 scroll-mt-28 border-t pt-12">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Guest information
+          </h2>
+          <PropertyEditDialog
+            property={property}
+            fields={['check_in_instructions', 'wifi', 'house_rules']}
+            title="Edit guest information"
+            trigger={
+              <Button variant="ghost" size="icon" aria-label="Edit guest information">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            }
+          />
+        </div>
+        <dl className="mt-8 grid gap-8 sm:grid-cols-2">
+          <div>
+            <dt className="text-base font-medium">Check-in instructions</dt>
+            <dd className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+              {property.check_in_instructions || 'Not set'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-base font-medium">WiFi</dt>
+            <dd className="mt-2 text-base text-muted-foreground">
+              {property.wifi_name ? (
+                <>
+                  {property.wifi_name}
+                  {property.wifi_password ? ` · ${property.wifi_password}` : ''}
+                </>
+              ) : (
+                'Not set'
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-base font-medium">House rules</dt>
+            <dd className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+              {property.house_rules || 'Not set'}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      {/* Upcoming stays */}
+      <section id="upcoming" className="mt-16 scroll-mt-28 border-t pt-12">
+        <h2 className="text-2xl font-semibold tracking-tight">Upcoming stays</h2>
+        {upcoming.length === 0 ? (
+          <p className="mt-6 text-sm text-muted-foreground">
+            No upcoming approved stays.
+          </p>
+        ) : (
+          <ul className="mt-6 divide-y">
+            {upcoming.map((booking) => (
+              <li
+                key={booking.id}
+                className="flex items-center justify-between py-5"
+              >
+                <div>
+                  <p className="text-lg font-medium">{booking.guestName}</p>
+                  {booking.checkIn && booking.checkOut && (
+                    <p className="text-base text-muted-foreground">
+                      {formatDateRange(booking.checkIn, booking.checkOut)}
+                    </p>
+                  )}
+                </div>
+                <Badge>Confirmed</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

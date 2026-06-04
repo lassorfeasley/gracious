@@ -1,10 +1,38 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { datesOverlap } from '@/lib/dates';
 import type {
+  BookingGuest,
   BookingWithDetails,
   InvitationWithDetails,
   Room,
+  User,
 } from '@/types/database';
+
+function normalizeBookingGuest(
+  data: {
+    guest_name: string | null;
+    guest_email: string | null;
+    guest: User | User[] | null;
+  }
+): BookingGuest {
+  const userGuest = data.guest
+    ? (Array.isArray(data.guest) ? data.guest[0] : data.guest)
+    : null;
+
+  if (userGuest) {
+    return {
+      id: userGuest.id,
+      name: userGuest.name,
+      email: userGuest.email,
+    };
+  }
+
+  return {
+    id: null,
+    name: data.guest_name,
+    email: data.guest_email,
+  };
+}
 
 export async function getBookingWithDetails(
   bookingId: string
@@ -27,13 +55,19 @@ export async function getBookingWithDetails(
 
   if (!data) return null;
 
+  const invitation = data.invitation
+    ? Array.isArray(data.invitation)
+      ? data.invitation[0]
+      : data.invitation
+    : null;
+
   return {
     ...data,
-    guest: data.guest,
+    guest: normalizeBookingGuest(data),
     dates: Array.isArray(data.dates) ? data.dates[0] : data.dates,
     rooms: data.booking_rooms?.map((br: { room: Room }) => br.room) ?? [],
-    property: data.property,
-    invitation: data.invitation,
+    property: Array.isArray(data.property) ? data.property[0] : data.property,
+    invitation,
   } as BookingWithDetails;
 }
 

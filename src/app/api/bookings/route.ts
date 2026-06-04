@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
         status: 'requested',
         party_size: data.party_size,
         notes: data.notes ?? null,
+        notify_guest: true,
       })
       .select()
       .single();

@@ -84,12 +84,15 @@ export async function notifyStayRequested(bookingId: string) {
   const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
   const rooms = booking.rooms.map((r) => r.name).join(', ');
 
+  const guestLabel =
+    booking.guest.name ?? booking.guest.email ?? 'A guest';
+
   for (const email of Array.from(new Set(recipients))) {
     await sendEmail({
       to: email,
-      subject: `Stay request from ${booking.guest.name ?? booking.guest.email}`,
+      subject: `Stay request from ${guestLabel}`,
       react: StayRequestedEmail({
-        guestName: booking.guest.name ?? booking.guest.email,
+        guestName: guestLabel,
         propertyName: booking.property.name,
         dates,
         rooms,
@@ -106,7 +109,7 @@ export async function notifyStayRequested(bookingId: string) {
 
 export async function notifyBookingApproved(bookingId: string) {
   const booking = await getBookingWithDetails(bookingId);
-  if (!booking) return;
+  if (!booking || !booking.guest.email) return;
 
   const icsContent = generateIcs(booking);
   const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
@@ -117,7 +120,7 @@ export async function notifyBookingApproved(bookingId: string) {
     booking.property_id,
     booking.dates.check_in,
     booking.dates.check_out,
-    booking.guest_user_id
+    booking.guest_user_id ?? undefined
   );
   let coguestNote: string | undefined;
   if (coguests.visible.length > 0) {
@@ -140,7 +143,9 @@ export async function notifyBookingApproved(bookingId: string) {
       checkIn: booking.property.check_in_instructions ?? undefined,
       houseRules: booking.property.house_rules ?? undefined,
       coguestNote,
-      profileUrl: inviteUrl(booking.invitation.token),
+      profileUrl: booking.invitation
+        ? inviteUrl(booking.invitation.token)
+        : undefined,
     }),
     attachments: [
       {
@@ -151,7 +156,7 @@ export async function notifyBookingApproved(bookingId: string) {
   });
 
   await logNotification({
-    userId: booking.guest_user_id,
+    userId: booking.guest_user_id ?? undefined,
     bookingId,
     type: 'booking_approved',
   });
@@ -162,7 +167,7 @@ export async function notifyBookingDeclined(
   declineMessage?: string
 ) {
   const booking = await getBookingWithDetails(bookingId);
-  if (!booking) return;
+  if (!booking || !booking.guest.email || !booking.invitation) return;
 
   await sendEmail({
     to: booking.guest.email,
@@ -177,7 +182,7 @@ export async function notifyBookingDeclined(
   });
 
   await logNotification({
-    userId: booking.guest_user_id,
+    userId: booking.guest_user_id ?? undefined,
     bookingId,
     type: 'booking_declined',
   });
@@ -200,7 +205,8 @@ export async function notifyBookingCancelled(
   if (!property) return;
 
   const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
-  const guestName = booking.guest.name ?? booking.guest.email;
+  const guestName =
+    booking.guest.name ?? booking.guest.email ?? 'Guest';
 
   if (cancelledBy === 'guest') {
     const ownerRaw = property.owner;
@@ -219,7 +225,7 @@ export async function notifyBookingCancelled(
         cancelledBy: 'guest',
       }),
     });
-  } else {
+  } else if (booking.notify_guest && booking.guest.email) {
     await sendEmail({
       to: booking.guest.email,
       subject: `Your stay at ${booking.property.name} was cancelled`,
@@ -240,6 +246,8 @@ export async function notifyTripReminder(
   booking: BookingWithDetails,
   daysUntil: number
 ) {
+  if (!booking.notify_guest || !booking.guest.email) return;
+
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
 
   await sendEmail({
@@ -257,12 +265,14 @@ export async function notifyTripReminder(
       address: booking.property.address ?? undefined,
       wifiName: booking.property.wifi_name ?? undefined,
       wifiPassword: booking.property.wifi_password ?? undefined,
-      profileUrl: inviteUrl(booking.invitation.token),
+      profileUrl: booking.invitation
+        ? inviteUrl(booking.invitation.token)
+        : undefined,
     }),
   });
 
   await logNotification({
-    userId: booking.guest_user_id,
+    userId: booking.guest_user_id ?? undefined,
     bookingId: booking.id,
     type,
   });

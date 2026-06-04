@@ -1,11 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
+import { getDashboardProperty } from '@/lib/dashboard-property';
 import { BookingRequests } from '@/components/dashboard/booking-requests';
-
-async function getProperty(slug: string) {
-  const supabase = await createClient();
-  const { data } = await supabase.from('properties').select('id').eq('slug', slug).single();
-  return data;
-}
+import { HostBookingDialog } from '@/components/dashboard/host-booking-dialog';
 
 export default async function RequestsPage({
   params,
@@ -16,8 +12,7 @@ export default async function RequestsPage({
 }) {
   const { slug } = await params;
   const sp = await searchParams;
-  const property = await getProperty(slug);
-  if (!property) return null;
+  const property = await getDashboardProperty(slug);
 
   const supabase = await createClient();
   const { data: bookings } = await supabase
@@ -28,11 +23,20 @@ export default async function RequestsPage({
     .eq('property_id', property.id)
     .order('created_at', { ascending: false });
 
+  const { data: rooms } = await supabase
+    .from('rooms')
+    .select('*')
+    .eq('property_id', property.id)
+    .order('display_order');
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Booking requests</h1>
-        <p className="text-muted-foreground">Review and respond to stay requests</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Booking requests</h1>
+          <p className="text-muted-foreground">Review and respond to stay requests</p>
+        </div>
+        <HostBookingDialog propertyId={property.id} rooms={rooms ?? []} />
       </div>
       <BookingRequests bookings={bookings ?? []} />
       {sp.booking && sp.action && (

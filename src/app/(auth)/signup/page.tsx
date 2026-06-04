@@ -38,6 +38,7 @@ export default function SignupPage() {
   async function onSubmit(values: SignupInput) {
     setLoading(true);
     const supabase = createClient();
+
     const { data, error } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
@@ -45,6 +46,40 @@ export default function SignupPage() {
         data: { name: values.name, role: 'owner' },
       },
     });
+
+    if (error?.message?.includes('Database error saving new user')) {
+      const fallback = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      const fallbackData = await fallback.json();
+      setLoading(false);
+
+      if (!fallback.ok) {
+        toast.error(
+          typeof fallbackData.error === 'string'
+            ? fallbackData.error
+            : 'Signup failed. Run supabase/migrations/002_fix_auth_user_trigger.sql in the Supabase SQL Editor.'
+        );
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      if (signInError) {
+        toast.error(signInError.message);
+        return;
+      }
+
+      toast.success('Account created! Setting up your dashboard...');
+      router.push('/dashboard');
+      router.refresh();
+      return;
+    }
+
     setLoading(false);
 
     if (error) {

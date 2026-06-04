@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { requireOwner } from '@/lib/auth';
+import { getDashboardProperty } from '@/lib/dashboard-property';
 import { SettingsForm } from '@/components/dashboard/settings-form';
 
 export default async function SettingsPage({
@@ -9,15 +10,8 @@ export default async function SettingsPage({
 }) {
   const { slug } = await params;
   const user = await requireOwner();
+  const property = await getDashboardProperty(slug);
   const supabase = await createClient();
-
-  const { data: property } = await supabase
-    .from('properties')
-    .select('id')
-    .eq('slug', slug)
-    .single();
-
-  if (!property) return null;
 
   const { data: managersRaw } = await supabase
     .from('property_managers')

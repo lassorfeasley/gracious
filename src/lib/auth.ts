@@ -22,7 +22,43 @@ export async function getCurrentUser(): Promise<User | null> {
     .eq('id', authUser.id)
     .single();
 
-  return data as User | null;
+  if (data) {
+    const user = data as User;
+    const metaRole = authUser.user_metadata?.role as string | undefined;
+    if (metaRole === 'owner' && user.role !== 'owner') {
+      const admin = createAdminClient();
+      const { data: updated } = await admin
+        .from('users')
+        .update({ role: 'owner' })
+        .eq('id', authUser.id)
+        .select()
+        .single();
+      await linkOfflineBookingsToUser(authUser.id, authUser.email!);
+      return (updated as User) ?? user;
+    }
+    await linkOfflineBookingsToUser(authUser.id, authUser.email!);
+    return user;
+  }
+
+  const admin = createAdminClient();
+  const role: UserRole =
+    authUser.user_metadata?.role === 'owner' ? 'owner' : 'guest';
+  const { data: created } = await admin
+    .from('users')
+    .upsert({
+      id: authUser.id,
+      email: authUser.email!,
+      name:
+        (authUser.user_metadata?.name as string | undefined) ??
+        authUser.email!.split('@')[0],
+      role,
+    })
+    .select()
+    .single();
+
+  await linkOfflineBookingsToUser(authUser.id, authUser.email!);
+
+  return created as User | null;
 }
 
 export async function requireAuth(): Promise<User> {
@@ -86,9 +122,21 @@ export async function upsertUserProfile(
     },
     { onConflict: 'id' }
   );
+
+  await linkOfflineBookingsToUser(userId, email);
+}
+
+async function linkOfflineBookingsToUser(userId: string, email: string) {
+  const admin = createAdminClient();
+  await admin
+    .from('bookings')
+    .update({ guest_user_id: userId })
+    .eq('guest_email', email.toLowerCase())
+    .is('guest_user_id', null);
 }
 
 export async function getOwnerProperties(userId: string) {
+  const { normalizeProperty, isValidProperty } = await import('@/lib/properties');
   const supabase = await createClient();
   const { data: owned } = await supabase
     .from('properties')
@@ -102,9 +150,12 @@ export async function getOwnerProperties(userId: string) {
     .eq('user_id', userId);
 
   const managedProps =
-    managed?.map((m) => m.property as unknown as import('@/types/database').Property).filter(Boolean) ?? [];
+    managed
+      ?.map((m) => normalizeProperty(m.property))
+      .filter(isValidProperty) ?? [];
 
-  const all = [...(owned ?? []), ...managedProps];
+  const ownedProps = (owned ?? []).filter(isValidProperty);
+  const all = [...ownedProps, ...managedProps];
   const unique = all.filter(
     (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
   );

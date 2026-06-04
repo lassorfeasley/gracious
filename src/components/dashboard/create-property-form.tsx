@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,15 +23,12 @@ export function CreatePropertyForm({ userId }: { userId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  const slugEdited = useRef(false);
+
   const form = useForm<PropertyInput>({
     resolver: zodResolver(propertySchema),
-    defaultValues: { name: '', slug: '' },
+    defaultValues: { name: '', slug: '', amenities: [] },
   });
-
-  const name = form.watch('name');
-  if (name && !form.getValues('slug')) {
-    form.setValue('slug', slugify(name));
-  }
 
   async function onSubmit(values: PropertyInput) {
     setLoading(true);
@@ -66,7 +63,16 @@ export function CreatePropertyForm({ userId }: { userId: string }) {
             <FormItem>
               <FormLabel>Property name</FormLabel>
               <FormControl>
-                <Input placeholder="Lake House" {...field} />
+                <Input
+                  placeholder="Lake House"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    if (!slugEdited.current) {
+                      form.setValue('slug', slugify(e.target.value));
+                    }
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -79,7 +85,14 @@ export function CreatePropertyForm({ userId }: { userId: string }) {
             <FormItem>
               <FormLabel>URL slug</FormLabel>
               <FormControl>
-                <Input placeholder="lake-house" {...field} />
+                <Input
+                  placeholder="lake-house"
+                  {...field}
+                  onChange={(e) => {
+                    slugEdited.current = true;
+                    field.onChange(slugify(e.target.value));
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -17,6 +17,13 @@ export const signupSchema = z
     path: ['confirmPassword'],
   });
 
+export const amenitySchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  note: z.string().max(280, 'Note is too long'),
+});
+export type AmenityInput = z.infer<typeof amenitySchema>;
+
 export const propertySchema = z.object({
   name: z.string().min(1, 'Property name is required'),
   slug: z
@@ -30,12 +37,50 @@ export const propertySchema = z.object({
   wifi_password: z.string().optional(),
   house_rules: z.string().optional(),
   check_in_instructions: z.string().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
+  amenities: z.array(amenitySchema),
 });
+
+export const BED_SIZES = [
+  'king',
+  'queen',
+  'full',
+  'twin',
+  'bunk',
+  'sofa',
+  'other',
+] as const;
+
+export const BED_SIZE_LABELS: Record<(typeof BED_SIZES)[number], string> = {
+  king: 'King',
+  queen: 'Queen',
+  full: 'Full / Double',
+  twin: 'Twin',
+  bunk: 'Bunk',
+  sofa: 'Sofa bed',
+  other: 'Other',
+};
+
+export function summarizeBeds(beds: string[] | null | undefined): string {
+  if (!beds || beds.length === 0) return 'No beds listed';
+  const counts = new Map<string, number>();
+  for (const b of beds) counts.set(b, (counts.get(b) ?? 0) + 1);
+  return Array.from(counts.entries())
+    .map(([size, n]) => {
+      const label =
+        BED_SIZE_LABELS[size as keyof typeof BED_SIZE_LABELS] ?? size;
+      return n > 1 ? `${n}× ${label}` : label;
+    })
+    .join(' · ');
+}
 
 export const roomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   description: z.string().optional(),
   max_occupancy: z.number().min(1, 'At least 1 guest'),
+  beds: z.array(z.enum(BED_SIZES)).min(1, 'Add at least one bed'),
+  amenities: z.array(amenitySchema),
 });
 
 export const invitationSchema = z.object({
@@ -65,9 +110,31 @@ export const bookingRequestSchema = z.object({
   guest_name: z.string().optional(),
 });
 
+export const hostBookingSchema = z
+  .object({
+    property_id: z.string().uuid(),
+    guest_name: z.string().min(1, 'Guest name is required'),
+    guest_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+    guest_phone: z.string().optional(),
+    check_in: z.string().min(1, 'Check-in date is required'),
+    check_out: z.string().min(1, 'Check-out date is required'),
+    room_ids: z.array(z.string()).min(1, 'Select at least one room'),
+    party_size: z.number().min(1, 'At least 1 guest'),
+    notes: z.string().optional(),
+    notify_guest: z.boolean(),
+  })
+  .refine(
+    (d) => !d.notify_guest || (d.guest_email && d.guest_email.length > 0),
+    {
+      message: 'An email is required to send guest notifications',
+      path: ['guest_email'],
+    }
+  );
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type PropertyInput = z.infer<typeof propertySchema>;
 export type RoomInput = z.infer<typeof roomSchema>;
 export type InvitationInput = z.infer<typeof invitationSchema>;
 export type BookingRequestInput = z.infer<typeof bookingRequestSchema>;
+export type HostBookingInput = z.infer<typeof hostBookingSchema>;

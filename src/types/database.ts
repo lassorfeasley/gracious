@@ -19,6 +19,12 @@ export interface NotificationPrefs {
   invitation_expiring: boolean;
 }
 
+export interface Amenity {
+  key: string;
+  label: string;
+  note: string;
+}
+
 export interface Property {
   id: string;
   owner_id: string;
@@ -32,6 +38,9 @@ export interface Property {
   house_rules: string | null;
   check_in_instructions: string | null;
   hero_image_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  amenities: Amenity[];
   created_at: string;
 }
 
@@ -56,6 +65,8 @@ export interface Room {
   name: string;
   description: string | null;
   max_occupancy: number;
+  beds: string[];
+  amenities: Amenity[];
   image_url: string | null;
   display_order: number;
 }
@@ -95,11 +106,22 @@ export interface InvitationWindow {
   end_date: string;
 }
 
+export interface BookingGuest {
+  id: string | null;
+  name: string | null;
+  email: string | null;
+}
+
 export interface Booking {
   id: string;
-  invitation_id: string;
+  invitation_id: string | null;
   property_id: string;
-  guest_user_id: string;
+  guest_user_id: string | null;
+  guest_name: string | null;
+  guest_email: string | null;
+  guest_phone: string | null;
+  notify_guest: boolean;
+  created_by: string | null;
   status: BookingStatus;
   party_size: number;
   notes: string | null;
@@ -127,9 +149,9 @@ export interface InvitationWithDetails extends Invitation {
 }
 
 export interface BookingWithDetails extends Booking {
-  guest: User;
+  guest: BookingGuest;
   dates: BookingDates;
   rooms: Room[];
   property: Property;
-  invitation: Invitation;
+  invitation: Invitation | null;
 }

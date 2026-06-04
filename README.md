@@ -14,7 +14,9 @@ Private, invitation-only booking platform for vacation/second homeowners to shar
 ### 1. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com)
-2. Run the migration in `supabase/migrations/001_initial_schema.sql` via the SQL editor
+2. Run migrations in the SQL editor (in order):
+   - `supabase/migrations/001_initial_schema.sql`
+   - `supabase/migrations/002_fix_auth_user_trigger.sql` (required if signup shows **"Database error saving new user"**)
 3. Enable Email auth (magic link + email/password) in Authentication → Providers
 4. Add your site URL to Authentication → URL Configuration:
    - Site URL: `http://localhost:3000` (or production URL)

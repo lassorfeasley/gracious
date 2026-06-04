@@ -1,11 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
+import { getDashboardProperty } from '@/lib/dashboard-property';
 import { InvitationsManager } from '@/components/dashboard/invitations-manager';
-
-async function getProperty(slug: string) {
-  const supabase = await createClient();
-  const { data } = await supabase.from('properties').select('*').eq('slug', slug).single();
-  return data;
-}
 
 export default async function GuestsPage({
   params,
@@ -13,8 +8,7 @@ export default async function GuestsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const property = await getProperty(slug);
-  if (!property) return null;
+  const property = await getDashboardProperty(slug);
 
   const supabase = await createClient();
   const { data: rooms } = await supabase

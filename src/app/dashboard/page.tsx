@@ -9,7 +9,7 @@ export default async function DashboardPage() {
   const user = await requireOwner();
   const properties = await getOwnerProperties(user.id);
 
-  if (properties.length === 1) {
+  if (properties.length === 1 && properties[0]?.slug) {
     redirect(`/dashboard/${properties[0].slug}/overview`);
   }
 

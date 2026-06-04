@@ -183,18 +183,32 @@ CREATE INDEX idx_notifications_log_booking ON public.notifications_log(booking_i
 
 -- Auto-create user profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.users (id, email, name, role)
   VALUES (
     NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'guest')
-  );
+    COALESCE(NEW.email, NEW.raw_user_meta_data->>'email'),
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(COALESCE(NEW.email, ''), '@', 1)),
+    CASE
+      WHEN NEW.raw_user_meta_data->>'role' = 'owner' THEN 'owner'::public.user_role
+      ELSE 'guest'::public.user_role
+    END
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    role = EXCLUDED.role;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+GRANT ALL ON TABLE public.users TO supabase_auth_admin;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -231,6 +245,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 -- Users policies
 CREATE POLICY users_select_own ON public.users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY users_insert_own ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY users_update_own ON public.users FOR UPDATE USING (auth.uid() = id);
 
 -- Properties policies

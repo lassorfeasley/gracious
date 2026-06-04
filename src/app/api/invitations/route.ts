@@ -67,9 +67,18 @@ export async function POST(request: NextRequest) {
       // prix fixe requires windows
     }
 
-    notifyInvitationSent(invitation.id).catch(console.error);
+    let emailSent = true;
+    let emailError: string | undefined;
+    try {
+      await notifyInvitationSent(invitation.id);
+    } catch (err) {
+      emailSent = false;
+      emailError =
+        err instanceof Error ? err.message : 'Failed to send invitation email';
+      console.error(err);
+    }
 
-    return NextResponse.json({ invitation });
+    return NextResponse.json({ invitation, emailSent, emailError });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

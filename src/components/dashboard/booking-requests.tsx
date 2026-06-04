@@ -20,9 +20,19 @@ interface RequestBooking {
   status: string;
   party_size: number;
   notes: string | null;
-  guest: { name: string | null; email: string };
+  guest_name?: string | null;
+  guest_email?: string | null;
+  created_by?: string | null;
+  guest: { name: string | null; email: string } | null;
   dates: { check_in: string; check_out: string } | { check_in: string; check_out: string }[];
   booking_rooms: { room: { name: string } }[];
+}
+
+function guestDisplayName(booking: RequestBooking): string {
+  if (booking.guest) {
+    return booking.guest.name ?? booking.guest.email;
+  }
+  return booking.guest_name ?? booking.guest_email ?? 'Guest';
 }
 
 export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
@@ -82,8 +92,13 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium">
-                          {booking.guest.name ?? booking.guest.email}
+                          {guestDisplayName(booking)}
                         </p>
+                        {booking.created_by && (
+                          <p className="text-xs text-muted-foreground">
+                            Host-arranged
+                          </p>
+                        )}
                         {dates && (
                           <p className="text-sm text-muted-foreground">
                             {formatDateRange(dates.check_in, dates.check_out)}
@@ -137,7 +152,7 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                   <CardContent className="flex items-center justify-between p-4">
                     <div>
                       <p className="font-medium">
-                        {booking.guest.name ?? booking.guest.email}
+                        {guestDisplayName(booking)}
                       </p>
                       {dates && (
                         <p className="text-sm text-muted-foreground">

@@ -18,7 +18,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Users, Calendar, Wifi } from 'lucide-react';
+import { MapPin, Users, Calendar, Wifi, BedDouble, Check } from 'lucide-react';
+import { summarizeBeds } from '@/lib/validations';
 
 export default async function InvitePage({
   params,
@@ -56,7 +57,7 @@ export default async function InvitePage({
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
               <h1 className="text-3xl font-semibold sm:text-4xl">{property.name}</h1>
               {property.address && (
@@ -130,6 +131,27 @@ export default async function InvitePage({
           </section>
         )}
 
+        {/* Amenities */}
+        {property.amenities && property.amenities.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold">Amenities</h2>
+            <Separator className="my-3" />
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {property.amenities.map((a) => (
+                <li key={a.key} className="flex items-baseline gap-2 text-sm">
+                  <Check className="h-4 w-4 shrink-0 translate-y-0.5 text-muted-foreground" />
+                  <span>
+                    {a.label}
+                    {a.note ? (
+                      <span className="text-muted-foreground"> — {a.note}</span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Your Rooms */}
         <section>
           <h2 className="text-lg font-semibold">Your rooms</h2>
@@ -160,10 +182,37 @@ export default async function InvitePage({
                           {room.description}
                         </p>
                       )}
-                      <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="h-3 w-3" />
-                        Up to {room.max_occupancy} guests
-                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <BedDouble className="h-3 w-3" />
+                          {summarizeBeds(room.beds)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          Up to {room.max_occupancy} guests
+                        </span>
+                      </div>
+                      {room.amenities && room.amenities.length > 0 && (
+                        <ul className="mt-3 space-y-1">
+                          {room.amenities.map((a) => (
+                            <li
+                              key={a.key}
+                              className="flex items-baseline gap-2 text-sm"
+                            >
+                              <Check className="h-3.5 w-3.5 shrink-0 translate-y-0.5 text-muted-foreground" />
+                              <span>
+                                {a.label}
+                                {a.note ? (
+                                  <span className="text-muted-foreground">
+                                    {' '}
+                                    — {a.note}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -272,7 +321,7 @@ export default async function InvitePage({
 
         {/* CTA */}
         {active && (
-          <section className="sticky bottom-0 border-t bg-background/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <section className="sticky bottom-0 border-t bg-background/95 py-4 backdrop-blur-sm supports-backdrop-filter:bg-background/80">
             {!isAuthenticated ? (
               <MagicLinkForm
                 email={invitation.guest_email}

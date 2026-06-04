@@ -13,7 +13,7 @@ interface Props {
   checkIn?: string;
   houseRules?: string;
   coguestNote?: string;
-  profileUrl: string;
+  profileUrl?: string;
 }
 
 export default function BookingApprovedEmail(props: Props) {
@@ -43,9 +43,11 @@ export default function BookingApprovedEmail(props: Props) {
       {props.houseRules && <Text><strong>House rules:</strong> {props.houseRules}</Text>}
       {props.coguestNote && <Text>{props.coguestNote}</Text>}
       <Text>A calendar file (.ics) is attached to add this stay to your calendar.</Text>
-      <Button style={buttonStyle} href={props.profileUrl}>
-        View house details
-      </Button>
+      {props.profileUrl && (
+        <Button style={buttonStyle} href={props.profileUrl}>
+          View house details
+        </Button>
+      )}
     </EmailLayout>
   );
 }

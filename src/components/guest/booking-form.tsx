@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -190,13 +191,13 @@ export function BookingForm({
                   />
                 </div>
 
-                <FormItem>
-                  <FormLabel>Rooms</FormLabel>
+                <div className="space-y-2">
+                  <Label>Rooms</Label>
                   <div className="space-y-2">
                     {invitation.rooms.map((room: Room) => (
                       <label
                         key={room.id}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-[:checked]:border-foreground"
+                        className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-checked:border-foreground"
                       >
                         <Checkbox
                           checked={selectedRooms.includes(room.id)}
@@ -216,7 +217,7 @@ export function BookingForm({
                       {form.formState.errors.room_ids.message}
                     </p>
                   )}
-                </FormItem>
+                </div>
               </>
             )}
 
