@@ -71,19 +71,19 @@ function MonthGrid({
 
   return (
     <div>
-      <p className="mb-4 text-center text-base font-medium">
+      <p className="mb-5 text-center text-base font-semibold">
         {format(month, 'MMMM yyyy')}
       </p>
-      <div className="grid grid-cols-7 text-center text-xs text-muted-foreground">
+      <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
         {WEEKDAYS.map((d, i) => (
-          <div key={i} className="py-1">
+          <div key={i} className="pb-2">
             {d}
           </div>
         ))}
       </div>
       <div className="grid grid-cols-7">
         {Array.from({ length: startPad }).map((_, i) => (
-          <div key={`pad-${i}`} />
+          <div key={`pad-${i}`} className="aspect-square" />
         ))}
         {days.map((day) => {
           const booked = bookings.filter((b) =>
@@ -103,11 +103,11 @@ function MonthGrid({
                 : undefined;
 
           return (
-            <div key={day.toISOString()} className="flex items-center justify-center py-0.5">
+            <div key={day.toISOString()} className="flex aspect-square items-center justify-center p-1.5">
               <span
                 title={title}
                 className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-full text-sm',
+                  'flex h-full w-full items-center justify-center rounded-full text-sm',
                   isToday && 'font-semibold ring-1 ring-inset ring-foreground',
                   isPast && !unavailable && 'text-muted-foreground/50',
                   unavailable && 'text-muted-foreground line-through',
@@ -156,7 +156,7 @@ export function AvailabilityCalendar({
         </button>
         <div
           className={cn(
-            'grid gap-x-12 gap-y-10',
+            'grid gap-x-16 gap-y-10 px-10',
             monthsToShow > 1 && 'sm:grid-cols-2'
           )}
         >

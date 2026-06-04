@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   getInvitationByToken,
   isInvitationActive,
@@ -9,16 +10,9 @@ import { getAuthUser } from '@/lib/auth';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { MagicLinkForm } from '@/components/guest/magic-link-form';
 import { BookingForm } from '@/components/guest/booking-form';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { PropertyMap } from '@/components/dashboard/property-map';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Users, Calendar, Wifi, BedDouble, Check } from 'lucide-react';
+import { MapPin, Check } from 'lucide-react';
 import { summarizeBeds } from '@/lib/validations';
 
 export default async function InvitePage({
@@ -44,12 +38,19 @@ export default async function InvitePage({
 
   const property = invitation.property;
 
+  const typeLabel =
+    invitation.type === 'standing'
+      ? 'Open invitation'
+      : invitation.type === 'date_offer'
+        ? 'Date offer'
+        : 'Fixed stay';
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <section className="relative">
+      <section className="relative h-72 w-full sm:h-96">
         {property.hero_image_url ? (
-          <div className="relative h-64 w-full sm:h-80">
+          <>
             <Image
               src={property.hero_image_url}
               alt={property.name}
@@ -57,52 +58,30 @@ export default async function InvitePage({
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl font-semibold sm:text-4xl">{property.name}</h1>
-              {property.address && (
-                <p className="mt-1 flex items-center gap-1 text-sm opacity-90">
-                  <MapPin className="h-4 w-4" />
-                  {property.address}
-                </p>
-              )}
-            </div>
-          </div>
+            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+          </>
         ) : (
-          <div className="border-b bg-muted/30 px-6 py-16 text-center">
-            <h1 className="text-4xl font-semibold tracking-tight">{property.name}</h1>
+          <div className="absolute inset-0 bg-linear-to-br from-slate-700 via-slate-800 to-slate-950" />
+        )}
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-5xl px-6 pb-8 text-white">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {property.name}
+            </h1>
             {property.address && (
-              <p className="mt-2 flex items-center justify-center gap-1 text-muted-foreground">
+              <p className="mt-2 flex items-center gap-1.5 text-base text-white/80">
                 <MapPin className="h-4 w-4" />
                 {property.address}
               </p>
             )}
           </div>
-        )}
+        </div>
       </section>
 
-      <div className="container mx-auto max-w-2xl px-4 py-8 space-y-10">
-        {!active && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-sm">
-            This invitation is no longer active.
-          </div>
-        )}
-
-        {invitation.message && (
-          <blockquote className="border-l-4 border-foreground/20 pl-4 italic text-muted-foreground">
-            &ldquo;{invitation.message}&rdquo;
-          </blockquote>
-        )}
-
-        {/* Invitation type badge */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">
-            {invitation.type === 'standing'
-              ? 'Open invitation'
-              : invitation.type === 'date_offer'
-                ? 'Date offer'
-                : 'Fixed stay'}
-          </Badge>
+      <div className="mx-auto max-w-5xl px-6 pb-40">
+        {/* Invitation badges */}
+        <div className="mt-8 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{typeLabel}</Badge>
           {invitation.expires_at && (
             <Badge variant="outline">
               Expires {formatDate(invitation.expires_at)}
@@ -110,20 +89,123 @@ export default async function InvitePage({
           )}
         </div>
 
+        {!active && (
+          <div className="mt-6 rounded-2xl border border-destructive/50 bg-destructive/10 p-5 text-center text-base">
+            This invitation is no longer active.
+          </div>
+        )}
+
+        {invitation.message && (
+          <blockquote className="mt-6 border-l-2 border-foreground/20 pl-5 text-lg italic leading-relaxed text-muted-foreground">
+            &ldquo;{invitation.message}&rdquo;
+          </blockquote>
+        )}
+
+        {/* Available dates */}
+        <section className="mt-12">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Available dates
+          </h2>
+          {invitation.type === 'standing' ? (
+            <p className="mt-6 text-base text-muted-foreground">
+              You can request any available dates within your invited rooms.
+            </p>
+          ) : invitation.windows.length > 0 ? (
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {invitation.windows.map((w) => (
+                <li
+                  key={w.id}
+                  className="rounded-2xl border px-5 py-4 text-base font-medium"
+                >
+                  {formatDateRange(w.start_date, w.end_date)}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-6 text-base text-muted-foreground">
+              Contact your host for date details.
+            </p>
+          )}
+        </section>
+
+        {/* Rooms available to you */}
+        <section className="mt-16 border-t pt-12">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Rooms available to you
+          </h2>
+          <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {invitation.rooms.map((room) => (
+              <Link
+                key={room.id}
+                href={`/invite/${invitation.token}/rooms/${room.id}`}
+                className="group block"
+              >
+                {room.image_url ? (
+                  <>
+                    <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
+                      <Image
+                        src={room.image_url}
+                        alt={room.name}
+                        fill
+                        className="object-cover transition duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                    <p className="mt-4 text-lg font-medium">{room.name}</p>
+                    <p className="text-base text-muted-foreground">
+                      {summarizeBeds(room.beds)} · Up to {room.max_occupancy}{' '}
+                      guests
+                    </p>
+                  </>
+                ) : (
+                  <div className="relative flex aspect-4/3 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-5 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900">
+                    <p className="text-lg font-medium text-white">
+                      {room.name}
+                    </p>
+                    <p className="text-base text-white/70">
+                      {summarizeBeds(room.beds)} · Up to {room.max_occupancy}{' '}
+                      guests
+                    </p>
+                  </div>
+                )}
+                {room.description && (
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {room.description}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* About */}
-        {(property.description || property.directions) && (
-          <section>
-            <h2 className="text-lg font-semibold">About</h2>
-            <Separator className="my-3" />
-            {property.description && (
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {property.description}
-              </p>
-            )}
+        {property.description && (
+          <section className="mt-16 border-t pt-12">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              About this place
+            </h2>
+            <p className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-foreground/90">
+              {property.description}
+            </p>
+          </section>
+        )}
+
+        {/* Location */}
+        {property.address && (
+          <section className="mt-16 border-t pt-12">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Where you&apos;re hosting
+            </h2>
+            <div className="mt-6">
+              <PropertyMap
+                address={property.address}
+                latitude={property.latitude}
+                longitude={property.longitude}
+              />
+            </div>
             {property.directions && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium">How to get there</h3>
-                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+              <div className="mt-8">
+                <h3 className="text-lg font-medium">Getting there</h3>
+                <p className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
                   {property.directions}
                 </p>
               </div>
@@ -133,17 +215,26 @@ export default async function InvitePage({
 
         {/* Amenities */}
         {property.amenities && property.amenities.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold">Amenities</h2>
-            <Separator className="my-3" />
-            <ul className="grid gap-2 sm:grid-cols-2">
+          <section className="mt-16 border-t pt-12">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              What this place offers
+            </h2>
+            <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
               {property.amenities.map((a) => (
-                <li key={a.key} className="flex items-baseline gap-2 text-sm">
-                  <Check className="h-4 w-4 shrink-0 translate-y-0.5 text-muted-foreground" />
+                <li
+                  key={a.key}
+                  className="flex items-start gap-4 border-b border-border/60 pb-5 text-base"
+                >
+                  <Check
+                    className="mt-0.5 h-5 w-5 shrink-0 text-foreground"
+                    strokeWidth={1.5}
+                  />
                   <span>
                     {a.label}
                     {a.note ? (
-                      <span className="text-muted-foreground"> — {a.note}</span>
+                      <span className="block text-sm text-muted-foreground">
+                        {a.note}
+                      </span>
                     ) : null}
                   </span>
                 </li>
@@ -152,176 +243,73 @@ export default async function InvitePage({
           </section>
         )}
 
-        {/* Your Rooms */}
-        <section>
-          <h2 className="text-lg font-semibold">Your rooms</h2>
-          <Separator className="my-3" />
-          <div className="grid gap-4">
-            {invitation.rooms.map((room) => (
-              <Card key={room.id}>
-                <CardContent className="p-4">
-                  <div className="flex gap-4">
-                    {room.image_url ? (
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md">
-                        <Image
-                          src={room.image_url}
-                          alt={room.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-muted text-2xl font-semibold text-muted-foreground">
-                        {room.name[0]}
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="font-medium">{room.name}</h3>
-                      {room.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {room.description}
-                        </p>
-                      )}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <BedDouble className="h-3 w-3" />
-                          {summarizeBeds(room.beds)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          Up to {room.max_occupancy} guests
-                        </span>
-                      </div>
-                      {room.amenities && room.amenities.length > 0 && (
-                        <ul className="mt-3 space-y-1">
-                          {room.amenities.map((a) => (
-                            <li
-                              key={a.key}
-                              className="flex items-baseline gap-2 text-sm"
-                            >
-                              <Check className="h-3.5 w-3.5 shrink-0 translate-y-0.5 text-muted-foreground" />
-                              <span>
-                                {a.label}
-                                {a.note ? (
-                                  <span className="text-muted-foreground">
-                                    {' '}
-                                    — {a.note}
-                                  </span>
-                                ) : null}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Available Dates */}
-        <section>
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Calendar className="h-5 w-5" />
-            Available dates
-          </h2>
-          <Separator className="my-3" />
-          {invitation.type === 'standing' ? (
-            <p className="text-muted-foreground">
-              You can request any available dates within your invited rooms.
-            </p>
-          ) : invitation.windows.length > 0 ? (
-            <ul className="space-y-2">
-              {invitation.windows.map((w) => (
-                <li
-                  key={w.id}
-                  className="rounded-lg border px-4 py-3 text-sm font-medium"
-                >
-                  {formatDateRange(w.start_date, w.end_date)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">Contact your host for date details.</p>
-          )}
-        </section>
-
-        {/* Who's Staying */}
-        <section>
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Users className="h-5 w-5" />
-            Who&apos;s staying
-          </h2>
-          <Separator className="my-3" />
-          {coguests.visible.length === 0 && !coguests.hasHidden ? (
-            <p className="text-sm text-muted-foreground">
-              No other confirmed guests during your dates yet.
-            </p>
-          ) : (
-            <p className="text-sm">
-              {coguests.visible.map((g) => g.label).join(', ')}
-              {coguests.hasHidden && (coguests.visible.length > 0 ? ', and others' : 'and others')}
-            </p>
-          )}
-        </section>
-
-        {/* House Info */}
+        {/* Guest information */}
         {(property.wifi_name ||
           property.check_in_instructions ||
           property.house_rules) && (
-          <section>
-            <h2 className="text-lg font-semibold">House info</h2>
-            <Separator className="my-3" />
-            <Accordion type="multiple" className="w-full">
-              {property.wifi_name && (
-                <AccordionItem value="wifi">
-                  <AccordionTrigger>
-                    <span className="flex items-center gap-2">
-                      <Wifi className="h-4 w-4" /> WiFi
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm">
-                      Network: <strong>{property.wifi_name}</strong>
-                      {property.wifi_password && (
-                        <>
-                          <br />
-                          Password: <strong>{property.wifi_password}</strong>
-                        </>
-                      )}
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+          <section className="mt-16 border-t pt-12">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Guest information
+            </h2>
+            <dl className="mt-8 grid gap-8 sm:grid-cols-2">
               {property.check_in_instructions && (
-                <AccordionItem value="checkin">
-                  <AccordionTrigger>Check-in instructions</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                      {property.check_in_instructions}
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
+                <div>
+                  <dt className="text-base font-medium">
+                    Check-in instructions
+                  </dt>
+                  <dd className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+                    {property.check_in_instructions}
+                  </dd>
+                </div>
+              )}
+              {property.wifi_name && (
+                <div>
+                  <dt className="text-base font-medium">WiFi</dt>
+                  <dd className="mt-2 text-base text-muted-foreground">
+                    {property.wifi_name}
+                    {property.wifi_password
+                      ? ` · ${property.wifi_password}`
+                      : ''}
+                  </dd>
+                </div>
               )}
               {property.house_rules && (
-                <AccordionItem value="rules">
-                  <AccordionTrigger>House rules</AccordionTrigger>
-                  <AccordionContent>
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                      {property.house_rules}
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
+                <div>
+                  <dt className="text-base font-medium">House rules</dt>
+                  <dd className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+                    {property.house_rules}
+                  </dd>
+                </div>
               )}
-            </Accordion>
+            </dl>
           </section>
         )}
 
-        {/* CTA */}
-        {active && (
-          <section className="sticky bottom-0 border-t bg-background/95 py-4 backdrop-blur-sm supports-backdrop-filter:bg-background/80">
+        {/* Who's staying */}
+        <section className="mt-16 border-t pt-12">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Who&apos;s staying
+          </h2>
+          {coguests.visible.length === 0 && !coguests.hasHidden ? (
+            <p className="mt-6 text-base text-muted-foreground">
+              No other confirmed guests during your dates yet.
+            </p>
+          ) : (
+            <p className="mt-6 text-base">
+              {coguests.visible.map((g) => g.label).join(', ')}
+              {coguests.hasHidden &&
+                (coguests.visible.length > 0
+                  ? ', and others'
+                  : 'and others')}
+            </p>
+          )}
+        </section>
+      </div>
+
+      {/* CTA */}
+      {active && (
+        <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/80">
+          <div className="mx-auto max-w-5xl px-6 py-5">
             {!isAuthenticated ? (
               <MagicLinkForm
                 email={invitation.guest_email}
@@ -335,9 +323,9 @@ export default async function InvitePage({
                 guestName={invitation.guest_name}
               />
             )}
-          </section>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

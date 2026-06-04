@@ -1,14 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Users, Home, Settings, Bell, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  Users,
+  Home,
+  Settings,
+  Bell,
+  ChevronDown,
+  User,
+  LogOut,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 import type { Property } from '@/types/database';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -17,16 +28,26 @@ interface DashboardTopNavProps {
   properties: Property[];
   currentProperty: Property;
   requestCount?: number;
+  userEmail?: string;
 }
 
 export function DashboardTopNav({
   properties,
   currentProperty,
   requestCount = 0,
+  userEmail,
 }: DashboardTopNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const base = `/dashboard/${currentProperty.slug}`;
   const showSwitcher = properties.length > 1;
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  }
 
   function isActive(href: string) {
     return pathname.startsWith(`${base}/${href}`);
@@ -116,6 +137,33 @@ export function DashboardTopNav({
           >
             <Settings className="h-5 w-5" />
           </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Account"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+              {userEmail && (
+                <>
+                  <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
+                    {userEmail}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
       </div>
     </header>

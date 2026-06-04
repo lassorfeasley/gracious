@@ -46,6 +46,8 @@ interface BookingFormProps {
   isAuthenticated: boolean;
   guestEmail: string;
   guestName?: string | null;
+  /** When set, the form is locked to booking this single room. */
+  lockedRoom?: Room;
 }
 
 export function BookingForm({
@@ -53,6 +55,7 @@ export function BookingForm({
   isAuthenticated,
   guestEmail,
   guestName,
+  lockedRoom,
 }: BookingFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -66,9 +69,11 @@ export function BookingForm({
     defaultValues: {
       check_in: isPrixFixe && defaultWindow ? defaultWindow.start_date : '',
       check_out: isPrixFixe && defaultWindow ? defaultWindow.end_date : '',
-      room_ids: isPrixFixe
-        ? invitation.rooms.map((r) => r.id)
-        : [],
+      room_ids: lockedRoom
+        ? [lockedRoom.id]
+        : isPrixFixe
+          ? invitation.rooms.map((r) => r.id)
+          : [],
       party_size: 1,
       notes: '',
       guest_name: guestName ?? '',
@@ -78,7 +83,7 @@ export function BookingForm({
   const selectedRooms = form.watch('room_ids');
 
   function toggleRoom(roomId: string) {
-    if (isPrixFixe) return;
+    if (isPrixFixe || lockedRoom) return;
     const current = form.getValues('room_ids');
     if (current.includes(roomId)) {
       form.setValue(
@@ -160,6 +165,16 @@ export function BookingForm({
               />
             )}
 
+            {lockedRoom && (
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Booking</p>
+                <p className="font-medium">{lockedRoom.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Up to {lockedRoom.max_occupancy} guests
+                </p>
+              </div>
+            )}
+
             {!isPrixFixe && (
               <>
                 <div className="grid grid-cols-2 gap-3">
@@ -191,33 +206,35 @@ export function BookingForm({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Rooms</Label>
+                {!lockedRoom && (
                   <div className="space-y-2">
-                    {invitation.rooms.map((room: Room) => (
-                      <label
-                        key={room.id}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-checked:border-foreground"
-                      >
-                        <Checkbox
-                          checked={selectedRooms.includes(room.id)}
-                          onCheckedChange={() => toggleRoom(room.id)}
-                        />
-                        <div>
-                          <p className="font-medium">{room.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Up to {room.max_occupancy} guests
-                          </p>
-                        </div>
-                      </label>
-                    ))}
+                    <Label>Rooms</Label>
+                    <div className="space-y-2">
+                      {invitation.rooms.map((room: Room) => (
+                        <label
+                          key={room.id}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-checked:border-foreground"
+                        >
+                          <Checkbox
+                            checked={selectedRooms.includes(room.id)}
+                            onCheckedChange={() => toggleRoom(room.id)}
+                          />
+                          <div>
+                            <p className="font-medium">{room.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Up to {room.max_occupancy} guests
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    {form.formState.errors.room_ids && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.room_ids.message}
+                      </p>
+                    )}
                   </div>
-                  {form.formState.errors.room_ids && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.room_ids.message}
-                    </p>
-                  )}
-                </div>
+                )}
               </>
             )}
 
@@ -246,9 +263,13 @@ export function BookingForm({
                   </FormControl>
                   <FormDescription>
                     Max for selected rooms:{' '}
-                    {invitation.rooms
-                      .filter((r) => selectedRooms.includes(r.id) || isPrixFixe)
-                      .reduce((s, r) => s + r.max_occupancy, 0) || '—'}
+                    {lockedRoom
+                      ? lockedRoom.max_occupancy
+                      : invitation.rooms
+                          .filter(
+                            (r) => selectedRooms.includes(r.id) || isPrixFixe
+                          )
+                          .reduce((s, r) => s + r.max_occupancy, 0) || '—'}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { VisibilityToggle } from '@/components/guest/visibility-toggle';
 import { CancelBookingButton } from '@/components/guest/cancel-booking-button';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
+import { LogoutButton } from '@/components/logout-button';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   requested: 'secondary',
@@ -39,7 +40,10 @@ export default async function MyTripsPage() {
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <span className="font-semibold">GuestHouse</span>
-          <VisibilityToggle visible={user.visible_to_coguests} />
+          <div className="flex items-center gap-2">
+            <VisibilityToggle visible={user.visible_to_coguests} />
+            <LogoutButton />
+          </div>
         </div>
       </header>
 

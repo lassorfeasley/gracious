@@ -30,6 +30,7 @@ export default async function PropertyDashboardLayout({
         properties={properties}
         currentProperty={currentProperty}
         requestCount={requestCount ?? 0}
+        userEmail={user.email ?? undefined}
       />
       <main className="flex-1 px-6 pt-6 pb-32">{children}</main>
       <footer className="mt-auto h-[200px] border-t bg-muted/20">
