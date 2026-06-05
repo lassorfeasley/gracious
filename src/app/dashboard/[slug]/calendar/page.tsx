@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
+import { HostBookingDialog } from '@/components/dashboard/host-booking-dialog';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { assignColors } from '@/lib/calendar-colors';
 
@@ -58,7 +59,10 @@ export default async function CalendarPage({
           <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
           <p className="mt-1 text-muted-foreground">Approved stays across your home</p>
         </div>
-        <InviteGuestDialog propertyId={property.id} rooms={rooms ?? []} />
+        <div className="flex flex-wrap gap-2">
+          <HostBookingDialog propertyId={property.id} rooms={rooms ?? []} />
+          <InviteGuestDialog propertyId={property.id} rooms={rooms ?? []} />
+        </div>
       </div>
       <AvailabilityCalendar bookings={calendarBookings} />
     </div>

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { requireOwner } from '@/lib/auth';
+import { requireOwner, getOwnerProperties } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
+import { PropertyHomesSection } from '@/components/dashboard/property-homes-section';
 import { SettingsForm } from '@/components/dashboard/settings-form';
 
 export default async function SettingsPage({
@@ -11,6 +12,8 @@ export default async function SettingsPage({
   const { slug } = await params;
   const user = await requireOwner();
   const property = await getDashboardProperty(slug);
+  const properties = await getOwnerProperties(user.id);
+  const isPropertyOwner = property.owner_id === user.id;
   const supabase = await createClient();
 
   const { data: managersRaw } = await supabase
@@ -30,11 +33,22 @@ export default async function SettingsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-muted-foreground">Co-managers and notifications</p>
+        <p className="text-muted-foreground">
+          Account, your homes, and who can help manage them
+        </p>
       </div>
+
+      <PropertyHomesSection
+        properties={properties}
+        currentPropertyId={property.id}
+        userId={user.id}
+      />
+
       <SettingsForm
         user={user}
         propertyId={property.id}
+        propertyName={property.name}
+        isPropertyOwner={isPropertyOwner}
         managers={managers}
       />
     </div>

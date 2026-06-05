@@ -7,13 +7,18 @@ export interface CoGuestDisplay {
   hasHidden: boolean;
 }
 
-function formatGuestName(user: User): string {
-  if (!user.name) return 'Guest';
-  const parts = user.name.trim().split(/\s+/);
+function formatDisplayName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return 'Guest';
+  const parts = trimmed.split(/\s+/);
   if (parts.length === 1) return parts[0];
   const first = parts[0];
   const lastInitial = parts[parts.length - 1][0]?.toUpperCase() ?? '';
   return lastInitial ? `${first} ${lastInitial}.` : first;
+}
+
+function formatGuestName(user: User): string {
+  return formatDisplayName(user.name ?? 'Guest');
 }
 
 export async function getCoGuestsForDates(
@@ -30,6 +35,8 @@ export async function getCoGuestsForDates(
     .select(
       `
       guest_user_id,
+      guest_name,
+      guest_email,
       guest:users!guest_user_id(id, name, visible_to_coguests),
       dates:booking_dates(check_in, check_out)
     `
@@ -53,16 +60,29 @@ export async function getCoGuestsForDates(
     )
       continue;
 
-    const guest = (Array.isArray(booking.guest) ? booking.guest[0] : booking.guest) as User;
-    if (!forOwner && !guest.visible_to_coguests) {
-      hasHidden = true;
-      continue;
+    if (booking.guest_user_id) {
+      const guest = (Array.isArray(booking.guest)
+        ? booking.guest[0]
+        : booking.guest) as User | null;
+      if (!guest) continue;
+      if (!forOwner && !guest.visible_to_coguests) {
+        hasHidden = true;
+        continue;
+      }
+      visible.push({
+        label: formatGuestName(guest),
+        name: guest.name ?? 'Guest',
+      });
+    } else {
+      const name =
+        booking.guest_name ??
+        booking.guest_email?.split('@')[0] ??
+        'Guest';
+      visible.push({
+        label: formatDisplayName(name),
+        name,
+      });
     }
-
-    visible.push({
-      label: formatGuestName(guest),
-      name: guest.name ?? 'Guest',
-    });
   }
 
   return { visible, hasHidden };

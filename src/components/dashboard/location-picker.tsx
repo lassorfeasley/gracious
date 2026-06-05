@@ -6,6 +6,7 @@ import type { Map as MapboxMap, Marker as MapboxMarker } from 'mapbox-gl';
 import { LocateFixed, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { geocodeMapboxPlace } from '@/lib/mapbox-geocoding';
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const DEFAULT_CENTER: [number, number] = [-98.5795, 39.8283];
@@ -87,24 +88,26 @@ export function LocationPicker({
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      typeof longitude !== 'number' ||
+      typeof latitude !== 'number' ||
+      !mapRef.current ||
+      !markerRef.current
+    ) {
+      return;
+    }
+    markerRef.current.setLngLat([longitude, latitude]);
+    mapRef.current.flyTo({ center: [longitude, latitude], zoom: 14 });
+  }, [latitude, longitude]);
+
   async function locateFromAddress() {
     if (!TOKEN || !addressRef.current) return;
     setLocating(true);
     try {
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          addressRef.current
-        )}.json?limit=1&access_token=${TOKEN}`
-      );
-      const data = await res.json();
-      const center = data?.features?.[0]?.center;
-      if (
-        Array.isArray(center) &&
-        center.length === 2 &&
-        mapRef.current &&
-        markerRef.current
-      ) {
-        const [lng, lat] = center as [number, number];
+      const place = await geocodeMapboxPlace(addressRef.current);
+      if (place && mapRef.current && markerRef.current) {
+        const [lng, lat] = place.center;
         markerRef.current.setLngLat([lng, lat]);
         mapRef.current.flyTo({ center: [lng, lat], zoom: 14 });
         onChangeRef.current(lat, lng);

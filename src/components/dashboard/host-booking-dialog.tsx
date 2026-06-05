@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,9 +34,14 @@ import type { Room } from '@/types/database';
 interface HostBookingDialogProps {
   propertyId: string;
   rooms: Room[];
+  trigger?: ReactNode;
 }
 
-export function HostBookingDialog({ propertyId, rooms }: HostBookingDialogProps) {
+export function HostBookingDialog({
+  propertyId,
+  rooms,
+  trigger,
+}: HostBookingDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -97,7 +102,7 @@ export function HostBookingDialog({ propertyId, rooms }: HostBookingDialogProps)
       return;
     }
 
-    toast.success('Guest booked');
+    toast.success('Stay added to calendar');
     setOpen(false);
     form.reset({
       property_id: propertyId,
@@ -117,15 +122,22 @@ export function HostBookingDialog({ propertyId, rooms }: HostBookingDialogProps)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" disabled={rooms.length === 0}>
-          <CalendarPlus className="mr-1 h-4 w-4" />
-          Book a guest
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" size="sm" disabled={rooms.length === 0}>
+            <CalendarPlus className="mr-1 h-4 w-4" />
+            Add manual stay
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Book a guest</DialogTitle>
+          <DialogTitle>Add a manual stay</DialogTitle>
         </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          For guests who won&apos;t use the app — family, neighbors, or anyone
+          you&apos;re hosting offline. Their dates block the calendar for other
+          guests and show up in your schedule.
+        </p>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -287,7 +299,7 @@ export function HostBookingDialog({ propertyId, rooms }: HostBookingDialogProps)
             />
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Booking...' : 'Confirm booking'}
+              {loading ? 'Adding…' : 'Add to calendar'}
             </Button>
           </form>
         </Form>

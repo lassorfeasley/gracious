@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
+import { HostBookingDialog } from '@/components/dashboard/host-booking-dialog';
+import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-button';
 import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog';
 import { PropertyMap } from '@/components/dashboard/property-map';
@@ -35,7 +37,7 @@ export default async function OverviewPage({
   const { data: bookings } = await supabase
     .from('bookings')
     .select(
-      `id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out)`
+      `id, status, invitation_id, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out)`
     )
     .eq('property_id', property.id)
     .in('status', ['approved', 'requested']);
@@ -69,6 +71,7 @@ export default async function OverviewPage({
       guestName,
       checkIn: dates?.check_in ?? '',
       checkOut: dates?.check_out ?? '',
+      isManual: !b.invitation_id,
     };
   });
 
@@ -118,7 +121,8 @@ export default async function OverviewPage({
             </p>
           )}
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <HostBookingDialog propertyId={property.id} rooms={rooms ?? []} />
           <InviteGuestDialog propertyId={property.id} rooms={rooms ?? []} />
         </div>
       </div>
@@ -466,7 +470,7 @@ export default async function OverviewPage({
             {upcoming.map((booking) => (
               <li
                 key={booking.id}
-                className="flex items-center justify-between py-5"
+                className="flex items-center justify-between gap-4 py-5"
               >
                 <div>
                   <p className="text-lg font-medium">{booking.guestName}</p>
@@ -476,7 +480,16 @@ export default async function OverviewPage({
                     </p>
                   )}
                 </div>
-                <Badge>Confirmed</Badge>
+                <div className="flex shrink-0 items-center gap-2">
+                  {booking.isManual ? (
+                    <Badge variant="secondary">Manual stay</Badge>
+                  ) : (
+                    <Badge>Confirmed</Badge>
+                  )}
+                  {booking.isManual && (
+                    <CancelHostStayButton bookingId={booking.id} />
+                  )}
+                </div>
               </li>
             ))}
           </ul>

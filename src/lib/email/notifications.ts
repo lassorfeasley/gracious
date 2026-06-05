@@ -109,7 +109,7 @@ export async function notifyStayRequested(bookingId: string) {
 
 export async function notifyBookingApproved(bookingId: string) {
   const booking = await getBookingWithDetails(bookingId);
-  if (!booking || !booking.guest.email) return;
+  if (!booking || !booking.notify_guest || !booking.guest.email) return;
 
   const icsContent = generateIcs(booking);
   const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);

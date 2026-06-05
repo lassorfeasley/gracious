@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import { AmenitiesEditor } from '@/components/dashboard/amenities-editor';
 import { HOME_AMENITY_PRESETS } from '@/lib/amenities';
+import { AddressAutocomplete } from '@/components/dashboard/address-autocomplete';
 import { LocationPicker } from '@/components/dashboard/location-picker';
 import type { Property } from '@/types/database';
 
@@ -207,7 +208,18 @@ export function PropertyEditDialog({
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <AddressAutocomplete
+                          {...field}
+                          value={field.value ?? ''}
+                          onPlaceSelect={(place) => {
+                            form.setValue('latitude', place.latitude, {
+                              shouldDirty: true,
+                            });
+                            form.setValue('longitude', place.longitude, {
+                              shouldDirty: true,
+                            });
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

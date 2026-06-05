@@ -14,10 +14,18 @@ import type { NotificationPrefs, User } from '@/types/database';
 interface SettingsFormProps {
   user: User;
   propertyId: string;
+  propertyName: string;
+  isPropertyOwner: boolean;
   managers: { id: string; user: { email: string; name: string | null } }[];
 }
 
-export function SettingsForm({ user, propertyId, managers }: SettingsFormProps) {
+export function SettingsForm({
+  user,
+  propertyId,
+  propertyName,
+  isPropertyOwner,
+  managers,
+}: SettingsFormProps) {
   const router = useRouter();
   const [prefs, setPrefs] = useState<NotificationPrefs>(user.notification_prefs);
   const [managerEmail, setManagerEmail] = useState('');
@@ -102,49 +110,55 @@ export function SettingsForm({ user, propertyId, managers }: SettingsFormProps) 
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Co-managers</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Co-managers have full access to this property only.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              type="email"
-              placeholder="co-manager@email.com"
-              value={managerEmail}
-              onChange={(e) => setManagerEmail(e.target.value)}
-            />
-            <Button onClick={addManager} disabled={loading}>
-              Add
-            </Button>
-          </div>
-          {managers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No co-managers yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {managers.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex items-center justify-between rounded border px-3 py-2 text-sm"
-                >
-                  <span>{m.user.name ?? m.user.email}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => removeManager(m.id)}
+      {isPropertyOwner && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Home managers</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Home managers can run <strong>{propertyName}</strong> with you —
+              calendar, guests, and requests — but cannot add other managers or
+              delete the home.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="manager@email.com"
+                value={managerEmail}
+                onChange={(e) => setManagerEmail(e.target.value)}
+              />
+              <Button onClick={addManager} disabled={loading}>
+                Add
+              </Button>
+            </div>
+            {managers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No home managers yet.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {managers.map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex items-center justify-between rounded border px-3 py-2 text-sm"
                   >
-                    Remove
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                    <span>{m.user.name ?? m.user.email}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => removeManager(m.id)}
+                    >
+                      Remove
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

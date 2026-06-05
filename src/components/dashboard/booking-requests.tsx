@@ -13,13 +13,16 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { formatDateRange } from '@/lib/dates';
+import { Badge } from '@/components/ui/badge';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
+import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-button';
 
 interface RequestBooking {
   id: string;
   status: string;
   party_size: number;
   notes: string | null;
+  invitation_id?: string | null;
   guest_name?: string | null;
   guest_email?: string | null;
   created_by?: string | null;
@@ -94,11 +97,6 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                         <p className="font-medium">
                           {guestDisplayName(booking)}
                         </p>
-                        {booking.created_by && (
-                          <p className="text-xs text-muted-foreground">
-                            Host-arranged
-                          </p>
-                        )}
                         {dates && (
                           <p className="text-sm text-muted-foreground">
                             {formatDateRange(dates.check_in, dates.check_out)}
@@ -149,11 +147,18 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                 : booking.dates;
               return (
                 <Card key={booking.id}>
-                  <CardContent className="flex items-center justify-between p-4">
+                  <CardContent className="flex items-center justify-between gap-4 p-4">
                     <div>
-                      <p className="font-medium">
-                        {guestDisplayName(booking)}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">
+                          {guestDisplayName(booking)}
+                        </p>
+                        {!booking.invitation_id && (
+                          <Badge variant="secondary" className="text-xs">
+                            Manual stay
+                          </Badge>
+                        )}
+                      </div>
                       {dates && (
                         <p className="text-sm text-muted-foreground">
                           {formatDateRange(dates.check_in, dates.check_out)}
@@ -163,9 +168,16 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                         {booking.status}
                       </p>
                     </div>
-                    {booking.status === 'approved' && (
-                      <AddToCalendarButton bookingId={booking.id} />
-                    )}
+                    <div className="flex shrink-0 items-center gap-2">
+                      {booking.status === 'approved' &&
+                        booking.invitation_id && (
+                          <AddToCalendarButton bookingId={booking.id} />
+                        )}
+                      {booking.status === 'approved' &&
+                        !booking.invitation_id && (
+                          <CancelHostStayButton bookingId={booking.id} />
+                        )}
+                    </div>
                   </CardContent>
                 </Card>
               );
