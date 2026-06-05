@@ -1,0 +1,27 @@
+/** URL-safe key for a guest profile (email-based). */
+export function guestKeyFromEmail(email: string): string {
+  return `e-${encodeURIComponent(email.trim().toLowerCase())}`;
+}
+
+/** URL-safe key for a manual guest with no email. */
+export function guestKeyFromManualBooking(bookingId: string): string {
+  return `m-${bookingId}`;
+}
+
+export function parseGuestKey(
+  guestKey: string
+): { type: 'email'; email: string } | { type: 'manual'; bookingId: string } | null {
+  if (guestKey.startsWith('e-')) {
+    try {
+      const email = decodeURIComponent(guestKey.slice(2));
+      if (email.includes('@')) return { type: 'email', email };
+    } catch {
+      return null;
+    }
+  }
+  if (guestKey.startsWith('m-')) {
+    const bookingId = guestKey.slice(2);
+    if (bookingId.length > 0) return { type: 'manual', bookingId };
+  }
+  return null;
+}

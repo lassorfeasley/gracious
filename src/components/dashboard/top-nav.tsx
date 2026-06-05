@@ -7,6 +7,7 @@ import {
   Home,
   Settings,
   Bell,
+  Calendar,
   ChevronDown,
   LogOut,
   Plus,
@@ -116,6 +117,14 @@ export function DashboardTopNav({
           <Link href={`${base}/guests`} className={navLinkClass(isActive('guests'))}>
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Guests</span>
+          </Link>
+
+          <Link
+            href={`${base}/calendar`}
+            className={navLinkClass(isActive('calendar'))}
+          >
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Calendar</span>
           </Link>
 
           <Link

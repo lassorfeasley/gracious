@@ -22,6 +22,8 @@ interface CalendarBooking {
   guestName: string;
   checkIn: string;
   checkOut: string;
+  /** Pending approval — shown differently from confirmed stays. */
+  pending?: boolean;
 }
 
 interface CalendarBlock {
@@ -120,6 +122,8 @@ function MonthGrid({
           const booked = bookings.filter((b) =>
             coversDay(day, b.checkIn, b.checkOut)
           );
+          const hasPending = booked.some((b) => b.pending);
+          const hasConfirmed = booked.some((b) => !b.pending);
           const isBlocked = blocks.some((bl) =>
             coversDay(day, bl.start_date, bl.end_date)
           );
@@ -128,7 +132,11 @@ function MonthGrid({
           const isToday = isSameDay(day, today);
           const title =
             booked.length > 0
-              ? booked.map((b) => b.guestName).join(', ')
+              ? booked
+                  .map((b) =>
+                    b.pending ? `${b.guestName} (pending)` : b.guestName
+                  )
+                  .join(', ')
               : isBlocked
                 ? 'Blocked'
                 : undefined;
@@ -196,7 +204,14 @@ function MonthGrid({
                   INNER,
                   isToday && 'font-semibold ring-1 ring-inset ring-foreground',
                   isPast && !unavailable && 'text-muted-foreground/50',
-                  unavailable && 'text-muted-foreground line-through',
+                  hasPending &&
+                    !hasConfirmed &&
+                    'bg-amber-100 font-medium text-amber-900 ring-1 ring-inset ring-amber-300',
+                  hasConfirmed &&
+                    'text-muted-foreground line-through',
+                  hasPending &&
+                    hasConfirmed &&
+                    'bg-amber-50 text-muted-foreground line-through ring-1 ring-inset ring-amber-200',
                   !unavailable && !isPast && 'text-foreground hover:bg-muted'
                 )}
               >
@@ -331,10 +346,28 @@ export function AvailabilityCalendar({
         </div>
       </div>
       {!selectable && (bookings.length > 0 || blocks.length > 0) && (
-        <p className="mt-6 text-xs text-muted-foreground">
-          Crossed-out dates are already booked or blocked. Hover a date to see who&apos;s
-          staying.
-        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          {bookings.some((b) => !b.pending) && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-muted-foreground line-through ring-1 ring-inset ring-border">
+                1
+              </span>
+              Confirmed stay
+            </span>
+          )}
+          {bookings.some((b) => b.pending) && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-medium text-amber-900 ring-1 ring-inset ring-amber-300">
+                1
+              </span>
+              Pending request
+            </span>
+          )}
+          {blocks.length > 0 && <span>Crossed-out dates may also be blocked</span>}
+          <span className="w-full sm:w-auto">
+            Hover a date to see who&apos;s staying.
+          </span>
+        </div>
       )}
     </div>
   );

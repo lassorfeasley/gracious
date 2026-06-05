@@ -1,19 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { formatDateRange } from '@/lib/dates';
-import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds } from '@/lib/validations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
-import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
-import { HostBookingDialog } from '@/components/dashboard/host-booking-dialog';
+import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
+import { HostBookingShell } from '@/components/dashboard/host-compose-section';
+import { HostComposeCalendarSection } from '@/components/dashboard/stay-compose';
 import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-button';
 import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog';
 import { PropertyMap } from '@/components/dashboard/property-map';
 import { SectionNav } from '@/components/dashboard/section-nav';
-import { Pencil, Plus, MapPin, Check, ArrowRight } from 'lucide-react';
+import { Pencil, Plus, MapPin, Check } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -75,17 +74,6 @@ export default async function OverviewPage({
     };
   });
 
-  const calendarBookings = assignColors(
-    normalized
-      .filter((b) => b.status === 'approved' && b.checkIn && b.checkOut)
-      .map(({ id, guestName, checkIn, checkOut }) => ({
-        id,
-        guestName,
-        checkIn,
-        checkOut,
-      }))
-  );
-
   const upcoming = normalized
     .filter((b) => b.status === 'approved' && b.checkOut >= today)
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
@@ -107,7 +95,7 @@ export default async function OverviewPage({
   ];
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       {/* Title */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -121,10 +109,7 @@ export default async function OverviewPage({
             </p>
           )}
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <HostBookingDialog propertyId={property.id} rooms={rooms ?? []} />
-          <InviteGuestDialog propertyId={property.id} rooms={rooms ?? []} />
-        </div>
+        <ComposePageActions slug={slug} rooms={rooms ?? []} />
       </div>
 
       {/* House card */}
@@ -168,25 +153,21 @@ export default async function OverviewPage({
 
       <SectionNav sections={navSections} />
 
-      {/* Calendar (lead) */}
-      <section id="calendar" className="mt-12 scroll-mt-28">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-2xl font-semibold tracking-tight">Calendar</h2>
-          <Link
-            href={`/dashboard/${slug}/calendar`}
-            className="flex items-center gap-1 text-base text-primary hover:underline"
-          >
-            Full calendar
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <div className="mt-8">
-          <AvailabilityCalendar bookings={calendarBookings} />
-        </div>
-      </section>
+      <HostBookingShell
+        propertyId={property.id}
+        slug={slug}
+        rooms={rooms ?? []}
+        className="mt-6"
+      >
+        <HostComposeCalendarSection
+          sectionId="calendar"
+          title="Calendar"
+          showFullCalendarLink
+          slug={slug}
+        />
 
       {/* Rooms */}
-      <section id="rooms" className="mt-16 scroll-mt-28 border-t pt-12">
+      <section id="rooms" className="scroll-mt-28 py-10">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-2xl font-semibold tracking-tight">Rooms</h2>
           <RoomEditDialog
@@ -268,7 +249,8 @@ export default async function OverviewPage({
       </section>
 
       {/* Quick stats */}
-      <div className="mt-16 grid grid-cols-1 divide-y overflow-hidden rounded-2xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <section className="py-10">
+      <div className="grid grid-cols-1 divide-y overflow-hidden rounded-2xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="p-7">
           <p className="text-base text-muted-foreground">Pending requests</p>
           <p className="mt-2 text-3xl font-semibold">{pendingCount ?? 0}</p>
@@ -296,9 +278,10 @@ export default async function OverviewPage({
           </Link>
         </div>
       </div>
+      </section>
 
       {/* About */}
-      <section id="about" className="mt-16 scroll-mt-28 border-t pt-12">
+      <section id="about" className="scroll-mt-28 py-10">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">
             About this place
@@ -326,7 +309,7 @@ export default async function OverviewPage({
       </section>
 
       {/* Location */}
-      <section id="location" className="mt-16 scroll-mt-28 border-t pt-12">
+      <section id="location" className="scroll-mt-28 py-10">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">
             Where you&apos;re hosting
@@ -367,7 +350,7 @@ export default async function OverviewPage({
       </section>
 
       {/* House amenities */}
-      <section id="amenities" className="mt-16 scroll-mt-28 border-t pt-12">
+      <section id="amenities" className="scroll-mt-28 py-10">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">
             What this place offers
@@ -413,7 +396,7 @@ export default async function OverviewPage({
       </section>
 
       {/* Guest information */}
-      <section id="guest-info" className="mt-16 scroll-mt-28 border-t pt-12">
+      <section id="guest-info" className="scroll-mt-28 py-10">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">
             Guest information
@@ -459,7 +442,7 @@ export default async function OverviewPage({
       </section>
 
       {/* Upcoming stays */}
-      <section id="upcoming" className="mt-16 scroll-mt-28 border-t pt-12">
+      <section id="upcoming" className="scroll-mt-28 py-10">
         <h2 className="text-2xl font-semibold tracking-tight">Upcoming stays</h2>
         {upcoming.length === 0 ? (
           <p className="mt-6 text-sm text-muted-foreground">
@@ -495,6 +478,7 @@ export default async function OverviewPage({
           </ul>
         )}
       </section>
+      </HostBookingShell>
     </div>
   );
 }

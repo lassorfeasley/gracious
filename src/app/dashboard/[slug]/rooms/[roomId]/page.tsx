@@ -4,10 +4,12 @@ import Image from 'next/image';
 import { ArrowLeft, BedDouble, Check, UserPlus, Pencil } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
-import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds, BED_SIZE_LABELS } from '@/lib/validations';
-import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 import { AvailabilityBlocks } from '@/components/dashboard/availability-blocks';
+import {
+  HostBookingShell,
+} from '@/components/dashboard/host-compose-section';
+import { HostComposeCalendarSection } from '@/components/dashboard/stay-compose';
 import { PropertyMap } from '@/components/dashboard/property-map';
 import { SectionNav } from '@/components/dashboard/section-nav';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
@@ -38,41 +40,6 @@ export default async function RoomProfilePage({
   const room = rooms?.find((r) => r.id === roomId);
   if (!room) notFound();
 
-  const { data: bookingRows } = await supabase
-    .from('booking_rooms')
-    .select(
-      `booking:bookings(id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out))`
-    )
-    .eq('room_id', roomId);
-
-  const roomBookings = assignColors(
-    (bookingRows ?? [])
-      .map((row) => (Array.isArray(row.booking) ? row.booking[0] : row.booking))
-      .filter(
-        (b): b is NonNullable<typeof b> =>
-          !!b && (b.status === 'approved' || b.status === 'requested')
-      )
-      .map((b) => {
-        const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
-        const guest = (Array.isArray(b.guest) ? b.guest[0] : b.guest) as
-          | { name: string | null; email: string }
-          | null;
-        const guestName =
-          guest?.name ??
-          guest?.email?.split('@')[0] ??
-          b.guest_name ??
-          b.guest_email?.split('@')[0] ??
-          'Guest';
-        return {
-          id: b.id,
-          guestName: b.status === 'requested' ? `${guestName} (pending)` : guestName,
-          checkIn: dates?.check_in ?? '',
-          checkOut: dates?.check_out ?? '',
-        };
-      })
-      .filter((b) => b.checkIn && b.checkOut)
-  );
-
   const { data: blocks } = await supabase
     .from('room_availability')
     .select('*')
@@ -90,7 +57,7 @@ export default async function RoomProfilePage({
   ];
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       <Link
         href={`/dashboard/${slug}/overview`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -176,8 +143,16 @@ export default async function RoomProfilePage({
 
       <SectionNav sections={navSections} />
 
+      <HostBookingShell
+        propertyId={property.id}
+        slug={slug}
+        rooms={rooms ?? []}
+        defaultSelectedRoomIds={[room.id]}
+        lockRoomSelection
+        className="mt-6"
+      >
       {/* Description */}
-      <section id="about" className="scroll-mt-28 border-t pt-10 mt-6">
+      <section id="about" className="scroll-mt-28 py-10 first:pt-0">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-[22px] font-semibold tracking-tight">
             About this room
@@ -205,7 +180,7 @@ export default async function RoomProfilePage({
       </section>
 
       {/* Where guests sleep */}
-      <section id="sleeping" className="mt-10 scroll-mt-28 border-t pt-10">
+      <section id="sleeping" className="scroll-mt-28 py-10">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-[22px] font-semibold tracking-tight">
             Where guests sleep
@@ -232,7 +207,7 @@ export default async function RoomProfilePage({
       </section>
 
       {/* What this room offers */}
-      <section id="amenities" className="mt-10 scroll-mt-28 border-t pt-10">
+      <section id="amenities" className="scroll-mt-28 py-10">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-[22px] font-semibold tracking-tight">
             What this room offers
@@ -277,23 +252,19 @@ export default async function RoomProfilePage({
         )}
       </section>
 
-      {/* Availability */}
-      <section id="availability" className="mt-10 scroll-mt-28 border-t pt-10">
-        <h2 className="text-[22px] font-semibold tracking-tight">Availability</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Booked, blocked, and open dates for this room.
-        </p>
-        <div className="mt-6">
-          <AvailabilityCalendar bookings={roomBookings} blocks={blocks ?? []} />
-        </div>
-        <div className="mt-6">
-          <AvailabilityBlocks rooms={[room]} blocks={blocksForEditor} />
-        </div>
-      </section>
+      <HostComposeCalendarSection
+        sectionId="availability"
+        title="Availability"
+        footer={
+          <div className="mt-8 border-t pt-8">
+            <AvailabilityBlocks rooms={[room]} blocks={blocksForEditor} />
+          </div>
+        }
+      />
 
       {/* Location */}
       {property.address && (
-        <section id="location" className="mt-10 scroll-mt-28 border-t pt-10">
+        <section id="location" className="scroll-mt-28 py-10">
           <h2 className="text-[22px] font-semibold tracking-tight">
             Where you&apos;re hosting
           </h2>
@@ -308,7 +279,7 @@ export default async function RoomProfilePage({
       )}
 
       {/* Danger zone */}
-      <section className="mt-10 border-t pt-10">
+      <section className="py-10">
         <h2 className="text-[22px] font-semibold tracking-tight text-destructive">
           Danger zone
         </h2>
@@ -328,6 +299,7 @@ export default async function RoomProfilePage({
           />
         </div>
       </section>
+      </HostBookingShell>
     </div>
   );
 }

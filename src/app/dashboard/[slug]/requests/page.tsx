@@ -1,7 +1,11 @@
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
+import { mapPropertyBookingsToCalendar } from '@/lib/calendar-bookings';
+import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 import { BookingRequests } from '@/components/dashboard/booking-requests';
-import { HostBookingDialog } from '@/components/dashboard/host-booking-dialog';
+import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
 
 export default async function RequestsPage({
   params,
@@ -18,7 +22,10 @@ export default async function RequestsPage({
   const { data: bookings } = await supabase
     .from('bookings')
     .select(
-      `*, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out), booking_rooms(room:rooms(name))`
+      `id, status, invitation_id, guest_name, guest_email, party_size, notes, created_by,
+      guest:users!guest_user_id(name, email),
+      dates:booking_dates(check_in, check_out),
+      booking_rooms(room:rooms(name))`
     )
     .eq('property_id', property.id)
     .order('created_at', { ascending: false });
@@ -29,16 +36,52 @@ export default async function RequestsPage({
     .eq('property_id', property.id)
     .order('display_order');
 
+  const { data: calendarRows } = await supabase
+    .from('bookings')
+    .select(
+      `id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out)`
+    )
+    .eq('property_id', property.id)
+    .in('status', ['approved', 'requested']);
+
+  const calendarBookings = mapPropertyBookingsToCalendar(calendarRows ?? [], {
+    includeRequested: true,
+  });
+
+  const pendingCount = (bookings ?? []).filter(
+    (b) => b.status === 'requested'
+  ).length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+    <div className="mx-auto max-w-5xl space-y-10">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Booking requests</h1>
-          <p className="text-muted-foreground">Review and respond to stay requests</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Requests</h1>
+          <p className="mt-1 text-muted-foreground">
+            {pendingCount > 0
+              ? `${pendingCount} stay request${pendingCount === 1 ? '' : 's'} waiting for you`
+              : 'Review stay requests and see what’s on the calendar'}
+          </p>
         </div>
-        <HostBookingDialog propertyId={property.id} rooms={rooms ?? []} />
+        <ComposePageActions slug={slug} rooms={rooms ?? []} />
       </div>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Calendar</h2>
+          <Link
+            href={`/dashboard/${slug}/calendar`}
+            className="flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            Full calendar
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <AvailabilityCalendar bookings={calendarBookings} />
+      </section>
+
       <BookingRequests bookings={bookings ?? []} />
+
       {sp.booking && sp.action && (
         <QuickActionHandler bookingId={sp.booking} action={sp.action} />
       )}

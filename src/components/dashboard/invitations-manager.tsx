@@ -10,16 +10,16 @@ import type { Invitation, Room } from '@/types/database';
 import { getInviteUrl } from '@/lib/invite-url';
 import { guestPreviewQuery } from '@/lib/guest-preview';
 import { formatDate } from '@/lib/dates';
-import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
+import Link from 'next/link';
 
 interface InvitationsManagerProps {
-  propertyId: string;
+  propertySlug: string;
   rooms: Room[];
   invitations: Invitation[];
 }
 
 export function InvitationsManager({
-  propertyId,
+  propertySlug,
   rooms,
   invitations,
 }: InvitationsManagerProps) {
@@ -64,7 +64,11 @@ export function InvitationsManager({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Invitations</h2>
-        <InviteGuestDialog propertyId={propertyId} rooms={rooms} />
+        <Button size="sm" disabled={rooms.length === 0} asChild>
+          <Link href={`/dashboard/${propertySlug}/compose?mode=invite`}>
+            Invite a guest
+          </Link>
+        </Button>
       </div>
 
       {rooms.length === 0 && (

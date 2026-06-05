@@ -26,14 +26,20 @@ interface RequestBooking {
   guest_name?: string | null;
   guest_email?: string | null;
   created_by?: string | null;
-  guest: { name: string | null; email: string } | null;
+  guest:
+    | { name: string | null; email: string }
+    | { name: string | null; email: string }[]
+    | null;
   dates: { check_in: string; check_out: string } | { check_in: string; check_out: string }[];
-  booking_rooms: { room: { name: string } }[];
+  booking_rooms: { room: { name: string } | { name: string }[] }[];
 }
 
 function guestDisplayName(booking: RequestBooking): string {
-  if (booking.guest) {
-    return booking.guest.name ?? booking.guest.email;
+  const guest = Array.isArray(booking.guest)
+    ? booking.guest[0]
+    : booking.guest;
+  if (guest) {
+    return guest.name ?? guest.email;
   }
   return booking.guest_name ?? booking.guest_email ?? 'Guest';
 }
@@ -71,13 +77,20 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
   const recent = bookings.filter((b) => b.status !== 'requested');
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h2 className="text-lg font-semibold">Pending requests</h2>
-        <div className="mt-4 space-y-3">
+    <div className="space-y-10">
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">
+          Pending requests
+          {pending.length > 0 && (
+            <span className="ml-2 text-base font-normal text-muted-foreground">
+              ({pending.length})
+            </span>
+          )}
+        </h2>
+        <div className="space-y-3">
           {pending.length === 0 ? (
             <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
                 No pending requests — you&apos;re all caught up.
               </CardContent>
             </Card>
@@ -87,7 +100,12 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                 ? booking.dates[0]
                 : booking.dates;
               const rooms =
-                booking.booking_rooms?.map((br) => br.room.name).join(', ') ?? '';
+                booking.booking_rooms
+                  ?.map((br) => {
+                    const room = Array.isArray(br.room) ? br.room[0] : br.room;
+                    return room?.name ?? 'Room';
+                  })
+                  .join(', ') ?? '';
 
               return (
                 <Card key={booking.id}>
@@ -138,9 +156,9 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
       </section>
 
       {recent.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold">Recent</h2>
-          <div className="mt-4 space-y-3">
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">Recent activity</h2>
+          <div className="space-y-3">
             {recent.slice(0, 10).map((booking) => {
               const dates = Array.isArray(booking.dates)
                 ? booking.dates[0]
