@@ -29,6 +29,10 @@ import {
 import { toast } from 'sonner';
 import type { InvitationWithDetails, Room } from '@/types/database';
 import { formatDateRange } from '@/lib/dates';
+import {
+  guestBookingCtaLabel,
+  guestBookingSuccessMessage,
+} from '@/lib/invitation-booking';
 
 const formSchema = z.object({
   check_in: z.string().min(1, 'Check-in is required'),
@@ -48,6 +52,8 @@ interface BookingFormProps {
   guestName?: string | null;
   /** When set, the form is locked to booking this single room. */
   lockedRoom?: Room;
+  /** Dev-only: renders the full flow but stubs out submission. */
+  previewMode?: boolean;
 }
 
 export function BookingForm({
@@ -56,6 +62,7 @@ export function BookingForm({
   guestEmail,
   guestName,
   lockedRoom,
+  previewMode = false,
 }: BookingFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -97,6 +104,16 @@ export function BookingForm({
   }
 
   async function onSubmit(values: FormValues) {
+    if (previewMode) {
+      toast.info('Preview mode — no booking was submitted', {
+        description: `${values.check_in || 'dates'} → ${
+          values.check_out || ''
+        } · ${values.room_ids.length} room(s) · party of ${values.party_size}`,
+      });
+      setOpen(false);
+      return;
+    }
+
     if (!isAuthenticated) {
       toast.error('Please sign in first using the magic link');
       return;
@@ -121,9 +138,7 @@ export function BookingForm({
         toast.error(err || 'Failed to submit request');
         return;
       }
-      toast.success(
-        isPrixFixe ? 'Stay accepted! Awaiting confirmation.' : 'Stay request submitted!'
-      );
+      toast.success(guestBookingSuccessMessage(invitation));
       setOpen(false);
       router.push('/my-trips');
       router.refresh();
@@ -134,7 +149,7 @@ export function BookingForm({
     }
   }
 
-  const ctaLabel = isPrixFixe ? 'Accept Stay' : 'Request Stay';
+  const ctaLabel = guestBookingCtaLabel(invitation);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -293,7 +308,14 @@ export function BookingForm({
               )}
             />
 
-            {!isAuthenticated && (
+            {previewMode && (
+              <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                Preview mode — this is for UI work only. Submissions are
+                disabled and nothing will be saved.
+              </p>
+            )}
+
+            {!previewMode && !isAuthenticated && (
               <p className="text-sm text-amber-600">
                 You need to sign in first. Close this dialog and use the magic link
                 button for {guestEmail}.
@@ -303,9 +325,9 @@ export function BookingForm({
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !isAuthenticated}
+              disabled={loading || (!isAuthenticated && !previewMode)}
             >
-              {loading ? 'Submitting...' : ctaLabel}
+              {loading ? 'Submitting...' : previewMode ? `${ctaLabel} (preview)` : ctaLabel}
             </Button>
           </form>
         </Form>

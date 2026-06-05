@@ -30,6 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { UserPlus, ArrowLeft, Check, CalendarIcon } from 'lucide-react';
@@ -102,6 +103,7 @@ export function InviteGuestDialog({
       guest_email: '',
       guest_name: '',
       type: 'standing',
+      requires_approval: true,
       message: '',
       room_ids: defaultRoomIds,
     },
@@ -380,6 +382,31 @@ export function InviteGuestDialog({
 
             {stepKey === 'details' && (
               <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="requires_approval"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start justify-between gap-4 rounded-lg border p-4">
+                      <div className="space-y-1">
+                        <FormLabel className="text-base">
+                          Require host approval
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          {field.value
+                            ? 'Guests submit a request; you approve or decline before the stay is confirmed.'
+                            : 'Bookings are confirmed immediately — no request in your inbox.'}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          aria-label="Require host approval for bookings"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="message"

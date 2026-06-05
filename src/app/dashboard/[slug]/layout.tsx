@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { requireOwner, getOwnerProperties } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardTopNav } from '@/components/dashboard/top-nav';
+import { SiteFooter } from '@/components/site-footer';
 
 export default async function PropertyDashboardLayout({
   children,
@@ -33,14 +34,7 @@ export default async function PropertyDashboardLayout({
         userEmail={user.email ?? undefined}
       />
       <main className="flex-1 px-6 pt-6 pb-32">{children}</main>
-      <footer className="mt-auto h-[200px] border-t bg-muted/20">
-        <div className="mx-auto flex h-full max-w-4xl flex-col justify-center gap-2 px-6">
-          <p className="font-semibold tracking-tight">{currentProperty.name}</p>
-          <p className="text-sm text-muted-foreground">
-            Powered by GuestHouse
-          </p>
-        </div>
-      </footer>
+      <SiteFooter name={currentProperty.name} />
     </div>
   );
 }

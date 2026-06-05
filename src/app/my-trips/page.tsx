@@ -9,6 +9,7 @@ import { VisibilityToggle } from '@/components/guest/visibility-toggle';
 import { CancelBookingButton } from '@/components/guest/cancel-booking-button';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 import { LogoutButton } from '@/components/logout-button';
+import { SiteFooter } from '@/components/site-footer';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   requested: 'secondary',
@@ -36,7 +37,7 @@ export default async function MyTripsPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <span className="font-semibold">GuestHouse</span>
@@ -47,7 +48,7 @@ export default async function MyTripsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-2xl px-4 py-8">
+      <main className="container mx-auto w-full max-w-2xl px-4 py-8">
         <h1 className="text-2xl font-semibold">My trips</h1>
         <p className="mt-1 text-muted-foreground">Your stays and requests</p>
 
@@ -117,6 +118,8 @@ export default async function MyTripsPage() {
           )}
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

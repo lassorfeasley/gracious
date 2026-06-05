@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isDevAdminPreviewEnabled } from '@/lib/dev-tools';
+import { isSiteAdminEmail } from '@/lib/site-admin';
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -37,6 +39,30 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login';
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
+  }
+
+  if (pathname.startsWith('/admin')) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(url);
+    }
+    if (!isDevAdminPreviewEnabled()) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role, email')
+        .eq('id', user.id)
+        .single();
+      const allowed =
+        profile?.role === 'admin' ||
+        (profile?.email && isSiteAdminEmail(profile.email));
+      if (!allowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   // Redirect logged-in owners away from auth pages

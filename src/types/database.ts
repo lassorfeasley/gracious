@@ -1,4 +1,4 @@
-export type UserRole = 'owner' | 'guest';
+export type UserRole = 'owner' | 'guest' | 'admin';
 export type InvitationType = 'standing' | 'date_offer' | 'prix_fixe';
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
 export type BookingStatus = 'requested' | 'approved' | 'declined' | 'cancelled';
@@ -89,6 +89,7 @@ export interface Invitation {
   status: InvitationStatus;
   expires_at: string | null;
   message: string | null;
+  requires_approval: boolean;
   created_by: string;
   created_at: string;
 }

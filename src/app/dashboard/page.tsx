@@ -4,6 +4,7 @@ import { CreatePropertyForm } from '@/components/dashboard/create-property-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { SiteFooter } from '@/components/site-footer';
 
 export default async function DashboardPage() {
   const user = await requireOwner();
@@ -14,13 +15,13 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center px-4">
           <span className="font-semibold">GuestHouse</span>
         </div>
       </header>
-      <main className="container mx-auto max-w-2xl px-4 py-12">
+      <main className="container mx-auto w-full max-w-2xl px-4 py-12">
         <h1 className="text-2xl font-semibold">Your properties</h1>
         <p className="mt-1 text-muted-foreground">
           Select a property to manage or create a new one
@@ -63,6 +64,8 @@ export default async function DashboardPage() {
           </div>
         )}
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

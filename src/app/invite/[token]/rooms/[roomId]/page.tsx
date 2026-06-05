@@ -10,10 +10,18 @@ import { getAuthUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds, BED_SIZE_LABELS } from '@/lib/validations';
-import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 import { PropertyMap } from '@/components/dashboard/property-map';
-import { MagicLinkForm } from '@/components/guest/magic-link-form';
-import { BookingForm } from '@/components/guest/booking-form';
+import { SectionNav } from '@/components/dashboard/section-nav';
+import { SiteFooter } from '@/components/site-footer';
+import { BookingProvider } from '@/components/guest/booking-context';
+import { SelectableRoomCalendar } from '@/components/guest/selectable-room-calendar';
+import { BookingSidebar } from '@/components/guest/booking-sidebar';
+import {
+  appendGuestPreviewToPath,
+  isGuestPreviewEnabled,
+  parseGuestPreviewAs,
+  parseGuestPreviewBookingStatus,
+} from '@/lib/guest-preview';
 import type { Amenity } from '@/types/database';
 
 function bedLabel(bed: string): string {
@@ -22,21 +30,42 @@ function bedLabel(bed: string): string {
 
 export default async function GuestRoomPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string; roomId: string }>;
+  searchParams: Promise<{ preview?: string; as?: string; status?: string }>;
 }) {
   const { token, roomId } = await params;
+  const { preview, as, status } = await searchParams;
   const invitation = await getInvitationByToken(token);
   if (!invitation) notFound();
 
   const room = invitation.rooms.find((r) => r.id === roomId);
   if (!room) notFound();
 
+  const previewMode = isGuestPreviewEnabled(preview);
+  const guestPreviewAs = parseGuestPreviewAs(as);
+  const guestPreviewBookingStatus = parseGuestPreviewBookingStatus(status);
+  const showBookingCalendar =
+    !previewMode || guestPreviewAs !== 'booked';
   const active = isInvitationActive(invitation);
   const authUser = await getAuthUser();
   const isAuthenticated =
     !!authUser && authUser.email === invitation.guest_email;
   const property = invitation.property;
+
+  const isPrixFixe = invitation.type === 'prix_fixe';
+  const fixedWindow = isPrixFixe ? invitation.windows[0] : undefined;
+  const defaultRange = fixedWindow
+    ? { checkIn: fixedWindow.start_date, checkOut: fixedWindow.end_date }
+    : undefined;
+  const allowedRanges =
+    invitation.windows.length > 0
+      ? invitation.windows.map((w) => ({
+          start: w.start_date,
+          end: w.end_date,
+        }))
+      : undefined;
 
   const admin = createAdminClient();
   const { data: bookingRows } = await admin
@@ -71,166 +100,207 @@ export default async function GuestRoomPage({
     .eq('room_id', roomId)
     .eq('is_blocked', true);
 
+  const navSections = [
+    ...(room.description ? [{ id: 'about', label: 'About' }] : []),
+    ...(room.beds.length > 0 ? [{ id: 'sleeping', label: 'Beds' }] : []),
+    ...(room.amenities && room.amenities.length > 0
+      ? [{ id: 'amenities', label: 'Amenities' }]
+      : []),
+    ...(showBookingCalendar
+      ? [{ id: 'availability', label: 'Availability' }]
+      : []),
+    ...(property.address ? [{ id: 'location', label: 'Location' }] : []),
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <section className="relative h-72 w-full sm:h-96">
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-24">
+        <Link
+          href={
+            previewMode
+              ? appendGuestPreviewToPath(
+                  `/invite/${invitation.token}`,
+                  guestPreviewAs,
+                  guestPreviewBookingStatus
+                )
+              : `/invite/${invitation.token}`
+          }
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Link>
+
+        {/* Hero card */}
         {room.image_url ? (
           <>
-            <Image
-              src={room.image_url}
-              alt={room.name}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
-          </>
-        ) : (
-          <div className="absolute inset-0 bg-linear-to-br from-slate-700 via-slate-800 to-slate-950" />
-        )}
-        <div className="absolute left-0 top-0 p-5">
-          <Link
-            href={`/invite/${invitation.token}`}
-            className="inline-flex items-center gap-1 rounded-full bg-black/30 px-3 py-1.5 text-sm text-white backdrop-blur transition-colors hover:bg-black/50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-        </div>
-        <div className="absolute inset-x-0 bottom-0">
-          <div className="mx-auto max-w-5xl px-6 pb-8 text-white">
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              {room.name}
-            </h1>
-            <p className="mt-2 text-base text-white/80">
-              Up to {room.max_occupancy} guests · {summarizeBeds(room.beds)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-5xl px-6 pb-40">
-        {!active && (
-          <div className="mt-8 rounded-2xl border border-destructive/50 bg-destructive/10 p-5 text-center text-base">
-            This invitation is no longer active.
-          </div>
-        )}
-
-        {/* About */}
-        {room.description && (
-          <section className="mt-12">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              About this room
-            </h2>
-            <p className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-foreground/90">
-              {room.description}
-            </p>
-          </section>
-        )}
-
-        {/* Where you sleep */}
-        {room.beds.length > 0 && (
-          <section className="mt-16 border-t pt-12">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Where you&apos;ll sleep
-            </h2>
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {room.beds.map((bed: string, i: number) => (
-                <div key={i} className="rounded-xl border p-4">
-                  <BedDouble className="h-7 w-7" strokeWidth={1.5} />
-                  <p className="mt-3 font-medium">{bedLabel(bed)} bed</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* What this room offers */}
-        {room.amenities && room.amenities.length > 0 && (
-          <section className="mt-16 border-t pt-12">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              What this room offers
-            </h2>
-            <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
-              {room.amenities.map((a: Amenity) => (
-                <li
-                  key={a.key}
-                  className="flex items-start gap-4 border-b border-border/60 pb-5 text-base"
-                >
-                  <Check
-                    className="mt-0.5 h-5 w-5 shrink-0 text-foreground"
-                    strokeWidth={1.5}
-                  />
-                  <span>
-                    {a.label}
-                    {a.note ? (
-                      <span className="block text-sm text-muted-foreground">
-                        {a.note}
-                      </span>
-                    ) : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {/* Availability */}
-        <section className="mt-16 border-t pt-12">
-          <h2 className="text-2xl font-semibold tracking-tight">Availability</h2>
-          <p className="mt-2 text-base text-muted-foreground">
-            Crossed-out dates are already booked or unavailable.
-          </p>
-          <div className="mt-6">
-            <AvailabilityCalendar bookings={roomBookings} blocks={blocks ?? []} />
-          </div>
-        </section>
-
-        {/* Location */}
-        {property.address && (
-          <section className="mt-16 border-t pt-12">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Where you&apos;re hosting
-            </h2>
-            <div className="mt-6">
-              <PropertyMap
-                address={property.address}
-                latitude={property.latitude}
-                longitude={property.longitude}
-              />
-            </div>
-          </section>
-        )}
-      </div>
-
-      {/* CTA */}
-      {active && (
-        <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/80">
-          <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-5">
-            <div>
-              <p className="font-medium">{room.name}</p>
-              <p className="text-sm text-muted-foreground">
+            <div className="mt-4">
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                {room.name}
+              </h1>
+              <p className="mt-2 text-base text-muted-foreground">
                 Up to {room.max_occupancy} guests · {summarizeBeds(room.beds)}
               </p>
             </div>
-            {!isAuthenticated ? (
-              <MagicLinkForm
-                email={invitation.guest_email}
-                token={invitation.token}
+            <div className="relative mt-6 h-72 w-full overflow-hidden rounded-2xl sm:h-[420px]">
+              <Image
+                src={room.image_url}
+                alt={room.name}
+                fill
+                className="object-cover"
+                priority
               />
-            ) : (
-              <BookingForm
-                invitation={invitation}
-                isAuthenticated={isAuthenticated}
-                guestEmail={invitation.guest_email}
-                guestName={invitation.guest_name}
-                lockedRoom={room}
-              />
-            )}
+            </div>
+          </>
+        ) : (
+          <div className="relative mt-4 flex h-72 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-6 sm:h-[420px]">
+            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              {room.name}
+            </h1>
+            <p className="mt-2 text-base text-white/70">
+              Up to {room.max_occupancy} guests · {summarizeBeds(room.beds)}
+            </p>
           </div>
-        </div>
-      )}
+        )}
+
+        <SectionNav
+          sections={navSections}
+          className="top-0 mt-8"
+          scrollOffset={80}
+        />
+
+        <BookingProvider
+          defaultRange={defaultRange}
+          defaultGuests={1}
+          maxGuestsCap={room.max_occupancy}
+        >
+          <div className="mt-6 grid gap-x-12 gap-y-12 lg:grid-cols-[1fr_360px]">
+            {/* Left column */}
+            <div className="min-w-0 divide-y">
+              {room.description && (
+                <section id="about" className="scroll-mt-24 py-10 first:pt-0">
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    About this room
+                  </h2>
+                  <p className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-foreground/90">
+                    {room.description}
+                  </p>
+                </section>
+              )}
+
+              {room.beds.length > 0 && (
+                <section id="sleeping" className="scroll-mt-24 py-10 first:pt-0">
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Where you&apos;ll sleep
+                  </h2>
+                  <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {room.beds.map((bed: string, i: number) => (
+                      <div key={i} className="rounded-xl border p-4">
+                        <BedDouble className="h-7 w-7" strokeWidth={1.5} />
+                        <p className="mt-3 font-medium">{bedLabel(bed)} bed</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {room.amenities && room.amenities.length > 0 && (
+                <section id="amenities" className="scroll-mt-24 py-10 first:pt-0">
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    What this room offers
+                  </h2>
+                  <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
+                    {room.amenities.map((a: Amenity) => (
+                      <li
+                        key={a.key}
+                        className="flex items-start gap-4 border-b border-border/60 pb-5 text-base"
+                      >
+                        <Check
+                          className="mt-0.5 h-5 w-5 shrink-0 text-foreground"
+                          strokeWidth={1.5}
+                        />
+                        <span>
+                          {a.label}
+                          {a.note ? (
+                            <span className="block text-sm text-muted-foreground">
+                              {a.note}
+                            </span>
+                          ) : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {showBookingCalendar && (
+                <section
+                  id="availability"
+                  className="scroll-mt-24 py-10 first:pt-0"
+                >
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Availability
+                  </h2>
+                  <p className="mt-2 text-base text-muted-foreground">
+                    {isPrixFixe
+                      ? 'This is a fixed-date stay.'
+                      : 'Select your dates — crossed-out days are unavailable.'}
+                  </p>
+                  <div className="mt-6">
+                    <SelectableRoomCalendar
+                      bookings={roomBookings}
+                      blocks={blocks ?? []}
+                      allowedRanges={allowedRanges}
+                    />
+                  </div>
+                </section>
+              )}
+
+              {/* Location */}
+              {property.address && (
+                <section id="location" className="scroll-mt-24 py-10 first:pt-0">
+                  <h2 className="text-2xl font-semibold tracking-tight">
+                    Where you&apos;re staying
+                  </h2>
+                  <div className="mt-6">
+                    <PropertyMap
+                      address={property.address}
+                      latitude={property.latitude}
+                      longitude={property.longitude}
+                    />
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* Right column — booking sidebar */}
+            <aside className="lg:sticky lg:top-20 lg:self-start">
+              {active || previewMode ? (
+                <BookingSidebar
+                  invitation={invitation}
+                  propertyName={property.name}
+                  room={room}
+                  isAuthenticated={isAuthenticated}
+                  previewMode={previewMode}
+                  guestPreviewAs={guestPreviewAs}
+                  guestPreviewBookingStatus={guestPreviewBookingStatus}
+                  isPrixFixe={isPrixFixe}
+                  maxGuests={room.max_occupancy}
+                  bookings={roomBookings}
+                  blocks={blocks ?? []}
+                  allowedRanges={allowedRanges}
+                />
+              ) : (
+                <div className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">
+                  This invitation is no longer active.
+                </div>
+              )}
+            </aside>
+          </div>
+        </BookingProvider>
+      </div>
+
+      <SiteFooter name={property.name} />
     </div>
   );
 }

@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
         guest_name: data.guest_name ?? null,
         type: data.type,
         message: data.message ?? null,
+        requires_approval: data.requires_approval,
         expires_at: data.expires_at ?? null,
         created_by: user.id,
         status: 'pending',

@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isDevAdminPreviewEnabled } from '@/lib/dev-tools';
+import { isSiteAdmin } from '@/lib/site-admin';
 import type { User, UserRole } from '@/types/database';
 
 export async function getAuthUser() {
@@ -69,7 +71,15 @@ export async function requireAuth(): Promise<User> {
 
 export async function requireOwner(): Promise<User> {
   const user = await requireAuth();
+  if (isSiteAdmin(user)) redirect('/admin');
   if (user.role !== 'owner') redirect('/my-trips');
+  return user;
+}
+
+export async function requireSiteAdmin(): Promise<User> {
+  const user = await requireAuth();
+  if (isDevAdminPreviewEnabled()) return user;
+  if (!isSiteAdmin(user)) redirect('/');
   return user;
 }
 

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
+import { DevToolbar } from '@/components/dev/dev-toolbar';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -19,6 +21,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
+        <Suspense fallback={null}>
+          <DevToolbar />
+        </Suspense>
         {children}
         <Toaster />
       </body>

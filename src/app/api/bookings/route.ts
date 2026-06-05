@@ -7,7 +7,11 @@ import {
   checkRoomConflicts,
   validateBookingAgainstInvitation,
 } from '@/lib/bookings';
-import { notifyStayRequested } from '@/lib/email/notifications';
+import { invitationRequiresApproval } from '@/lib/invitation-booking';
+import {
+  notifyBookingApproved,
+  notifyStayRequested,
+} from '@/lib/email/notifications';
 import { upsertUserProfile } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -81,6 +85,8 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    const needsApproval = invitationRequiresApproval(invitation);
+    const initialStatus = needsApproval ? 'requested' : 'approved';
 
     const { data: booking, error: bookingError } = await admin
       .from('bookings')
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
         invitation_id: invitation.id,
         property_id: invitation.property_id,
         guest_user_id: authUser.id,
-        status: 'requested',
+        status: initialStatus,
         party_size: data.party_size,
         notes: data.notes ?? null,
         notify_guest: true,
@@ -119,9 +125,13 @@ export async function POST(request: NextRequest) {
       .eq('id', invitation.id)
       .eq('status', 'pending');
 
-    notifyStayRequested(booking.id).catch(console.error);
+    if (needsApproval) {
+      notifyStayRequested(booking.id).catch(console.error);
+    } else {
+      notifyBookingApproved(booking.id).catch(console.error);
+    }
 
-    return NextResponse.json({ booking });
+    return NextResponse.json({ booking, status: initialStatus });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

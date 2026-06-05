@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Copy } from 'lucide-react';
+import { Copy, Eye } from 'lucide-react';
 import type { Invitation, Room } from '@/types/database';
 import { getInviteUrl } from '@/lib/invite-url';
+import { guestPreviewQuery } from '@/lib/guest-preview';
 import { formatDate } from '@/lib/dates';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 
@@ -41,6 +42,15 @@ export function InvitationsManager({
   function copyLink(token: string) {
     navigator.clipboard.writeText(getInviteUrl(token));
     toast.success('Link copied!');
+  }
+
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  function previewBooking(token: string) {
+    window.open(
+      `${getInviteUrl(token)}?${guestPreviewQuery('booking')}`,
+      '_blank'
+    );
   }
 
   const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -84,6 +94,11 @@ export function InvitationsManager({
                       {inv.status}
                     </Badge>
                     <Badge variant="outline">{inv.type.replace('_', ' ')}</Badge>
+                    <Badge variant="outline">
+                      {inv.requires_approval === false
+                        ? 'Auto-confirm'
+                        : 'Approval required'}
+                    </Badge>
                   </div>
                   {inv.expires_at && (
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -92,6 +107,16 @@ export function InvitationsManager({
                   )}
                 </div>
                 <div className="flex gap-2">
+                  {isDev && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => previewBooking(inv.token)}
+                    >
+                      <Eye className="mr-1 h-3 w-3" />
+                      Preview booking
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

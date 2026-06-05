@@ -1,16 +1,19 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getCurrentUser } from '@/lib/auth';
+import { isSiteAdmin } from '@/lib/site-admin';
 import { redirect } from 'next/navigation';
+import { SiteFooter } from '@/components/site-footer';
 
 export default async function HomePage() {
   const user = await getCurrentUser();
 
+  if (user && isSiteAdmin(user)) redirect('/admin');
   if (user?.role === 'owner') redirect('/dashboard');
   if (user) redirect('/my-trips');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <span className="text-lg font-semibold tracking-tight">GuestHouse</span>
@@ -40,6 +43,8 @@ export default async function HomePage() {
           </Button>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
