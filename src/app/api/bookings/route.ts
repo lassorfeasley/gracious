@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { bookingRequestSchema } from '@/lib/validations';
-import { getInvitationByToken, isInvitationActive } from '@/lib/invitations';
+import {
+  getInvitationByToken,
+  guestMatchesInvitation,
+  isInvitationActive,
+} from '@/lib/invitations';
 import {
   checkRoomConflicts,
   validateBookingAgainstInvitation,
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    if (authUser.email !== invitation.guest_email) {
+    if (!guestMatchesInvitation(authUser, invitation)) {
       return NextResponse.json(
         { error: 'This invitation was sent to a different email address' },
         { status: 403 }

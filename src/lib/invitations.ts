@@ -1,5 +1,14 @@
+import type { User } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { InvitationWithDetails } from '@/types/database';
+
+export function guestMatchesInvitation(
+  authUser: Pick<User, 'email' | 'phone'> | null,
+  invitation: { guest_email: string }
+): boolean {
+  if (!authUser?.email) return false;
+  return authUser.email.toLowerCase() === invitation.guest_email.toLowerCase();
+}
 
 export async function getInvitationByToken(
   token: string

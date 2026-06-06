@@ -1,10 +1,9 @@
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { mapPropertyBookingsToCalendar } from '@/lib/calendar-bookings';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 import { BookingRequests } from '@/components/dashboard/booking-requests';
+import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
 
 export default async function RequestsPage({
@@ -52,6 +51,10 @@ export default async function RequestsPage({
     (b) => b.status === 'requested'
   ).length;
 
+  const roomAvailability = await getInvitationRoomAvailability(
+    (rooms ?? []).map((r) => r.id)
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -63,24 +66,22 @@ export default async function RequestsPage({
               : 'Review stay requests and see what’s on the calendar'}
           </p>
         </div>
-        <ComposePageActions slug={slug} rooms={rooms ?? []} />
+        <ComposePageActions
+          propertyId={property.id}
+          rooms={rooms ?? []}
+          roomAvailability={roomAvailability}
+        />
       </div>
 
       <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Calendar</h2>
-          <Link
-            href={`/dashboard/${slug}/calendar`}
-            className="flex items-center gap-1 text-sm text-primary hover:underline"
-          >
-            Full calendar
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <AvailabilityCalendar bookings={calendarBookings} />
+        <h2 className="text-lg font-semibold">Calendar</h2>
+        <AvailabilityCalendar
+          bookings={calendarBookings}
+          bookingHrefBase={`/dashboard/${slug}/bookings`}
+        />
       </section>
 
-      <BookingRequests bookings={bookings ?? []} />
+      <BookingRequests bookings={bookings ?? []} slug={slug} />
 
       {sp.booking && sp.action && (
         <QuickActionHandler bookingId={sp.booking} action={sp.action} />

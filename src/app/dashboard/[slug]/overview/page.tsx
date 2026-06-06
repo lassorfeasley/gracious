@@ -2,12 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { formatDateRange } from '@/lib/dates';
 import { summarizeBeds } from '@/lib/validations';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
-import { HostBookingShell } from '@/components/dashboard/host-compose-section';
-import { HostComposeCalendarSection } from '@/components/dashboard/stay-compose';
-import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-button';
+import { HostPageShell } from '@/components/dashboard/host-page-shell';
+import { HostCalendarSection } from '@/components/dashboard/host-calendar-section';
 import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog';
 import { PropertyMap } from '@/components/dashboard/property-map';
@@ -79,6 +78,9 @@ export default async function OverviewPage({
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
 
   const roomCount = rooms?.length ?? 0;
+  const roomAvailability = await getInvitationRoomAvailability(
+    (rooms ?? []).map((r) => r.id)
+  );
   const totalGuests = (rooms ?? []).reduce(
     (sum, r) => sum + (r.max_occupancy ?? 0),
     0
@@ -102,14 +104,12 @@ export default async function OverviewPage({
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             {property.name}
           </h1>
-          {property.address && (
-            <p className="mt-2 flex items-center gap-1.5 text-base text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              {property.address}
-            </p>
-          )}
         </div>
-        <ComposePageActions slug={slug} rooms={rooms ?? []} />
+        <ComposePageActions
+          propertyId={property.id}
+          rooms={rooms ?? []}
+          roomAvailability={roomAvailability}
+        />
       </div>
 
       {/* House card */}
@@ -144,6 +144,12 @@ export default async function OverviewPage({
           <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             {property.name}
           </h2>
+          {property.address && (
+            <p className="mt-2 flex items-center gap-1.5 text-base text-white/80">
+              <MapPin className="h-4 w-4" />
+              {property.address}
+            </p>
+          )}
           <p className="mt-2 text-base text-white/70">
             {roomCount} {roomCount === 1 ? 'room' : 'rooms'}
             {totalGuests > 0 ? ` · sleeps ${totalGuests}` : ''}
@@ -153,18 +159,8 @@ export default async function OverviewPage({
 
       <SectionNav sections={navSections} />
 
-      <HostBookingShell
-        propertyId={property.id}
-        slug={slug}
-        rooms={rooms ?? []}
-        className="mt-6"
-      >
-        <HostComposeCalendarSection
-          sectionId="calendar"
-          title="Calendar"
-          showFullCalendarLink
-          slug={slug}
-        />
+      <HostPageShell propertyId={property.id} rooms={rooms ?? []} className="mt-6">
+        <HostCalendarSection slug={slug} sectionId="calendar" title="Calendar" />
 
       {/* Rooms */}
       <section id="rooms" className="scroll-mt-28 py-10">
@@ -449,36 +445,30 @@ export default async function OverviewPage({
             No upcoming approved stays.
           </p>
         ) : (
-          <ul className="mt-6 divide-y">
+          <ul className="mt-6 space-y-3">
             {upcoming.map((booking) => (
-              <li
-                key={booking.id}
-                className="flex items-center justify-between gap-4 py-5"
-              >
-                <div>
-                  <p className="text-lg font-medium">{booking.guestName}</p>
-                  {booking.checkIn && booking.checkOut && (
-                    <p className="text-base text-muted-foreground">
-                      {formatDateRange(booking.checkIn, booking.checkOut)}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {booking.isManual ? (
-                    <Badge variant="secondary">Manual stay</Badge>
-                  ) : (
-                    <Badge>Confirmed</Badge>
-                  )}
-                  {booking.isManual && (
-                    <CancelHostStayButton bookingId={booking.id} />
-                  )}
+              <li key={booking.id}>
+                <div className="flex items-center justify-between gap-4 rounded-2xl border bg-card p-5 shadow-sm">
+                  <div>
+                    <p className="text-lg font-medium">{booking.guestName}</p>
+                    {booking.checkIn && booking.checkOut && (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formatDateRange(booking.checkIn, booking.checkOut)}
+                      </p>
+                    )}
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/dashboard/${slug}/bookings/${booking.id}`}>
+                      Manage
+                    </Link>
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
         )}
       </section>
-      </HostBookingShell>
+      </HostPageShell>
     </div>
   );
 }

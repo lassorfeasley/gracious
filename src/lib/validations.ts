@@ -132,6 +132,16 @@ export const hostBookingSchema = z
     }
   );
 
+export const bookingUpdateSchema = z.object({
+  check_in: z.string().min(1, 'Check-in date is required'),
+  check_out: z.string().min(1, 'Check-out date is required'),
+  room_ids: z.array(z.string()).min(1, 'Select at least one room'),
+  party_size: z.number().min(1, 'At least 1 guest'),
+  notes: z.string().optional(),
+});
+
+export type BookingUpdateInput = z.infer<typeof bookingUpdateSchema>;
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type PropertyInput = z.infer<typeof propertySchema>;

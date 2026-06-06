@@ -52,7 +52,7 @@ export function GuestProfileActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {invitePageHref && (
         <Button variant="outline" size="sm" asChild>
           <Link href={invitePageHref} target="_blank">

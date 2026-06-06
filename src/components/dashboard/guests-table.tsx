@@ -1,17 +1,23 @@
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { formatDate, formatDateRange } from '@/lib/dates';
 import type { GuestRosterEntry } from '@/lib/guest-roster';
 
-function guestStatus(entry: GuestRosterEntry, today: string): {
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+function guestStatus(
+  entry: GuestRosterEntry,
+  today: string
+): {
   label: string;
   variant: 'default' | 'secondary' | 'outline' | 'destructive';
 } {
@@ -20,13 +26,13 @@ function guestStatus(entry: GuestRosterEntry, today: string): {
     if (stay.checkIn <= today && stay.checkOut >= today) {
       return { label: 'On property', variant: 'default' };
     }
-    return { label: 'Upcoming stay', variant: 'default' };
+    return { label: 'Upcoming', variant: 'default' };
   }
   if (entry.invitation?.status === 'pending') {
     return { label: 'Invited', variant: 'secondary' };
   }
   if (entry.invitation?.status === 'accepted') {
-    return { label: 'Accepted invite', variant: 'outline' };
+    return { label: 'Accepted', variant: 'outline' };
   }
   if (entry.pastStaysCount > 0) {
     return { label: 'Past guest', variant: 'outline' };
@@ -54,73 +60,81 @@ export function GuestsTable({
 
   if (guests.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
-        No guests yet.
-      </p>
+      <div className="rounded-2xl border bg-muted/20 px-6 py-12 text-center">
+        <p className="text-sm text-muted-foreground">No guests yet.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Invite someone or add a manual stay to get started.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Guest</TableHead>
-            <TableHead className="hidden sm:table-cell">Email</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden md:table-cell">Next / invite</TableHead>
-            <TableHead className="text-right">Profile</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {guests.map((guest) => {
-            const status = guestStatus(guest, today);
-            const nextLabel = guest.upcomingStay
-              ? formatDateRange(
-                  guest.upcomingStay.checkIn,
-                  guest.upcomingStay.checkOut
-                )
-              : guest.invitation
-                ? typeLabels[guest.invitation.type] ?? guest.invitation.type
-                : guest.pastStaysCount > 0
-                  ? `${guest.pastStaysCount} past stay${guest.pastStaysCount !== 1 ? 's' : ''}`
-                  : '—';
+    <ul className="divide-y rounded-2xl border bg-card shadow-sm">
+      {guests.map((guest) => {
+        const status = guestStatus(guest, today);
+        const nextLabel = guest.upcomingStay
+          ? formatDateRange(
+              guest.upcomingStay.checkIn,
+              guest.upcomingStay.checkOut
+            )
+          : guest.invitation
+            ? typeLabels[guest.invitation.type] ?? guest.invitation.type
+            : guest.pastStaysCount > 0
+              ? `${guest.pastStaysCount} past stay${guest.pastStaysCount !== 1 ? 's' : ''}`
+              : null;
 
-            return (
-              <TableRow key={guest.key}>
-                <TableCell>
-                  <div className="font-medium">{guest.name}</div>
-                  <div className="text-xs text-muted-foreground sm:hidden">
-                    {guest.email ?? 'No email'}
-                  </div>
-                </TableCell>
-                <TableCell className="hidden text-muted-foreground sm:table-cell">
-                  {guest.email ?? '—'}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                </TableCell>
-                <TableCell className="hidden text-muted-foreground md:table-cell">
-                  {nextLabel}
-                  {guest.invitation?.expiresAt && !guest.upcomingStay && (
-                    <span className="mt-0.5 block text-xs">
-                      Expires {formatDate(guest.invitation.expiresAt)}
+        return (
+          <li key={guest.key}>
+            <Link
+              href={`/dashboard/${slug}/guests/${guest.key}`}
+              className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40 sm:px-6"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                {initials(guest.name)}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium group-hover:underline">
+                    {guest.name}
+                  </p>
+                  <Badge variant={status.variant} className="text-[11px]">
+                    {status.label}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                  {guest.email ?? 'No email on file'}
+                  {nextLabel && (
+                    <span className="hidden sm:inline">
+                      {' '}
+                      · {nextLabel}
                     </span>
                   )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Link
-                    href={`/dashboard/${slug}/guests/${guest.key}`}
-                    className="text-sm font-medium text-foreground hover:underline"
-                  >
-                    View
-                  </Link>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+                </p>
+                {guest.invitation?.expiresAt && !guest.upcomingStay && (
+                  <p className="mt-0.5 text-xs text-muted-foreground sm:hidden">
+                    Expires {formatDate(guest.invitation.expiresAt)}
+                  </p>
+                )}
+              </div>
+
+              <div className="hidden shrink-0 text-right sm:block">
+                {nextLabel && (
+                  <p className="text-sm text-muted-foreground">{nextLabel}</p>
+                )}
+                {guest.invitation?.expiresAt && !guest.upcomingStay && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Expires {formatDate(guest.invitation.expiresAt)}
+                  </p>
+                )}
+              </div>
+
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

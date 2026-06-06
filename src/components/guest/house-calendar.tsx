@@ -12,10 +12,12 @@ export function HouseCalendar({
   allowedRanges,
   monthsToShow = 2,
   disabled,
+  bookingHrefBase,
 }: {
   allowedRanges?: DateRange[];
   monthsToShow?: number;
   disabled?: boolean;
+  bookingHrefBase?: string;
 }) {
   const {
     checkIn,
@@ -38,6 +40,7 @@ export function HouseCalendar({
       allowedRanges={allowedRanges}
       activeField={activeField}
       onActiveFieldChange={setActiveField}
+      bookingHrefBase={bookingHrefBase}
     />
   );
 }

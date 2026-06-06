@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Check, Plus, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/lib/dates';
@@ -54,12 +54,12 @@ const INVITE_TYPE_OPTIONS: {
 }[] = [
   {
     value: 'date_offer',
-    label: 'Date offer',
+    label: 'Date range',
     description: 'They choose dates within the windows you added on the calendar.',
   },
   {
     value: 'prix_fixe',
-    label: 'Fixed stay',
+    label: 'Specific dates',
     description: 'Exact dates — they accept the stay as offered.',
   },
 ];
@@ -429,45 +429,60 @@ export function HostBookingSurvey({
                   </div>
                 )}
 
-                <div className="space-y-2 border-t pt-5 text-sm text-muted-foreground">
-                  {actionType === 'manual' ? (
-                    <p>
-                      Want to send an invitation instead?{' '}
+                <div className="space-y-3 border-t pt-5">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Other ways to book
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {actionType === 'manual' ? (
                       <button
                         type="button"
                         onClick={() => selectInviteType('date_offer')}
-                        className="font-medium text-foreground underline underline-offset-2"
+                        className="flex h-full w-full items-center justify-between gap-4 rounded-xl border p-5 text-left transition-colors hover:bg-muted/50"
                       >
-                        Choose invitation type
+                        <div>
+                          <p className="font-medium">Send an invitation</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Invite a guest to choose or accept dates.
+                          </p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
                       </button>
-                    </p>
-                  ) : (
-                    <p>
-                      Adding a stay for someone who won&apos;t use the app?{' '}
+                    ) : (
                       <button
                         type="button"
                         onClick={() => onActionTypeChange('manual')}
-                        className="font-medium text-foreground underline underline-offset-2"
+                        className="flex h-full w-full items-center justify-between gap-4 rounded-xl border p-5 text-left transition-colors hover:bg-muted/50"
                       >
-                        Use manual stay
+                        <div>
+                          <p className="font-medium">Manual stay</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Block the calendar for someone who won&apos;t use the
+                            app.
+                          </p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
                       </button>
-                    </p>
-                  )}
-                  <p>
-                    Need an open invitation where guests pick their own dates?{' '}
+                    )}
                     <InviteGuestDialog
                       propertyId={propertyId}
                       rooms={rooms}
                       trigger={
                         <button
                           type="button"
-                          className="font-medium text-foreground underline underline-offset-2"
+                          className="flex h-full w-full items-center justify-between gap-4 rounded-xl border p-5 text-left transition-colors hover:bg-muted/50"
                         >
-                          Use quick invite form
+                          <div>
+                            <p className="font-medium">Open invitation</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Guests pick their own dates, with no set window.
+                            </p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
                         </button>
                       }
                     />
-                  </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -589,8 +604,8 @@ export function HostBookingSurvey({
                     {actionType === 'manual'
                       ? 'Manual stay'
                       : inviteType === 'date_offer'
-                        ? 'Date offer invitation'
-                        : 'Fixed stay invitation'}
+                        ? 'Date range invitation'
+                        : 'Specific dates invitation'}
                   </dd>
                 </div>
                 <div className="rounded-xl border p-4">

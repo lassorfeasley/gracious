@@ -277,7 +277,7 @@ export function HostStaySidebar({
           onClick={() => setDetailsOpen(true)}
           disabled={loading || rooms.length === 0}
         >
-          Build invite
+          Create invite
         </Button>
 
         <p className="mt-3 text-center text-sm text-muted-foreground">

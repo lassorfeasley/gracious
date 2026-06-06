@@ -37,13 +37,13 @@ export function CancelHostStayButton({ bookingId }: { bookingId: string }) {
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="sm"
-      className="text-muted-foreground"
+      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
       onClick={handleCancel}
       disabled={loading}
     >
-      {loading ? 'Removing…' : 'Remove'}
+      {loading ? 'Removing…' : 'Remove stay'}
     </Button>
   );
 }

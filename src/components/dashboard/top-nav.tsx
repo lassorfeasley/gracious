@@ -7,11 +7,11 @@ import {
   Home,
   Settings,
   Bell,
-  Calendar,
   ChevronDown,
   LogOut,
   Plus,
   Check,
+  Luggage,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -114,17 +114,13 @@ export function DashboardTopNav({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link href={`${base}/guests`} className={navLinkClass(isActive('guests'))}>
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Guests</span>
-          </Link>
-
           <Link
-            href={`${base}/calendar`}
-            className={navLinkClass(isActive('calendar'))}
+            href={`${base}/guests`}
+            aria-label="Guests and bookings"
+            className={navLinkClass(isActive('guests'))}
           >
-            <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Calendar</span>
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Guests & bookings</span>
           </Link>
 
           <Link
@@ -169,6 +165,12 @@ export function DashboardTopNav({
                 <Link href={settingsHref}>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/my-trips">
+                  <Luggage className="mr-2 h-4 w-4" />
+                  My trips
                 </Link>
               </DropdownMenuItem>
               {userEmail && (

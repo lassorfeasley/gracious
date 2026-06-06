@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { ArrowLeft, Check, CalendarIcon, Plus, X } from 'lucide-react';
 import { invitationSchema, type InvitationInput } from '@/lib/validations';
+import { formatDate, formatDateRange } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,9 +23,6 @@ import {
 } from '@/components/ui/form';
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
@@ -32,22 +32,20 @@ import {
 } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
+import { SurveyDialogLayout } from '@/components/dashboard/survey-dialog-layout';
 import { toast } from 'sonner';
-import { UserPlus, ArrowLeft, Check, CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { UserPlus } from 'lucide-react';
 import type { Room } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 interface InviteGuestDialogProps {
   propertyId: string;
   rooms: Room[];
-  /** Rooms checked by default when the dialog opens. */
   preselectedRoomIds?: string[];
-  /** Custom trigger element. Falls back to a standard "Invite guest" button. */
   trigger?: ReactNode;
 }
 
-type StepKey = 'guest' | 'type' | 'dates' | 'rooms' | 'details';
+type StepKey = 'guest' | 'type' | 'dates' | 'rooms' | 'details' | 'review';
 
 const STEP_TITLES: Record<StepKey, string> = {
   guest: 'Who are you inviting?',
@@ -55,6 +53,7 @@ const STEP_TITLES: Record<StepKey, string> = {
   dates: 'When can they come?',
   rooms: 'Which rooms can they book?',
   details: 'Add a personal touch',
+  review: 'Review and send',
 };
 
 const TYPE_OPTIONS: {
@@ -78,6 +77,12 @@ const TYPE_OPTIONS: {
     description: 'A fixed set of dates they can accept as-is.',
   },
 ];
+
+const TYPE_LABELS: Record<InvitationInput['type'], string> = {
+  standing: 'Standing invitation',
+  date_offer: 'Date offer',
+  prix_fixe: 'Fixed stay',
+};
 
 export function InviteGuestDialog({
   propertyId,
@@ -105,36 +110,47 @@ export function InviteGuestDialog({
       type: 'standing',
       requires_approval: true,
       message: '',
-      room_ids: defaultRoomIds,
+      room_ids: defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
     },
   });
 
   const invType = form.watch('type');
+  const values = form.watch();
 
-  const steps: StepKey[] = [
-    'guest',
-    'type',
-    ...(invType !== 'standing' ? (['dates'] as StepKey[]) : []),
-    'rooms',
-    'details',
-  ];
+  const steps = useMemo((): StepKey[] => {
+    const base: StepKey[] = ['guest', 'type'];
+    if (invType !== 'standing') base.push('dates');
+    base.push('rooms', 'details', 'review');
+    return base;
+  }, [invType]);
+
   const current = Math.min(step, steps.length - 1);
   const stepKey = steps[current];
   const isLast = current === steps.length - 1;
 
+  useEffect(() => {
+    if (step >= steps.length) {
+      setStep(Math.max(0, steps.length - 1));
+    }
+  }, [step, steps.length]);
+
+  function resetForm() {
+    form.reset({
+      guest_email: '',
+      guest_name: '',
+      type: 'standing',
+      requires_approval: true,
+      message: '',
+      room_ids:
+        defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
+    });
+    setWindows([{ start_date: '', end_date: '' }]);
+    setStep(0);
+  }
+
   function handleOpenChange(next: boolean) {
     setOpen(next);
-    if (next) {
-      form.reset({
-        guest_email: '',
-        guest_name: '',
-        type: 'standing',
-        message: '',
-        room_ids: defaultRoomIds,
-      });
-      setWindows([{ start_date: '', end_date: '' }]);
-      setStep(0);
-    }
+    if (next) resetForm();
   }
 
   function toggleRoom(roomId: string) {
@@ -150,40 +166,47 @@ export function InviteGuestDialog({
     }
   }
 
-  async function goNext() {
+  async function validateCurrentStep(): Promise<boolean> {
     if (stepKey === 'guest') {
-      const ok = await form.trigger('guest_email');
-      if (!ok) return;
-    } else if (stepKey === 'dates') {
-      if (!windows.some((w) => w.start_date && w.end_date)) {
-        toast.error('Add at least one date window');
-        return;
-      }
-    } else if (stepKey === 'rooms') {
-      const ok = await form.trigger('room_ids');
-      if (!ok) return;
+      return form.trigger('guest_email');
     }
-    setStep(current + 1);
+    if (stepKey === 'dates') {
+      const validWindows = windows.filter((w) => w.start_date && w.end_date);
+      if (validWindows.length === 0) {
+        toast.error('Add at least one date window');
+        return false;
+      }
+      return true;
+    }
+    if (stepKey === 'rooms') {
+      return form.trigger('room_ids');
+    }
+    return true;
   }
 
-  function handleFormSubmit(e: React.FormEvent) {
+  async function handleNext() {
     if (!isLast) {
-      e.preventDefault();
-      goNext();
+      const ok = await validateCurrentStep();
+      if (!ok) return;
+      setStep(current + 1);
       return;
     }
-    form.handleSubmit(onSubmit)(e);
+    await form.handleSubmit(onSubmit)();
   }
 
-  async function onSubmit(values: InvitationInput) {
+  async function onSubmit(formValues: InvitationInput) {
+    const validWindows = windows.filter((w) => w.start_date && w.end_date);
+
+    if (formValues.type !== 'standing' && validWindows.length === 0) {
+      toast.error('Add at least one date window');
+      return;
+    }
+
     setLoading(true);
     const payload = {
       property_id: propertyId,
-      ...values,
-      windows:
-        values.type !== 'standing'
-          ? windows.filter((w) => w.start_date && w.end_date)
-          : undefined,
+      ...formValues,
+      windows: formValues.type !== 'standing' ? validWindows : undefined,
     };
 
     const res = await fetch('/api/invitations', {
@@ -210,9 +233,16 @@ export function InviteGuestDialog({
       toast.success('Invitation sent!');
     }
     setOpen(false);
-    form.reset();
+    resetForm();
     router.refresh();
   }
+
+  const roomLabels = rooms
+    .filter((r) => values.room_ids?.includes(r.id))
+    .map((r) => r.name)
+    .join(', ');
+
+  const validWindows = windows.filter((w) => w.start_date && w.end_date);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -220,105 +250,98 @@ export function InviteGuestDialog({
         {trigger ?? (
           <Button size="sm" disabled={rooms.length === 0}>
             <UserPlus className="mr-1 h-4 w-4" />
-            Invite a guest
+            Invite guest
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Invite a guest</DialogTitle>
-        </DialogHeader>
 
-        {/* Progress */}
-        <div>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-foreground transition-all"
-              style={{ width: `${((current + 1) / steps.length) * 100}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Step {current + 1} of {steps.length}
-          </p>
-        </div>
-
+      <SurveyDialogLayout
+        title="Invite a guest"
+        stepIndex={current}
+        stepCount={steps.length}
+        stepTitle={STEP_TITLES[stepKey]}
+        onBack={current > 0 ? () => setStep(current - 1) : undefined}
+        onNext={handleNext}
+        nextLabel={
+          isLast ? (loading ? 'Sending…' : 'Send invitation') : 'Next'
+        }
+        loading={loading}
+      >
         <Form {...form}>
-          <form onSubmit={handleFormSubmit} className="space-y-5">
-            <h3 className="text-lg font-semibold tracking-tight">
-              {STEP_TITLES[stepKey]}
-            </h3>
+          {stepKey === 'guest' && (
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="guest_email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guest email</FormLabel>
+                    <FormControl>
+                      <Input type="email" autoFocus {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="guest_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guest name (optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
 
-            {stepKey === 'guest' && (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="guest_email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Guest email</FormLabel>
-                      <FormControl>
-                        <Input type="email" autoFocus {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="guest_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Guest name (optional)</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
+          {stepKey === 'type' && (
+            <div className="space-y-3">
+              {TYPE_OPTIONS.map((opt) => {
+                const selected = invType === opt.value;
+                return (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => form.setValue('type', opt.value)}
+                    className={cn(
+                      'flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition-colors',
+                      selected
+                        ? 'border-foreground ring-1 ring-foreground'
+                        : 'hover:bg-muted'
+                    )}
+                  >
+                    <div>
+                      <p className="font-medium">{opt.label}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {opt.description}
+                      </p>
+                    </div>
+                    {selected && <Check className="h-5 w-5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-            {stepKey === 'type' && (
-              <div className="space-y-3">
-                {TYPE_OPTIONS.map((opt) => {
-                  const selected = invType === opt.value;
-                  return (
-                    <button
-                      type="button"
-                      key={opt.value}
-                      onClick={() => form.setValue('type', opt.value)}
-                      className={cn(
-                        'flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition-colors',
-                        selected
-                          ? 'border-foreground ring-1 ring-foreground'
-                          : 'hover:bg-muted'
-                      )}
-                    >
-                      <div>
-                        <p className="font-medium">{opt.label}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {opt.description}
-                        </p>
-                      </div>
-                      {selected && <Check className="h-5 w-5 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {stepKey === 'dates' && (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  {invType === 'prix_fixe'
-                    ? 'Offer the exact dates of the stay.'
-                    : 'Offer one or more date ranges they can book within.'}
-                </p>
-                {windows.map((w, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-2">
+          {stepKey === 'dates' && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {invType === 'prix_fixe'
+                  ? 'Offer the exact dates of the stay.'
+                  : 'Offer one or more date ranges they can book within.'}
+              </p>
+              {windows.map((w, i) => (
+                <div key={i} className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Start</Label>
                     <Input
                       type="date"
+                      className="mt-1"
                       value={w.start_date}
                       onChange={(e) => {
                         const next = [...windows];
@@ -326,8 +349,12 @@ export function InviteGuestDialog({
                         setWindows(next);
                       }}
                     />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">End</Label>
                     <Input
                       type="date"
+                      className="mt-1"
                       value={w.end_date}
                       onChange={(e) => {
                         const next = [...windows];
@@ -336,7 +363,9 @@ export function InviteGuestDialog({
                       }}
                     />
                   </div>
-                ))}
+                </div>
+              ))}
+              {invType === 'date_offer' && (
                 <Button
                   type="button"
                   variant="outline"
@@ -347,177 +376,214 @@ export function InviteGuestDialog({
                 >
                   Add window
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
-            {stepKey === 'rooms' && (
-              <div className="space-y-2">
-                <div className="space-y-2">
-                  {rooms.map((room) => {
-                    const checked = form.watch('room_ids').includes(room.id);
-                    return (
-                      <label
-                        key={room.id}
-                        className={cn(
-                          'flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition-colors',
-                          checked ? 'border-foreground' : 'hover:bg-muted'
-                        )}
-                      >
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleRoom(room.id)}
-                        />
-                        {room.name}
-                      </label>
-                    );
-                  })}
-                </div>
-                {form.formState.errors.room_ids && (
-                  <p className="text-sm text-destructive">
-                    {form.formState.errors.room_ids.message}
-                  </p>
+          {stepKey === 'rooms' && (
+            <div className="space-y-2">
+              {rooms.map((room) => {
+                const checked = form.watch('room_ids').includes(room.id);
+                return (
+                  <label
+                    key={room.id}
+                    className={cn(
+                      'flex cursor-pointer items-center gap-3 rounded-xl border p-4 text-sm transition-colors',
+                      checked ? 'border-foreground' : 'hover:bg-muted'
+                    )}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() => toggleRoom(room.id)}
+                    />
+                    {room.name}
+                  </label>
+                );
+              })}
+              {form.formState.errors.room_ids && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.room_ids.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          {stepKey === 'details' && (
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="requires_approval"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start justify-between gap-4 rounded-xl border p-4">
+                    <div className="space-y-1">
+                      <FormLabel className="text-base">
+                        Require host approval
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        {field.value
+                          ? 'Guests submit a request; you approve or decline.'
+                          : 'Bookings are confirmed immediately.'}
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
                 )}
-              </div>
-            )}
-
-            {stepKey === 'details' && (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="requires_approval"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start justify-between gap-4 rounded-lg border p-4">
-                      <div className="space-y-1">
-                        <FormLabel className="text-base">
-                          Require host approval
-                        </FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          {field.value
-                            ? 'Guests submit a request; you approve or decline before the stay is confirmed.'
-                            : 'Bookings are confirmed immediately — no request in your inbox.'}
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          aria-label="Require host approval for bookings"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Personal message (optional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Can't wait to host you!"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="expires_at"
-                  render={({ field }) => {
-                    const selected = field.value
-                      ? new Date(field.value)
-                      : undefined;
-                    return (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Invitation expires (optional)</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
+              />
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Personal message (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Can't wait to host you!"
+                        rows={4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="expires_at"
+                render={({ field }) => {
+                  const selected = field.value
+                    ? new Date(field.value)
+                    : undefined;
+                  return (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Invitation expires (optional)</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className={cn(
+                                'justify-start text-left font-normal',
+                                !selected && 'text-muted-foreground'
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {selected
+                                ? format(selected, 'PPP')
+                                : 'No expiration'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selected}
+                            onSelect={(d) => {
+                              if (!d) {
+                                field.onChange('');
+                                return;
+                              }
+                              const end = new Date(d);
+                              end.setHours(23, 59, 59, 0);
+                              field.onChange(end.toISOString());
+                            }}
+                            disabled={{ before: new Date() }}
+                            autoFocus
+                          />
+                          {selected && (
+                            <div className="border-t p-2">
                               <Button
                                 type="button"
-                                variant="outline"
-                                className={cn(
-                                  'justify-start text-left font-normal',
-                                  !selected && 'text-muted-foreground'
-                                )}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full"
+                                onClick={() => field.onChange('')}
                               >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {selected
-                                  ? format(selected, 'PPP')
-                                  : 'No expiration'}
+                                Clear date
                               </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-auto p-0"
-                            align="start"
-                          >
-                            <Calendar
-                              mode="single"
-                              selected={selected}
-                              onSelect={(d) => {
-                                if (!d) {
-                                  field.onChange('');
-                                  return;
-                                }
-                                const end = new Date(d);
-                                end.setHours(23, 59, 59, 0);
-                                field.onChange(end.toISOString());
-                              }}
-                              disabled={{ before: new Date() }}
-                              autoFocus
-                            />
-                            {selected && (
-                              <div className="border-t p-2">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => field.onChange('')}
-                                >
-                                  Clear date
-                                </Button>
-                              </div>
-                            )}
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between pt-2">
-              {current > 0 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setStep(current - 1)}
-                >
-                  <ArrowLeft className="mr-1 h-4 w-4" />
-                  Back
-                </Button>
-              ) : (
-                <span />
-              )}
-              <Button type="submit" disabled={loading}>
-                {isLast
-                  ? loading
-                    ? 'Sending...'
-                    : 'Send invitation'
-                  : 'Next'}
-              </Button>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
             </div>
-          </form>
+          )}
+
+          {stepKey === 'review' && (
+            <dl className="space-y-4 text-sm">
+              <div className="rounded-xl border p-4">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Guest
+                </dt>
+                <dd className="mt-1 font-medium">
+                  {values.guest_name || values.guest_email}
+                </dd>
+                {values.guest_name && (
+                  <dd className="text-muted-foreground">{values.guest_email}</dd>
+                )}
+              </div>
+              <div className="rounded-xl border p-4">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Invitation
+                </dt>
+                <dd className="mt-1 font-medium">{TYPE_LABELS[invType]}</dd>
+                <dd className="mt-1 text-muted-foreground">
+                  {values.requires_approval
+                    ? 'Requires your approval'
+                    : 'Auto-confirms'}
+                </dd>
+              </div>
+              {validWindows.length > 0 && (
+                <div className="rounded-xl border p-4">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Dates
+                  </dt>
+                  <dd className="mt-1 space-y-1">
+                    {validWindows.map((w) => (
+                      <p key={`${w.start_date}-${w.end_date}`} className="font-medium">
+                        {formatDateRange(w.start_date, w.end_date)}
+                      </p>
+                    ))}
+                  </dd>
+                </div>
+              )}
+              <div className="rounded-xl border p-4">
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Rooms
+                </dt>
+                <dd className="mt-1 font-medium">{roomLabels || '—'}</dd>
+              </div>
+              {values.message?.trim() && (
+                <div className="rounded-xl border p-4">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Message
+                  </dt>
+                  <dd className="mt-1 whitespace-pre-wrap">{values.message}</dd>
+                </div>
+              )}
+              {values.expires_at && (
+                <div className="rounded-xl border p-4">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Expires
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {formatDate(values.expires_at)}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          )}
         </Form>
-      </DialogContent>
+      </SurveyDialogLayout>
     </Dialog>
   );
 }

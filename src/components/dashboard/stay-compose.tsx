@@ -234,7 +234,7 @@ function HostComposeForm({
     }
 
     toast.success('Stay added to calendar');
-    router.push(`/dashboard/${slug}/calendar`);
+    router.push(`/dashboard/${slug}/overview`);
     router.refresh();
   }
 
@@ -309,7 +309,11 @@ function HostComposeForm({
         {calendarHint}
       </p>
       <div className="mt-6">
-        <HouseCalendar monthsToShow={2} disabled={false} />
+        <HouseCalendar
+          monthsToShow={2}
+          disabled={false}
+          bookingHrefBase={`/dashboard/${slug}/bookings`}
+        />
       </div>
       {actionType === 'invite' && inviteType === 'date_offer' && (
         <Button
@@ -484,38 +488,22 @@ export function HostComposeSplitGrid({
 export function HostComposeCalendarSection({
   sectionId,
   title,
-  showFullCalendarLink,
-  slug,
   footer,
 }: {
   sectionId: string;
   title?: string;
-  showFullCalendarLink?: boolean;
-  slug?: string;
   footer?: ReactNode;
 }) {
   const { calendarBlock } = useHostComposeParts();
 
   return (
     <section id={sectionId} className="scroll-mt-28 py-10 first:pt-0">
-      {(title || showFullCalendarLink) && (
+      {title && (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {title && (
-            <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
-          )}
-          {showFullCalendarLink && slug && (
-            <Link
-              href={`/dashboard/${slug}/calendar`}
-              className="text-base text-primary hover:underline"
-            >
-              Full calendar →
-            </Link>
-          )}
+          <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
         </div>
       )}
-      <div className={title || showFullCalendarLink ? 'mt-6' : undefined}>
-        {calendarBlock}
-      </div>
+      <div className={title ? 'mt-6' : undefined}>{calendarBlock}</div>
       {footer}
     </section>
   );

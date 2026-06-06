@@ -14,6 +14,7 @@ import {
   startOfDay,
   startOfMonth,
 } from 'date-fns';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -57,11 +58,35 @@ interface AvailabilityCalendarProps {
   /** Which field the next calendar click should fill. */
   activeField?: DateField | null;
   onActiveFieldChange?: (field: DateField | null) => void;
+  /** If set, booked days link to `${bookingHrefBase}/${bookingId}`. */
+  bookingHrefBase?: string;
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const INNER =
   'flex h-full w-full items-center justify-center rounded-full text-sm transition-colors';
+
+function DayTooltip({
+  label,
+  children,
+}: {
+  label?: string;
+  children: React.ReactNode;
+}) {
+  if (!label) return <>{children}</>;
+  return (
+    <span className="group/day relative flex h-full w-full items-center justify-center">
+      {children}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 max-w-[12rem] -translate-x-1/2 scale-95 rounded-md bg-foreground px-2.5 py-1.5 text-center text-xs font-medium leading-tight text-background opacity-0 shadow-md transition-all duration-150 group-hover/day:scale-100 group-hover/day:opacity-100"
+      >
+        {label}
+        <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-4 border-transparent border-t-foreground" />
+      </span>
+    </span>
+  );
+}
 
 function coversDay(day: Date, start: string, end: string): boolean {
   try {
@@ -82,6 +107,7 @@ function MonthGrid({
   value,
   isSelectable,
   onSelect,
+  bookingHrefBase,
 }: {
   month: Date;
   bookings: CalendarBooking[];
@@ -90,6 +116,7 @@ function MonthGrid({
   value?: CalendarSelection;
   isSelectable: (dateStr: string) => boolean;
   onSelect: (dateStr: string) => void;
+  bookingHrefBase?: string;
 }) {
   const today = startOfDay(new Date());
   const days = useMemo(
@@ -130,6 +157,10 @@ function MonthGrid({
           const isPast = isBefore(day, today);
           const unavailable = booked.length > 0 || isBlocked;
           const isToday = isSameDay(day, today);
+          const bookingHref =
+            bookingHrefBase && booked.length > 0
+              ? `${bookingHrefBase}/${booked[0].id}`
+              : undefined;
           const title =
             booked.length > 0
               ? booked
@@ -176,47 +207,79 @@ function MonthGrid({
                   >
                     {format(day, 'd')}
                   </button>
+                ) : bookingHref ? (
+                  <DayTooltip label={title ? `${title} · Open` : 'Open booking'}>
+                    <Link
+                      href={bookingHref}
+                      className={cn(
+                        INNER,
+                        'bg-muted font-medium text-muted-foreground ring-1 ring-inset ring-border transition hover:ring-2 hover:ring-foreground/40'
+                      )}
+                    >
+                      {format(day, 'd')}
+                    </Link>
+                  </DayTooltip>
                 ) : (
-                  <span
-                    title={title}
-                    className={cn(
-                      INNER,
-                      unavailable
-                        ? 'text-muted-foreground line-through'
-                        : 'text-muted-foreground/40'
-                    )}
-                  >
-                    {format(day, 'd')}
-                  </span>
+                  <DayTooltip label={title}>
+                    <span
+                      className={cn(
+                        INNER,
+                        unavailable
+                          ? 'bg-muted font-medium text-muted-foreground ring-1 ring-inset ring-border'
+                          : 'text-muted-foreground/40'
+                      )}
+                    >
+                      {format(day, 'd')}
+                    </span>
+                  </DayTooltip>
                 )}
               </div>
             );
           }
+
+          const blockedOnly = isBlocked && booked.length === 0;
+          const dayClass = cn(
+            INNER,
+            isToday &&
+              !unavailable &&
+              'font-semibold ring-1 ring-inset ring-foreground',
+            isPast && !unavailable && 'text-muted-foreground/50',
+            !unavailable && !isPast && 'text-foreground hover:bg-muted',
+            hasConfirmed && 'bg-foreground font-medium text-background',
+            hasPending &&
+              !hasConfirmed &&
+              'bg-amber-100 font-medium text-amber-900 ring-1 ring-inset ring-amber-300',
+            hasPending &&
+              hasConfirmed &&
+              'bg-foreground font-medium text-background ring-2 ring-inset ring-amber-300',
+            blockedOnly &&
+              'bg-muted font-medium text-muted-foreground ring-1 ring-inset ring-border'
+          );
 
           return (
             <div
               key={day.toISOString()}
               className="flex aspect-square items-center justify-center p-1.5"
             >
-              <span
-                title={title}
-                className={cn(
-                  INNER,
-                  isToday && 'font-semibold ring-1 ring-inset ring-foreground',
-                  isPast && !unavailable && 'text-muted-foreground/50',
-                  hasPending &&
-                    !hasConfirmed &&
-                    'bg-amber-100 font-medium text-amber-900 ring-1 ring-inset ring-amber-300',
-                  hasConfirmed &&
-                    'text-muted-foreground line-through',
-                  hasPending &&
-                    hasConfirmed &&
-                    'bg-amber-50 text-muted-foreground line-through ring-1 ring-inset ring-amber-200',
-                  !unavailable && !isPast && 'text-foreground hover:bg-muted'
-                )}
+              <DayTooltip
+                label={
+                  bookingHref ? (title ? `${title} · Open` : 'Open booking') : title
+                }
               >
-                {format(day, 'd')}
-              </span>
+                {bookingHref ? (
+                  <Link
+                    href={bookingHref}
+                    className={cn(
+                      dayClass,
+                      'transition hover:ring-2 hover:ring-foreground/40'
+                    )}
+                  >
+                    {format(day, 'd')}
+                  </Link>
+                ) : (
+                  <span className={dayClass}>{format(day, 'd')}</span>
+                )}
+              </DayTooltip>
             </div>
           );
         })}
@@ -235,6 +298,7 @@ export function AvailabilityCalendar({
   allowedRanges = [],
   activeField = null,
   onActiveFieldChange,
+  bookingHrefBase,
 }: AvailabilityCalendarProps) {
   const [base, setBase] = useState(() => startOfMonth(new Date()));
   const today = startOfDay(new Date());
@@ -341,6 +405,7 @@ export function AvailabilityCalendar({
               value={value}
               isSelectable={isSelectable}
               onSelect={handleSelect}
+              bookingHrefBase={bookingHrefBase}
             />
           ))}
         </div>
@@ -349,7 +414,7 @@ export function AvailabilityCalendar({
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
           {bookings.some((b) => !b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-muted-foreground line-through ring-1 ring-inset ring-border">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
                 1
               </span>
               Confirmed stay
@@ -363,7 +428,14 @@ export function AvailabilityCalendar({
               Pending request
             </span>
           )}
-          {blocks.length > 0 && <span>Crossed-out dates may also be blocked</span>}
+          {blocks.length > 0 && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground ring-1 ring-inset ring-border">
+                1
+              </span>
+              Blocked
+            </span>
+          )}
           <span className="w-full sm:w-auto">
             Hover a date to see who&apos;s staying.
           </span>

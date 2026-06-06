@@ -6,10 +6,8 @@ import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { summarizeBeds, BED_SIZE_LABELS } from '@/lib/validations';
 import { AvailabilityBlocks } from '@/components/dashboard/availability-blocks';
-import {
-  HostBookingShell,
-} from '@/components/dashboard/host-compose-section';
-import { HostComposeCalendarSection } from '@/components/dashboard/stay-compose';
+import { HostPageShell } from '@/components/dashboard/host-page-shell';
+import { HostCalendarSection } from '@/components/dashboard/host-calendar-section';
 import { PropertyMap } from '@/components/dashboard/property-map';
 import { SectionNav } from '@/components/dashboard/section-nav';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
@@ -143,12 +141,12 @@ export default async function RoomProfilePage({
 
       <SectionNav sections={navSections} />
 
-      <HostBookingShell
+      <HostPageShell
         propertyId={property.id}
-        slug={slug}
         rooms={rooms ?? []}
         defaultSelectedRoomIds={[room.id]}
         lockRoomSelection
+        preselectedRoomIds={[room.id]}
         className="mt-6"
       >
       {/* Description */}
@@ -252,7 +250,8 @@ export default async function RoomProfilePage({
         )}
       </section>
 
-      <HostComposeCalendarSection
+      <HostCalendarSection
+        slug={slug}
         sectionId="availability"
         title="Availability"
         footer={
@@ -299,7 +298,7 @@ export default async function RoomProfilePage({
           />
         </div>
       </section>
-      </HostBookingShell>
+      </HostPageShell>
     </div>
   );
 }

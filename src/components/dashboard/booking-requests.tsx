@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,7 +45,13 @@ function guestDisplayName(booking: RequestBooking): string {
   return booking.guest_name ?? booking.guest_email ?? 'Guest';
 }
 
-export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
+export function BookingRequests({
+  bookings,
+  slug,
+}: {
+  bookings: RequestBooking[];
+  slug: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [declineId, setDeclineId] = useState<string | null>(null);
@@ -146,6 +153,11 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                       >
                         Decline
                       </Button>
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link href={`/dashboard/${slug}/bookings/${booking.id}`}>
+                          Manage
+                        </Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -195,6 +207,11 @@ export function BookingRequests({ bookings }: { bookings: RequestBooking[] }) {
                         !booking.invitation_id && (
                           <CancelHostStayButton bookingId={booking.id} />
                         )}
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link href={`/dashboard/${slug}/bookings/${booking.id}`}>
+                          Manage
+                        </Link>
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
