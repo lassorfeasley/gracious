@@ -14,6 +14,7 @@ import {
 import {
   type AppView,
   ADMIN_DEV_PATH,
+  LANDING_DEV_PATH,
   buildGuestDevPath,
   buildHostDevPath,
   detectAppView,
@@ -29,6 +30,7 @@ import {
 } from '@/lib/dev-context-storage';
 
 const APP_VIEWS: { id: AppView; label: string }[] = [
+  { id: 'landing', label: 'Landing' },
   { id: 'guest', label: 'Guest' },
   { id: 'host', label: 'Host' },
   { id: 'admin', label: 'Admin' },
@@ -103,6 +105,7 @@ export function DevToolbar() {
 
   const viewHrefs = useMemo(
     () => ({
+      landing: LANDING_DEV_PATH,
       guest: inviteToken
         ? buildGuestDevPath(inviteToken, guestAs, guestStatus)
         : '/my-trips',

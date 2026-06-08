@@ -3,6 +3,7 @@ import { requireOwner, getOwnerProperties } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { PropertyHomesSection } from '@/components/dashboard/property-homes-section';
 import { SettingsForm } from '@/components/dashboard/settings-form';
+import { SubscriptionCard } from '@/components/dashboard/subscription-card';
 
 export default async function SettingsPage({
   params,
@@ -43,6 +44,13 @@ export default async function SettingsPage({
         currentPropertyId={property.id}
         userId={user.id}
       />
+
+      {isPropertyOwner && (
+        <div className="max-w-xl">
+          {/* Plan is hardcoded to free until Stripe billing is wired up. */}
+          <SubscriptionCard currentPlan="free" />
+        </div>
+      )}
 
       <SettingsForm
         user={user}

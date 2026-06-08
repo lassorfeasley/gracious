@@ -1,7 +1,7 @@
 import type { GuestPreviewAs, GuestPreviewBookingStatus } from '@/lib/guest-preview';
 import { guestPreviewQuery } from '@/lib/guest-preview';
 
-export type AppView = 'guest' | 'host' | 'admin';
+export type AppView = 'landing' | 'guest' | 'host' | 'admin';
 
 export function isDevToolsEnabled(): boolean {
   return process.env.NODE_ENV !== 'production';
@@ -16,6 +16,7 @@ export function detectAppView(pathname: string): AppView | null {
   if (pathname.startsWith('/admin')) return 'admin';
   if (pathname.startsWith('/dashboard')) return 'host';
   if (pathname.startsWith('/invite') || pathname === '/my-trips') return 'guest';
+  if (pathname === '/') return 'landing';
   return null;
 }
 
@@ -42,3 +43,11 @@ export function buildHostDevPath(slug?: string | null): string {
 }
 
 export const ADMIN_DEV_PATH = '/admin';
+
+/** Landing page with the dev preview flag so signed-in users skip the redirect. */
+export const LANDING_DEV_PATH = '/?preview=1';
+
+/** When true (dev only), the marketing landing page renders even if signed in. */
+export function isLandingPreviewEnabled(preview?: string): boolean {
+  return isDevToolsEnabled() && preview === '1';
+}
