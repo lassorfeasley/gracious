@@ -71,9 +71,11 @@ export async function requireAuth(): Promise<User> {
 
 export async function requireOwner(): Promise<User> {
   const user = await requireAuth();
+  // Owners (including owners who are also site admins) can use the host
+  // dashboard. Only route pure platform admins to /admin.
+  if (user.role === 'owner') return user;
   if (isSiteAdmin(user)) redirect('/admin');
-  if (user.role !== 'owner') redirect('/my-trips');
-  return user;
+  redirect('/my-trips');
 }
 
 export async function requireSiteAdmin(): Promise<User> {

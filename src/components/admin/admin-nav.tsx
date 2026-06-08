@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, Home, CalendarDays, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Home, CalendarDays, Mail, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ const LINKS = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/properties', label: 'Properties', icon: Home },
   { href: '/admin/bookings', label: 'Bookings', icon: CalendarDays },
+  { href: '/admin/messaging', label: 'Messaging', icon: Mail },
 ];
 
 export function AdminNav({ userEmail }: { userEmail: string }) {

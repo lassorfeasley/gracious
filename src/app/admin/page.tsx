@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AUTOMATED_MESSAGES } from '@/lib/messaging/registry';
 
 export default async function AdminOverviewPage() {
   const admin = createAdminClient();
@@ -39,6 +40,11 @@ export default async function AdminOverviewPage() {
       href: '/admin/bookings',
     },
     { label: 'Invitations', value: invitationCount ?? 0, href: '/admin/bookings' },
+    {
+      label: 'Automated messages',
+      value: AUTOMATED_MESSAGES.length,
+      href: '/admin/messaging',
+    },
   ];
 
   return (
