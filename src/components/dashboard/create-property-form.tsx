@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,8 +22,6 @@ import { toast } from 'sonner';
 export function CreatePropertyForm({ userId }: { userId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-
-  const slugEdited = useRef(false);
 
   const form = useForm<PropertyInput>({
     resolver: zodResolver(propertySchema),
@@ -68,29 +66,7 @@ export function CreatePropertyForm({ userId }: { userId: string }) {
                   {...field}
                   onChange={(e) => {
                     field.onChange(e);
-                    if (!slugEdited.current) {
-                      form.setValue('slug', slugify(e.target.value));
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="slug"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL slug</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="lake-house"
-                  {...field}
-                  onChange={(e) => {
-                    slugEdited.current = true;
-                    field.onChange(slugify(e.target.value));
+                    form.setValue('slug', slugify(e.target.value));
                   }}
                 />
               </FormControl>
