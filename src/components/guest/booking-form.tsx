@@ -40,7 +40,8 @@ const formSchema = z.object({
   room_ids: z.array(z.string()).min(1, 'Select at least one room'),
   party_size: z.number().min(1, 'At least 1 guest'),
   notes: z.string().optional(),
-  guest_name: z.string().optional(),
+  guest_first_name: z.string().optional(),
+  guest_last_name: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -83,7 +84,8 @@ export function BookingForm({
           : [],
       party_size: 1,
       notes: '',
-      guest_name: guestName ?? '',
+      guest_first_name: '',
+      guest_last_name: '',
     },
   });
 
@@ -165,19 +167,34 @@ export function BookingForm({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {!guestName && (
-              <FormField
-                control={form.control}
-                name="guest_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="How should we address you?" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="guest_first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Jane" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="guest_last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
 
             {lockedRoom && (

@@ -42,8 +42,8 @@ export function SubscriptionCard({ currentPlan }: SubscriptionCardProps) {
         {isPro ? (
           <>
             <p className="text-sm text-muted-foreground">
-              You’re on the <strong>Pro</strong> plan with unlimited homes,
-              rooms, and co-managers.
+              You’re on the <strong>Pro</strong> plan with unlimited hosted
+              stays, homes, and co-managers.
             </p>
             <Button variant="outline" onClick={handleManage}>
               Manage billing
@@ -52,8 +52,9 @@ export function SubscriptionCard({ currentPlan }: SubscriptionCardProps) {
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
-              You’re on the <strong>Free</strong> plan — one home, with the full
-              guest experience. Upgrade to Pro to add more homes and co-managers.
+              You’re on the <strong>Free</strong> plan — your first 2 hosted
+              stays are on us. Upgrade to Pro for unlimited stays, homes, and
+              co-managers.
             </p>
 
             <div className="rounded-xl border p-5">
@@ -107,13 +108,13 @@ export function SubscriptionCard({ currentPlan }: SubscriptionCardProps) {
               </ul>
 
               <Button className="mt-5 w-full" onClick={handleUpgrade}>
-                {interval === 'annual'
-                  ? 'Start 30-day free trial'
-                  : 'Upgrade to Pro'}
+                Upgrade to Pro
               </Button>
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                {pro.ctaNote}
-              </p>
+              {pro.ctaNote && (
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  {pro.ctaNote}
+                </p>
+              )}
             </div>
           </>
         )}

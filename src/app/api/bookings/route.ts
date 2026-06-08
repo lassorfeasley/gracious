@@ -74,17 +74,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await upsertUserProfile(
-      authUser.id,
-      authUser.email!,
-      'guest',
-      data.guest_name
-    );
+    await upsertUserProfile(authUser.id, authUser.email!, 'guest', {
+      firstName: data.guest_first_name,
+      lastName: data.guest_last_name,
+    });
 
-    if (data.guest_name) {
+    if (data.guest_first_name) {
       await createAdminClient()
         .from('users')
-        .update({ name: data.guest_name })
+        .update({
+          first_name: data.guest_first_name,
+          last_name: data.guest_last_name ?? null,
+        })
         .eq('id', authUser.id);
     }
 

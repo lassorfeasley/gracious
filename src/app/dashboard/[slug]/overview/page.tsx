@@ -79,7 +79,8 @@ export default async function OverviewPage({
 
   const roomCount = rooms?.length ?? 0;
   const roomAvailability = await getInvitationRoomAvailability(
-    (rooms ?? []).map((r) => r.id)
+    (rooms ?? []).map((r) => r.id),
+    { includeGuestNames: true }
   );
   const totalGuests = (rooms ?? []).reduce(
     (sum, r) => sum + (r.max_occupancy ?? 0),

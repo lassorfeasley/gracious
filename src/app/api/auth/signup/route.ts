@@ -17,14 +17,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, password } = parsed.data;
+    const { first_name, last_name, email, password } = parsed.data;
     const admin = createAdminClient();
 
     const { data, error } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, role: 'owner' },
+      user_metadata: { first_name, last_name: last_name ?? null, role: 'owner' },
     });
 
     if (error) {
@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
     const { error: profileError } = await admin.from('users').upsert({
       id: data.user.id,
       email,
-      name,
+      first_name,
+      last_name: last_name ?? null,
       role: 'owner',
     });
 

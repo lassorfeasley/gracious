@@ -28,7 +28,8 @@ export async function HostPageShell({
   }
 
   const roomAvailability = await getInvitationRoomAvailability(
-    rooms.map((r) => r.id)
+    rooms.map((r) => r.id),
+    { includeGuestNames: true }
   );
 
   return (

@@ -56,7 +56,8 @@ export default async function GuestsPage({
   ).length;
   const scheduleStays = buildScheduleStays(roster);
   const roomAvailability = await getInvitationRoomAvailability(
-    (rooms ?? []).map((r) => r.id)
+    (rooms ?? []).map((r) => r.id),
+    { includeGuestNames: true }
   );
 
   return (

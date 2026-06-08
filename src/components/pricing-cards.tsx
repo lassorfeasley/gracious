@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Building2, Check, Home } from 'lucide-react';
+import { ArrowDown, Building2, Check, Home, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PRICING_PLANS, type PlanIcon } from '@/lib/pricing';
@@ -7,6 +7,7 @@ import { PRICING_PLANS, type PlanIcon } from '@/lib/pricing';
 const PLAN_ICONS: Record<PlanIcon, typeof Home> = {
   home: Home,
   building: Building2,
+  sparkles: Sparkles,
 };
 
 export function PricingCards({ className }: { className?: string }) {
@@ -61,6 +62,12 @@ export function PricingCards({ className }: { className?: string }) {
                   <span>{feature}</span>
                 </li>
               ))}
+              {plan.note && (
+                <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ArrowDown className="size-4 shrink-0" />
+                  <span>{plan.note}</span>
+                </li>
+              )}
             </ul>
 
             <div className="mt-8 flex flex-col gap-2">

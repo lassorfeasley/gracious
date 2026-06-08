@@ -155,7 +155,8 @@ export function BookingSidebar({
       room_ids: [room.id],
       party_size: guests,
       notes: '',
-      guest_name: invitation.guest_name ?? undefined,
+      guest_first_name: invitation.guest_first_name ?? undefined,
+      guest_last_name: invitation.guest_last_name ?? undefined,
       invitation_token: invitation.token,
     };
 

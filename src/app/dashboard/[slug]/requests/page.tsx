@@ -52,7 +52,8 @@ export default async function RequestsPage({
   ).length;
 
   const roomAvailability = await getInvitationRoomAvailability(
-    (rooms ?? []).map((r) => r.id)
+    (rooms ?? []).map((r) => r.id),
+    { includeGuestNames: true }
   );
 
   return (

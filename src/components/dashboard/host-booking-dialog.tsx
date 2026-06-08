@@ -53,7 +53,8 @@ function ManualStaySurvey({
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [guestName, setGuestName] = useState('');
+  const [guestFirstName, setGuestFirstName] = useState('');
+  const [guestLastName, setGuestLastName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [notes, setNotes] = useState('');
@@ -76,6 +77,10 @@ function ManualStaySurvey({
   const stepKey = STEPS[current];
   const isLast = current === STEPS.length - 1;
 
+  const guestName = [guestFirstName.trim(), guestLastName.trim()]
+    .filter(Boolean)
+    .join(' ');
+
   useEffect(() => {
     if (!lockRoomSelection) {
       selectAllRooms();
@@ -92,8 +97,8 @@ function ManualStaySurvey({
 
   function validateStep(key: StepKey): boolean {
     if (key === 'guest') {
-      if (!guestName.trim()) {
-        toast.error('Guest name is required');
+      if (!guestFirstName.trim()) {
+        toast.error('First name is required');
         return false;
       }
     }
@@ -134,7 +139,8 @@ function ManualStaySurvey({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         property_id: propertyId,
-        guest_name: guestName.trim(),
+        guest_first_name: guestFirstName.trim(),
+        guest_last_name: guestLastName.trim() || undefined,
         guest_email: guestEmail.trim() || undefined,
         guest_phone: guestPhone.trim() || undefined,
         check_in: checkIn,
@@ -177,14 +183,24 @@ function ManualStaySurvey({
             For guests who won&apos;t use the app — family, neighbors, or
             anyone you&apos;re hosting offline.
           </p>
-          <div className="space-y-2">
-            <Label htmlFor="manual-guest-name">Guest name</Label>
-            <Input
-              id="manual-guest-name"
-              autoFocus
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="manual-guest-first-name">First name</Label>
+              <Input
+                id="manual-guest-first-name"
+                autoFocus
+                value={guestFirstName}
+                onChange={(e) => setGuestFirstName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="manual-guest-last-name">Last name (optional)</Label>
+              <Input
+                id="manual-guest-last-name"
+                value={guestLastName}
+                onChange={(e) => setGuestLastName(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="manual-guest-email">Email (optional)</Label>

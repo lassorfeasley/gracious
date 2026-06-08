@@ -5,6 +5,8 @@ export interface CalendarBooking {
   guestName: string;
   checkIn: string;
   checkOut: string;
+  /** Pending approval — shown differently from confirmed stays. */
+  pending?: boolean;
 }
 
 export interface CalendarBlock {

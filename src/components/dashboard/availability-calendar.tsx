@@ -208,7 +208,7 @@ function MonthGrid({
                     {format(day, 'd')}
                   </button>
                 ) : bookingHref ? (
-                  <DayTooltip label={title ? `${title} · Open` : 'Open booking'}>
+                  <DayTooltip label={title}>
                     <Link
                       href={bookingHref}
                       className={cn(
@@ -261,11 +261,7 @@ function MonthGrid({
               key={day.toISOString()}
               className="flex aspect-square items-center justify-center p-1.5"
             >
-              <DayTooltip
-                label={
-                  bookingHref ? (title ? `${title} · Open` : 'Open booking') : title
-                }
-              >
+              <DayTooltip label={title}>
                 {bookingHref ? (
                   <Link
                     href={bookingHref}

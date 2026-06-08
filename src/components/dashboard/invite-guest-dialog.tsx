@@ -106,7 +106,8 @@ export function InviteGuestDialog({
     resolver: zodResolver(invitationSchema),
     defaultValues: {
       guest_email: '',
-      guest_name: '',
+      guest_first_name: '',
+      guest_last_name: '',
       type: 'standing',
       requires_approval: true,
       message: '',
@@ -137,7 +138,8 @@ export function InviteGuestDialog({
   function resetForm() {
     form.reset({
       guest_email: '',
-      guest_name: '',
+      guest_first_name: '',
+      guest_last_name: '',
       type: 'standing',
       requires_approval: true,
       message: '',
@@ -283,19 +285,34 @@ export function InviteGuestDialog({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="guest_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Guest name (optional)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="guest_first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First name (optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="guest_last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last name (optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           )}
 
@@ -525,9 +542,11 @@ export function InviteGuestDialog({
                   Guest
                 </dt>
                 <dd className="mt-1 font-medium">
-                  {values.guest_name || values.guest_email}
+                  {[values.guest_first_name, values.guest_last_name]
+                    .filter(Boolean)
+                    .join(' ') || values.guest_email}
                 </dd>
-                {values.guest_name && (
+                {(values.guest_first_name || values.guest_last_name) && (
                   <dd className="text-muted-foreground">{values.guest_email}</dd>
                 )}
               </div>

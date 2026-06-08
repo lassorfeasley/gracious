@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
       .insert({
         property_id,
         guest_email: data.guest_email.toLowerCase(),
-        guest_name: data.guest_name ?? null,
+        guest_first_name: data.guest_first_name ?? null,
+        guest_last_name: data.guest_last_name ?? null,
         type: data.type,
         message: data.message ?? null,
         requires_approval: data.requires_approval,

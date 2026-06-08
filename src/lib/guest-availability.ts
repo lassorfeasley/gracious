@@ -1,9 +1,29 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 
+interface BookingGuestRow {
+  guest_name: string | null;
+  guest_email: string | null;
+  guest: { name: string | null; email: string | null } | { name: string | null; email: string | null }[] | null;
+}
+
+function resolveGuestName(b: BookingGuestRow): string {
+  const user = Array.isArray(b.guest) ? b.guest[0] : b.guest;
+  return (
+    user?.name ??
+    b.guest_name ??
+    user?.email?.split('@')[0] ??
+    b.guest_email?.split('@')[0] ??
+    'Guest'
+  );
+}
+
 export async function getInvitationRoomAvailability(
-  roomIds: string[]
+  roomIds: string[],
+  /** Host views resolve real guest names; guest-facing views stay anonymous. */
+  options: { includeGuestNames?: boolean } = {}
 ): Promise<Record<string, RoomAvailability>> {
+  const { includeGuestNames = false } = options;
   const map: Record<string, RoomAvailability> = {};
   for (const id of roomIds) {
     map[id] = { bookings: [], blocks: [] };
@@ -16,7 +36,7 @@ export async function getInvitationRoomAvailability(
     .from('booking_rooms')
     .select(
       `room_id,
-      booking:bookings(id, status, dates:booking_dates(check_in, check_out))`
+      booking:bookings(id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out))`
     )
     .in('room_id', roomIds);
 
@@ -34,9 +54,12 @@ export async function getInvitationRoomAvailability(
     if (entry) {
       entry.bookings.push({
         id: booking.id,
-        guestName: 'Booked',
+        guestName: includeGuestNames
+          ? resolveGuestName(booking as BookingGuestRow)
+          : 'Booked',
         checkIn: dates.check_in,
         checkOut: dates.check_out,
+        pending: booking.status === 'requested',
       });
     }
   }

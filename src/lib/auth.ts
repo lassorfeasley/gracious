@@ -45,14 +45,18 @@ export async function getCurrentUser(): Promise<User | null> {
   const admin = createAdminClient();
   const role: UserRole =
     authUser.user_metadata?.role === 'owner' ? 'owner' : 'guest';
+  const meta = authUser.user_metadata ?? {};
+  const firstName =
+    (meta.first_name as string | undefined) ??
+    (meta.name as string | undefined) ??
+    authUser.email!.split('@')[0];
   const { data: created } = await admin
     .from('users')
     .upsert({
       id: authUser.id,
       email: authUser.email!,
-      name:
-        (authUser.user_metadata?.name as string | undefined) ??
-        authUser.email!.split('@')[0],
+      first_name: firstName,
+      last_name: (meta.last_name as string | undefined) ?? null,
       role,
     })
     .select()
@@ -122,18 +126,25 @@ export async function upsertUserProfile(
   userId: string,
   email: string,
   role: UserRole = 'guest',
-  name?: string
+  names?: { firstName?: string | null; lastName?: string | null }
 ) {
   const admin = createAdminClient();
-  await admin.from('users').upsert(
-    {
-      id: userId,
-      email,
-      role,
-      name: name ?? email.split('@')[0],
-    },
-    { onConflict: 'id' }
-  );
+  const profile: {
+    id: string;
+    email: string;
+    role: UserRole;
+    first_name?: string | null;
+    last_name?: string | null;
+  } = { id: userId, email, role };
+
+  // Only seed a first name when we have one and the row doesn't yet exist;
+  // never clobber an existing name with a blank on a returning guest.
+  if (names?.firstName !== undefined || names?.lastName !== undefined) {
+    profile.first_name = names.firstName || email.split('@')[0];
+    profile.last_name = names.lastName ?? null;
+  }
+
+  await admin.from('users').upsert(profile, { onConflict: 'id' });
 
   await linkOfflineBookingsToUser(userId, email);
 }

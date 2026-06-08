@@ -7,7 +7,8 @@ export const loginSchema = z.object({
 
 export const signupSchema = z
   .object({
-    name: z.string().min(1, 'Name is required'),
+    first_name: z.string().min(1, 'First name is required'),
+    last_name: z.string().optional(),
     email: z.string().email('Enter a valid email'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
@@ -85,7 +86,8 @@ export const roomSchema = z.object({
 
 export const invitationSchema = z.object({
   guest_email: z.string().email('Enter a valid email'),
-  guest_name: z.string().optional(),
+  guest_first_name: z.string().optional(),
+  guest_last_name: z.string().optional(),
   type: z.enum(['standing', 'date_offer', 'prix_fixe']),
   requires_approval: z.boolean(),
   message: z.string().optional(),
@@ -108,13 +110,15 @@ export const bookingRequestSchema = z.object({
   room_ids: z.array(z.string()).min(1, 'Select at least one room'),
   party_size: z.number().min(1, 'At least 1 guest'),
   notes: z.string().optional(),
-  guest_name: z.string().optional(),
+  guest_first_name: z.string().optional(),
+  guest_last_name: z.string().optional(),
 });
 
 export const hostBookingSchema = z
   .object({
     property_id: z.string().uuid(),
-    guest_name: z.string().min(1, 'Guest name is required'),
+    guest_first_name: z.string().min(1, 'First name is required'),
+    guest_last_name: z.string().optional(),
     guest_email: z.string().email('Enter a valid email').optional().or(z.literal('')),
     guest_phone: z.string().optional(),
     check_in: z.string().min(1, 'Check-in date is required'),

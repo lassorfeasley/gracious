@@ -1,6 +1,6 @@
 export type PlanId = 'free' | 'pro';
 
-export type PlanIcon = 'home' | 'building';
+export type PlanIcon = 'home' | 'building' | 'sparkles';
 
 export interface PricingPlan {
   id: PlanId;
@@ -15,6 +15,8 @@ export interface PricingPlan {
   /** Secondary pricing note, e.g. monthly equivalent */
   subtext?: string;
   features: string[];
+  /** Muted footnote shown under the features (e.g. an upgrade nudge) */
+  note?: string;
   cta: {
     label: string;
     href: string;
@@ -26,21 +28,23 @@ export interface PricingPlan {
 
 // Single source of truth for plans. When Stripe is integrated, map each plan
 // to its Stripe Price ID here (e.g. add `stripePriceId` fields below).
+export const FREE_INCLUDED_STAYS = 2;
+
 export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'free',
-    name: 'Free',
-    icon: 'home',
+    name: 'Free to start',
+    icon: 'sparkles',
     price: '$0',
-    tagline: 'Free forever, for your one home',
+    tagline: 'No card — set up and feel it work',
     features: [
-      'One home',
-      'Unlimited rooms, bookings & invites',
-      'Full guest experience',
-      'iCal export',
+      'Add homes & rooms, build everything',
+      'Your first 2 hosted stays, on us',
+      'Guests always free, forever',
     ],
+    note: 'After 2 stays, upgrade to keep hosting',
     cta: {
-      label: 'Start free',
+      label: 'Get started free',
       href: '/signup',
     },
   },
@@ -50,19 +54,18 @@ export const PRICING_PLANS: PricingPlan[] = [
     icon: 'building',
     price: '$390',
     priceSuffix: '/ year',
-    tagline: 'For hosts with more than one home',
+    tagline: 'For hosts who keep their calendar busy',
     subtext: 'or $39 / month · save 17% annually',
     features: [
+      'Unlimited hosted stays',
       'Unlimited homes & rooms',
       'Co-managers per property',
-      'Everything included, one flat price',
-      'No per-booking fees, ever',
+      'One flat price · no per-booking fees',
     ],
     cta: {
-      label: 'Start 30-day free trial',
+      label: 'Upgrade to Pro',
       href: '/signup',
     },
-    ctaNote: "No card to start · keeps your setup if you don't continue",
     recommended: true,
   },
 ];

@@ -28,7 +28,8 @@ export async function HostBookingShell({
   if (rooms.length === 0) return <>{children}</>;
 
   const roomAvailability = await getInvitationRoomAvailability(
-    rooms.map((r) => r.id)
+    rooms.map((r) => r.id),
+    { includeGuestNames: true }
   );
 
   return (

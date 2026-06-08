@@ -134,10 +134,6 @@ function HostComposeForm({
     setActiveField('checkIn');
   }
 
-  function guestFullName(): string {
-    return [guestFirstName.trim(), guestLastName.trim()].filter(Boolean).join(' ');
-  }
-
   async function submitInvite() {
     if (!guestEmail.trim()) {
       toast.error('Guest email is required');
@@ -159,7 +155,8 @@ function HostComposeForm({
       body: JSON.stringify({
         property_id: propertyId,
         guest_email: guestEmail.trim(),
-        guest_name: guestFullName() || undefined,
+        guest_first_name: guestFirstName.trim() || undefined,
+        guest_last_name: guestLastName.trim() || undefined,
         type: inviteType,
         requires_approval: requiresApproval,
         message: message.trim() || undefined,
@@ -212,7 +209,8 @@ function HostComposeForm({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         property_id: propertyId,
-        guest_name: guestFullName(),
+        guest_first_name: guestFirstName.trim(),
+        guest_last_name: guestLastName.trim() || undefined,
         guest_email: guestEmail.trim() || undefined,
         guest_phone: guestPhone.trim() || undefined,
         check_in: checkIn,

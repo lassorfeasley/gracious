@@ -6,6 +6,9 @@ export type BookingStatus = 'requested' | 'approved' | 'declined' | 'cancelled';
 export interface User {
   id: string;
   email: string;
+  first_name: string | null;
+  last_name: string | null;
+  /** Generated full name (first_name + last_name). Read-only. */
   name: string | null;
   role: UserRole;
   visible_to_coguests: boolean;
@@ -84,6 +87,9 @@ export interface Invitation {
   token: string;
   property_id: string;
   guest_email: string;
+  guest_first_name: string | null;
+  guest_last_name: string | null;
+  /** Generated full name (guest_first_name + guest_last_name). Read-only. */
   guest_name: string | null;
   type: InvitationType;
   status: InvitationStatus;
@@ -118,6 +124,9 @@ export interface Booking {
   invitation_id: string | null;
   property_id: string;
   guest_user_id: string | null;
+  guest_first_name: string | null;
+  guest_last_name: string | null;
+  /** Generated full name (guest_first_name + guest_last_name). Read-only. */
   guest_name: string | null;
   guest_email: string | null;
   guest_phone: string | null;

@@ -51,7 +51,9 @@ export default async function ManageBookingPage({
   }));
 
   const allRoomIds = bookableRooms.map((r) => r.id);
-  const fullAvailability = await getInvitationRoomAvailability(allRoomIds);
+  const fullAvailability = await getInvitationRoomAvailability(allRoomIds, {
+    includeGuestNames: true,
+  });
   const roomAvailability = excludeBooking(fullAvailability, booking.id);
 
   const guestProfileHref = booking.guest.email
