@@ -41,7 +41,8 @@ import { toast } from 'sonner';
 import { Plus, Trash2 } from 'lucide-react';
 import { AmenitiesEditor } from '@/components/dashboard/amenities-editor';
 import { ROOM_AMENITY_PRESETS } from '@/lib/amenities';
-import type { Room } from '@/types/database';
+import { PhotoManager } from '@/components/dashboard/photo-manager';
+import type { Room, RoomImage } from '@/types/database';
 
 type BedSize = (typeof BED_SIZES)[number];
 
@@ -64,6 +65,7 @@ const EMPTY_VALUES: RoomInput = {
 interface RoomEditDialogProps {
   /** Omit to create a new room. */
   room?: Room;
+  images?: RoomImage[];
   /** Required when creating a new room. */
   propertyId?: string;
   /** display_order to assign a newly created room. */
@@ -88,6 +90,7 @@ function toFormValues(room: Room): RoomInput {
 
 export function RoomEditDialog({
   room,
+  images = [],
   propertyId,
   displayOrder,
   fields,
@@ -98,7 +101,6 @@ export function RoomEditDialog({
   const isCreate = !room;
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   const form = useForm<RoomInput>({
     resolver: zodResolver(roomSchema),
@@ -132,37 +134,6 @@ export function RoomEditDialog({
     );
   }
 
-  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !room) return;
-    setUploading(true);
-    const supabase = createClient();
-    const ext = file.name.split('.').pop();
-    const path = `${room.property_id}/room-${room.id}-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from('property-images')
-      .upload(path, file);
-    if (uploadError) {
-      toast.error(uploadError.message);
-      setUploading(false);
-      return;
-    }
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('property-images').getPublicUrl(path);
-    const { error } = await supabase
-      .from('rooms')
-      .update({ image_url: publicUrl })
-      .eq('id', room.id);
-    setUploading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success('Photo updated');
-    router.refresh();
-  }
-
   async function onSubmit(values: RoomInput) {
     setLoading(true);
     const supabase = createClient();
@@ -192,24 +163,17 @@ export function RoomEditDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {has('image') && (
-              <div>
-                <Label>Photo</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={uploadImage}
-                  disabled={uploading}
-                  className="mt-1"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {uploading
-                    ? 'Uploading…'
-                    : room?.image_url
-                      ? 'A photo is set. Choose a file to replace it.'
-                      : 'Upload a photo for this room.'}
-                </p>
-              </div>
+            {has('image') && room && (
+              <PhotoManager
+                images={images}
+                table="room_images"
+                parentColumn="room_id"
+                parentId={room.id}
+                storagePrefix={`${room.property_id}/room-${room.id}-`}
+                featuredTable="rooms"
+                featuredColumn="image_url"
+                featuredId={room.id}
+              />
             )}
 
             {has('name') && (

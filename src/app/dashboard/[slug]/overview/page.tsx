@@ -11,6 +11,7 @@ import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog';
 import { PropertyMap } from '@/components/dashboard/property-map';
 import { SectionNav } from '@/components/dashboard/section-nav';
+import { PhotoGallery } from '@/components/photo-gallery';
 import { Pencil, Plus, MapPin, Check } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -28,6 +29,12 @@ export default async function OverviewPage({
 
   const { data: rooms } = await supabase
     .from('rooms')
+    .select('*')
+    .eq('property_id', property.id)
+    .order('display_order');
+
+  const { data: propertyImages } = await supabase
+    .from('property_images')
     .select('*')
     .eq('property_id', property.id)
     .order('display_order');
@@ -132,6 +139,7 @@ export default async function OverviewPage({
         <div className="absolute right-4 top-4">
           <PropertyEditDialog
             property={property}
+            images={propertyImages ?? []}
             fields={['image', 'name']}
             title="Edit house"
             trigger={
@@ -157,6 +165,8 @@ export default async function OverviewPage({
           </p>
         </div>
       </div>
+
+      <PhotoGallery photos={propertyImages ?? []} title="Photos" className="py-6" />
 
       <SectionNav sections={navSections} />
 

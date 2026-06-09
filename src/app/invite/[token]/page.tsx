@@ -24,6 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MapPin } from 'lucide-react';
 import { summarizeBeds } from '@/lib/validations';
+import { PhotoGallery } from '@/components/photo-gallery';
 
 export default async function InvitePage({
   params,
@@ -114,6 +115,12 @@ export default async function InvitePage({
             )}
           </div>
         </div>
+
+        <PhotoGallery
+          photos={property.property_images ?? []}
+          title="Photos"
+          className="py-6"
+        />
 
         {/* Invitation badges */}
         <div className="mt-8 flex flex-wrap items-center gap-2">

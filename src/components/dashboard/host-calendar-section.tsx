@@ -24,14 +24,6 @@ export function HostCalendarSection({
       {title && (
         <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
       )}
-      <p
-        className={
-          title ? 'mt-2 text-base text-muted-foreground' : 'text-sm text-muted-foreground'
-        }
-      >
-        Crossed-out dates are already booked. Select check-in and check-out, or
-        click a stay to manage it.
-      </p>
       <div className={title ? 'mt-6' : 'mt-4'}>
         <HouseCalendar
           monthsToShow={2}

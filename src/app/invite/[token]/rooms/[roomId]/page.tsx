@@ -23,6 +23,7 @@ import {
   parseGuestPreviewBookingStatus,
 } from '@/lib/guest-preview';
 import type { Amenity } from '@/types/database';
+import { PhotoGallery } from '@/components/photo-gallery';
 
 function bedLabel(bed: string): string {
   return BED_SIZE_LABELS[bed as keyof typeof BED_SIZE_LABELS] ?? bed;
@@ -162,6 +163,12 @@ export default async function GuestRoomPage({
             </p>
           </div>
         )}
+
+        <PhotoGallery
+          photos={room.room_images ?? []}
+          title="Photos"
+          className="py-6"
+        />
 
         <SectionNav
           sections={navSections}

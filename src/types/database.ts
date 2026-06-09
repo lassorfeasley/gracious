@@ -50,6 +50,7 @@ export interface Property {
   longitude: number | null;
   amenities: Amenity[];
   created_at: string;
+  property_images?: PropertyImage[];
 }
 
 export interface PropertyManager {
@@ -65,6 +66,16 @@ export interface PropertyImage {
   url: string;
   caption: string | null;
   display_order: number;
+  is_featured: boolean;
+}
+
+export interface RoomImage {
+  id: string;
+  room_id: string;
+  url: string;
+  caption: string | null;
+  display_order: number;
+  is_featured: boolean;
 }
 
 export interface Room {
@@ -77,6 +88,7 @@ export interface Room {
   amenities: Amenity[];
   image_url: string | null;
   display_order: number;
+  room_images?: RoomImage[];
 }
 
 export interface RoomAvailability {

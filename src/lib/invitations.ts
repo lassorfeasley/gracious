@@ -20,8 +20,8 @@ export async function getInvitationByToken(
     .select(
       `
       *,
-      property:properties(*),
-      invitation_rooms(room:rooms(*)),
+      property:properties(*, property_images(*)),
+      invitation_rooms(room:rooms(*, room_images(*))),
       invitation_windows(*)
     `
     )
@@ -43,6 +43,9 @@ export async function getInvitationByToken(
     invitation.status = 'expired';
   }
 
+  const property = invitation.property as import('@/types/database').Property;
+  const propertyImages = property.property_images ?? [];
+
   const rooms =
     invitation.invitation_rooms?.map(
       (ir: { room: import('@/types/database').Room }) => ir.room
@@ -50,7 +53,10 @@ export async function getInvitationByToken(
 
   return {
     ...invitation,
-    property: invitation.property,
+    property: {
+      ...property,
+      property_images: propertyImages,
+    },
     rooms: rooms.sort(
       (a: { display_order: number }, b: { display_order: number }) =>
         a.display_order - b.display_order

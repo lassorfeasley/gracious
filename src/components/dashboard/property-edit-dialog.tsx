@@ -30,7 +30,8 @@ import { AmenitiesEditor } from '@/components/dashboard/amenities-editor';
 import { HOME_AMENITY_PRESETS } from '@/lib/amenities';
 import { AddressAutocomplete } from '@/components/dashboard/address-autocomplete';
 import { LocationPicker } from '@/components/dashboard/location-picker';
-import type { Property } from '@/types/database';
+import { PhotoManager } from '@/components/dashboard/photo-manager';
+import type { Property, PropertyImage } from '@/types/database';
 
 export type PropertyEditField =
   | 'name'
@@ -45,6 +46,7 @@ export type PropertyEditField =
 
 interface PropertyEditDialogProps {
   property: Property;
+  images?: PropertyImage[];
   fields: PropertyEditField[];
   title: string;
   trigger: ReactNode;
@@ -69,6 +71,7 @@ function toFormValues(property: Property): PropertyInput {
 
 export function PropertyEditDialog({
   property,
+  images = [],
   fields,
   title,
   trigger,
@@ -76,7 +79,6 @@ export function PropertyEditDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   const form = useForm<PropertyInput>({
     resolver: zodResolver(propertySchema),
@@ -88,37 +90,6 @@ export function PropertyEditDialog({
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next) form.reset(toFormValues(property));
-  }
-
-  async function uploadHero(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const supabase = createClient();
-    const ext = file.name.split('.').pop();
-    const path = `${property.id}/hero-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from('property-images')
-      .upload(path, file);
-    if (uploadError) {
-      toast.error(uploadError.message);
-      setUploading(false);
-      return;
-    }
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('property-images').getPublicUrl(path);
-    const { error } = await supabase
-      .from('properties')
-      .update({ hero_image_url: publicUrl })
-      .eq('id', property.id);
-    setUploading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success('Photo updated');
-    router.refresh();
   }
 
   async function onSubmit(values: PropertyInput) {
@@ -148,23 +119,16 @@ export function PropertyEditDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {has('image') && (
-              <div>
-                <Label>Photo</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={uploadHero}
-                  disabled={uploading}
-                  className="mt-1"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {uploading
-                    ? 'Uploading…'
-                    : property.hero_image_url
-                      ? 'A photo is set. Choose a file to replace it.'
-                      : 'Upload a photo for your place.'}
-                </p>
-              </div>
+              <PhotoManager
+                images={images}
+                table="property_images"
+                parentColumn="property_id"
+                parentId={property.id}
+                storagePrefix={`${property.id}/property-`}
+                featuredTable="properties"
+                featuredColumn="hero_image_url"
+                featuredId={property.id}
+              />
             )}
 
             {has('name') && (

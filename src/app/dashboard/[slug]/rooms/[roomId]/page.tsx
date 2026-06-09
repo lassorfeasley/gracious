@@ -13,6 +13,7 @@ import { SectionNav } from '@/components/dashboard/section-nav';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { DeleteRoomButton } from '@/components/dashboard/delete-room-button';
+import { PhotoGallery } from '@/components/photo-gallery';
 import { Button } from '@/components/ui/button';
 import type { Amenity } from '@/types/database';
 
@@ -44,9 +45,18 @@ export default async function RoomProfilePage({
     .eq('room_id', roomId)
     .eq('is_blocked', true);
 
+  const { data: roomImages } = await supabase
+    .from('room_images')
+    .select('*')
+    .eq('room_id', roomId)
+    .order('display_order');
+
   const blocksForEditor = (blocks ?? []).map((b) => ({ ...b, room }));
 
   const navSections = [
+    ...(roomImages && roomImages.length > 0
+      ? [{ id: 'photos', label: 'Photos' }]
+      : []),
     { id: 'about', label: 'About' },
     { id: 'sleeping', label: 'Beds' },
     { id: 'amenities', label: 'Amenities' },
@@ -79,6 +89,7 @@ export default async function RoomProfilePage({
             <div className="flex items-center gap-2">
               <RoomEditDialog
                 room={room}
+                images={roomImages ?? []}
                 fields={['name', 'max_occupancy', 'image']}
                 title="Edit room details"
                 trigger={
@@ -114,6 +125,7 @@ export default async function RoomProfilePage({
           <div className="mt-3 flex items-center justify-end gap-2">
             <RoomEditDialog
               room={room}
+              images={roomImages ?? []}
               fields={['name', 'max_occupancy', 'image']}
               title="Edit room details"
               trigger={
@@ -138,6 +150,31 @@ export default async function RoomProfilePage({
           </div>
         </>
       )}
+
+      <section id="photos" className="scroll-mt-28">
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <h2 className="text-[22px] font-semibold tracking-tight">Photos</h2>
+          <RoomEditDialog
+            room={room}
+            images={roomImages ?? []}
+            fields={['image']}
+            title="Manage photos"
+            trigger={
+              <Button variant="outline" size="sm">
+                <Pencil className="mr-1 h-4 w-4" />
+                Manage photos
+              </Button>
+            }
+          />
+        </div>
+        {(roomImages ?? []).length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            No photos yet. Add photos to showcase this room.
+          </p>
+        ) : (
+          <PhotoGallery photos={roomImages ?? []} className="py-6" />
+        )}
+      </section>
 
       <SectionNav sections={navSections} />
 
