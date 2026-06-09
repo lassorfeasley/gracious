@@ -235,7 +235,7 @@ export function HouseBookingSidebar({
 
   if (previewUi.showSignIn) {
     return (
-      <div className="rounded-2xl border p-6 shadow-sm">
+      <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
         <p className="text-lg font-semibold">Sign in to book</p>
         <p className="mt-1 text-sm text-muted-foreground">
           We&apos;ll send a magic link to your invited email.
@@ -251,7 +251,7 @@ export function HouseBookingSidebar({
   }
 
   return (
-    <div className="rounded-2xl border p-6 shadow-sm">
+    <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
       <div className="flex items-baseline justify-between">
         <p className="text-xl font-semibold">
           {nights > 0

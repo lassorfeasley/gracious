@@ -45,14 +45,17 @@ const STEP_TITLES: Record<StepKey, string> = {
   review: 'Review and confirm',
 };
 
-function ManualStaySurvey({
+export function ManualStaySurvey({
   propertyId,
   returnPath,
   onClose,
+  onBackFromStart,
 }: {
   propertyId: string;
   returnPath?: string;
   onClose: () => void;
+  /** When set, Back on step 1 returns here (e.g. back to invite flow). */
+  onBackFromStart?: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -188,7 +191,11 @@ function ManualStaySurvey({
       stepIndex={current}
       stepCount={STEPS.length}
       stepTitle={STEP_TITLES[stepKey]}
-      onBack={current > 0 ? () => setStep(current - 1) : undefined}
+      onBack={
+        current > 0
+          ? () => setStep(current - 1)
+          : onBackFromStart
+      }
       onNext={handleNext}
       nextLabel={isLast ? (loading ? 'Adding…' : 'Add to calendar') : 'Next'}
       loading={loading}

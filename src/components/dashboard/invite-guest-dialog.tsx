@@ -33,15 +33,21 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { SurveyDialogLayout } from '@/components/dashboard/survey-dialog-layout';
+import { ManualStaySurvey } from '@/components/dashboard/host-booking-dialog';
+import { BookingProvider } from '@/components/guest/booking-context';
 import { toast } from 'sonner';
 import { UserPlus } from 'lucide-react';
+import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 interface InviteGuestDialogProps {
   propertyId: string;
   rooms: Room[];
+  roomAvailability?: Record<string, RoomAvailability>;
   preselectedRoomIds?: string[];
+  /** When true, manual stay uses the surrounding BookingProvider. */
+  useParentBookingContext?: boolean;
   trigger?: ReactNode;
 }
 
@@ -87,11 +93,14 @@ const TYPE_LABELS: Record<InvitationInput['type'], string> = {
 export function InviteGuestDialog({
   propertyId,
   rooms,
+  roomAvailability = {},
   preselectedRoomIds,
+  useParentBookingContext = false,
   trigger,
 }: InviteGuestDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'invite' | 'manual'>('invite');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
   const [windows, setWindows] = useState<{ start_date: string; end_date: string }[]>([
@@ -148,12 +157,28 @@ export function InviteGuestDialog({
     });
     setWindows([{ start_date: '', end_date: '' }]);
     setStep(0);
+    setMode('invite');
   }
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next) resetForm();
+    else setMode('invite');
   }
+
+  const bookableRooms = rooms.map((r) => ({
+    id: r.id,
+    name: r.name,
+    max_occupancy: r.max_occupancy,
+  }));
+
+  const manualSurvey = (
+    <ManualStaySurvey
+      propertyId={propertyId}
+      onClose={() => setOpen(false)}
+      onBackFromStart={() => setMode('invite')}
+    />
+  );
 
   function toggleRoom(roomId: string) {
     const value = form.getValues('room_ids');
@@ -252,13 +277,33 @@ export function InviteGuestDialog({
         {trigger ?? (
           <Button size="sm" disabled={rooms.length === 0}>
             <UserPlus className="mr-1 h-4 w-4" />
-            Invite guest
+            Book a guest
           </Button>
         )}
       </DialogTrigger>
 
+      {open &&
+        mode === 'manual' &&
+        (useParentBookingContext ? (
+          manualSurvey
+        ) : (
+          <BookingProvider
+            rooms={bookableRooms}
+            roomAvailability={roomAvailability}
+            defaultGuests={1}
+            defaultSelectedRoomIds={
+              defaultRoomIds.length > 0
+                ? defaultRoomIds
+                : bookableRooms.map((r) => r.id)
+            }
+          >
+            {manualSurvey}
+          </BookingProvider>
+        ))}
+
+      {open && mode === 'invite' && (
       <SurveyDialogLayout
-        title="Invite a guest"
+        title="Book a guest"
         stepIndex={current}
         stepCount={steps.length}
         stepTitle={STEP_TITLES[stepKey]}
@@ -285,6 +330,16 @@ export function InviteGuestDialog({
                   </FormItem>
                 )}
               />
+              <p className="text-sm text-muted-foreground">
+                Guest doesn&apos;t have an email?{' '}
+                <button
+                  type="button"
+                  onClick={() => setMode('manual')}
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  Add a manual stay instead
+                </button>
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
@@ -603,6 +658,7 @@ export function InviteGuestDialog({
           )}
         </Form>
       </SurveyDialogLayout>
+      )}
     </Dialog>
   );
 }

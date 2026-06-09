@@ -8,7 +8,6 @@ import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
 import { useBooking } from '@/components/guest/booking-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
-import { HostBookingDialog } from '@/components/dashboard/host-booking-dialog';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -88,7 +87,7 @@ export function HostPageSidebar({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border p-6 shadow-sm">
+      <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
         <div className="flex items-baseline justify-between">
           <p className="text-xl font-semibold">
             {nights > 0
@@ -188,6 +187,19 @@ export function HostPageSidebar({
           </Popover>
         </div>
 
+        <InviteGuestDialog
+          propertyId={propertyId}
+          rooms={rooms}
+          roomAvailability={roomAvailability}
+          useParentBookingContext
+          preselectedRoomIds={preselectedRoomIds}
+          trigger={
+            <Button className="mt-4 w-full" size="lg" disabled={disabled}>
+              Book a guest
+            </Button>
+          }
+        />
+
         {(checkIn || checkOut) && (
           <button
             type="button"
@@ -197,35 +209,6 @@ export function HostPageSidebar({
             Clear dates
           </button>
         )}
-      </div>
-
-      <div className="space-y-2">
-        <InviteGuestDialog
-          propertyId={propertyId}
-          rooms={rooms}
-          preselectedRoomIds={preselectedRoomIds}
-          trigger={
-            <Button className="w-full" size="lg" disabled={disabled}>
-              Invite guest
-            </Button>
-          }
-        />
-        <HostBookingDialog
-          propertyId={propertyId}
-          rooms={rooms}
-          roomAvailability={roomAvailability}
-          useParentBookingContext
-          trigger={
-            <Button
-              variant="outline"
-              className="w-full"
-              size="lg"
-              disabled={disabled}
-            >
-              Manual stay
-            </Button>
-          }
-        />
       </div>
     </div>
   );
