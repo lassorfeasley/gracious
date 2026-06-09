@@ -6,6 +6,7 @@ interface Props {
   propertyName: string;
   hostName?: string;
   profileUrl?: string;
+  unsubscribeUrl?: string;
 }
 
 export default function PostStayThankYouEmail({
@@ -13,11 +14,13 @@ export default function PostStayThankYouEmail({
   propertyName,
   hostName,
   profileUrl,
+  unsubscribeUrl,
 }: Props) {
   return (
     <EmailLayout
       preview={`Thanks for staying at ${propertyName}`}
       heading="Thanks for staying with us"
+      unsubscribeUrl={unsubscribeUrl}
     >
       <Text>Hi {guestName},</Text>
       <Text>

@@ -5,6 +5,7 @@ import {
   Heading,
   Hr,
   Html,
+  Link,
   Preview,
   Section,
   Text,
@@ -15,9 +16,16 @@ interface EmailLayoutProps {
   preview: string;
   heading: string;
   children: React.ReactNode;
+  /** When provided, an unsubscribe link is shown in the footer (opt-out emails). */
+  unsubscribeUrl?: string;
 }
 
-export function EmailLayout({ preview, heading, children }: EmailLayoutProps) {
+export function EmailLayout({
+  preview,
+  heading,
+  children,
+  unsubscribeUrl,
+}: EmailLayoutProps) {
   return (
     <Html>
       <Head />
@@ -30,6 +38,14 @@ export function EmailLayout({ preview, heading, children }: EmailLayoutProps) {
           <Hr style={hr} />
           <Text style={footer}>
             GuestHouse — private stays with people you trust.
+            {unsubscribeUrl && (
+              <>
+                <br />
+                <Link href={unsubscribeUrl} style={footerLink}>
+                  Unsubscribe from these emails
+                </Link>
+              </>
+            )}
           </Text>
         </Container>
       </Body>
@@ -79,6 +95,13 @@ const footer = {
   color: '#999',
   fontSize: '12px',
   margin: 0,
+  lineHeight: '20px',
+};
+
+const footerLink = {
+  color: '#999',
+  fontSize: '12px',
+  textDecoration: 'underline',
 };
 
 export const buttonStyle = {

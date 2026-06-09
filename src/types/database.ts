@@ -22,9 +22,14 @@ export interface User {
 }
 
 export interface NotificationPrefs {
+  // Host activity (opt-out, granular)
   booking_requests: boolean;
   booking_cancelled: boolean;
   invitation_expiring: boolean;
+  // Guest stay reminders (opt-out)
+  guest_reminders: boolean;
+  // Product updates — marketing (opt-out, scoped to people who own a home)
+  product_updates: boolean;
 }
 
 export interface Amenity {

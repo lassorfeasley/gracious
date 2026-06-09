@@ -13,6 +13,7 @@ import PostStayThankYouEmail from '../../../emails/post-stay-thankyou';
 import AuthConfirmSignupEmail from '../../../emails/auth-confirm-signup';
 import AuthMagicLinkEmail from '../../../emails/auth-magic-link';
 import AuthRecoveryEmail from '../../../emails/auth-recovery';
+import ProductUpdateEmail from '../../../emails/product-update';
 
 export type MessageChannel = 'email' | 'sms';
 
@@ -24,7 +25,8 @@ export type MessageCategory =
   | 'Invitations'
   | 'Booking requests'
   | 'Confirmations'
-  | 'Reminders';
+  | 'Reminders'
+  | 'Marketing';
 
 export interface MessagePreviewVariant {
   /** Short label shown when a message renders differently per recipient/context. */
@@ -327,7 +329,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     notificationPref: {
       key: 'booking_cancelled',
       label: 'Booking cancelled',
-      enforced: false,
+      enforced: true,
     },
     source: 'src/app/api/bookings/[id]/route.ts',
     variants: [
@@ -370,9 +372,13 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     description:
       'Reminds a guest about an upcoming stay. The 1-day reminder also includes check-in instructions.',
     trigger: 'A confirmed booking is exactly 7 days or 1 day before check-in.',
-    timing: 'Scheduled — daily cron at 9:00 UTC',
+    timing: 'Scheduled — ~8am local, 7 days and 1 day before check-in',
     logTypes: ['reminder_7d', 'reminder_1d'],
-    notificationPref: null,
+    notificationPref: {
+      key: 'guest_reminders',
+      label: 'Stay reminders',
+      enforced: true,
+    },
     source: 'src/app/api/cron/reminders/route.ts',
     variants: [
       {
@@ -423,7 +429,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     trigger: 'A confirmed booking reaches its check-out date.',
     timing: 'Scheduled — ~8am local on the day of checkout',
     logTypes: ['checkout_instructions'],
-    notificationPref: null,
+    notificationPref: {
+      key: 'guest_reminders',
+      label: 'Stay reminders',
+      enforced: true,
+    },
     source: 'src/app/api/cron/reminders/route.ts',
     variants: [
       {
@@ -454,7 +464,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     trigger: 'The day after a confirmed booking\u2019s check-out date.',
     timing: 'Scheduled — ~8am local the day after checkout',
     logTypes: ['post_stay'],
-    notificationPref: null,
+    notificationPref: {
+      key: 'guest_reminders',
+      label: 'Stay reminders',
+      enforced: true,
+    },
     source: 'src/app/api/cron/reminders/route.ts',
     variants: [
       {
@@ -487,7 +501,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     notificationPref: {
       key: 'invitation_expiring',
       label: 'Invitation expiring',
-      enforced: false,
+      enforced: true,
     },
     source: 'src/app/api/cron/reminders/route.ts',
     variants: [
@@ -510,6 +524,41 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
               },
             ]}
             dashboardUrl={SAMPLE.dashboardUrl}
+          />
+        ),
+      },
+    ],
+  },
+  {
+    id: 'product-updates',
+    name: 'Product updates',
+    channel: 'email',
+    category: 'Marketing',
+    recipients: ['host'],
+    status: 'planned',
+    audience: 'Hosts (anyone who owns a home)',
+    description:
+      'Occasional marketing email about new GuestHouse features. The only non-transactional email — subscribed by default once a host adds a home, opt-out anytime. No broadcast tooling is built yet.',
+    trigger: 'Sent manually when there\u2019s something worth sharing.',
+    timing: 'Ad hoc',
+    logTypes: [],
+    notificationPref: {
+      key: 'product_updates',
+      label: 'Product updates',
+      enforced: true,
+    },
+    source: 'Not built yet',
+    variants: [
+      {
+        label: 'Default',
+        subject: "What's new in GuestHouse",
+        element: (
+          <ProductUpdateEmail
+            hostName={SAMPLE.ownerName}
+            headline="Room-level photo galleries are here"
+            body="You can now add a photo gallery to each room, so guests see exactly where they'll be staying. Head to any home to try it out."
+            ctaLabel="See what's new"
+            ctaUrl={SAMPLE.dashboardUrl}
           />
         ),
       },

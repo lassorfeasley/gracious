@@ -7,6 +7,7 @@ interface Props {
   checkoutTime?: string;
   checkoutInstructions?: string;
   houseRules?: string;
+  unsubscribeUrl?: string;
 }
 
 export default function CheckoutInstructionsEmail({
@@ -15,11 +16,13 @@ export default function CheckoutInstructionsEmail({
   checkoutTime,
   checkoutInstructions,
   houseRules,
+  unsubscribeUrl,
 }: Props) {
   return (
     <EmailLayout
       preview={`Checkout details for your stay at ${propertyName}`}
       heading="Time to head out"
+      unsubscribeUrl={unsubscribeUrl}
     >
       <Text>Hi {guestName},</Text>
       <Text>

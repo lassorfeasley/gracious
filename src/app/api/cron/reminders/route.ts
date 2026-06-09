@@ -11,6 +11,8 @@ import {
 } from '@/lib/email/notifications';
 import { wasNotificationSent } from '@/lib/email/send';
 import { formatDate } from '@/lib/dates';
+import { wantsEmail } from '@/lib/notification-prefs';
+import type { NotificationPrefs } from '@/types/database';
 
 // Fallback timezone for properties that haven't set one.
 const DEFAULT_TIMEZONE = 'America/Denver';
@@ -92,7 +94,7 @@ export async function GET(request: NextRequest) {
     const in48h = addDays(now, 2);
     const { data: expiring } = await admin
       .from('invitations')
-      .select('*, property:properties(name, owner_id, owner:users!owner_id(email, name))')
+      .select('*, property:properties(name, owner_id, owner:users!owner_id(id, email, name, notification_prefs))')
       .eq('status', 'pending')
       .not('expires_at', 'is', null)
       .lte('expires_at', in48h.toISOString())
@@ -102,15 +104,23 @@ export async function GET(request: NextRequest) {
 
     const byOwner = new Map<
       string,
-      { email: string; name: string; invitations: { guestName: string; propertyName: string; expiresAt: string }[] }
+      { id: string; email: string; name: string; invitations: { guestName: string; propertyName: string; expiresAt: string }[] }
     >();
 
     for (const inv of expiring ?? []) {
-      const owner = inv.property?.owner as { email: string; name: string | null };
+      const owner = inv.property?.owner as {
+        id: string;
+        email: string;
+        name: string | null;
+        notification_prefs?: NotificationPrefs;
+      };
       if (!owner) continue;
-      const key = owner.email;
+      // Opt-out: skip hosts who muted invitation-expiring notices.
+      if (!wantsEmail(owner.notification_prefs, 'invitation_expiring')) continue;
+      const key = owner.id;
       if (!byOwner.has(key)) {
         byOwner.set(key, {
+          id: owner.id,
           email: owner.email,
           name: owner.name ?? 'there',
           invitations: [],
@@ -125,6 +135,7 @@ export async function GET(request: NextRequest) {
 
     for (const owner of Array.from(byOwner.values())) {
       await notifyInvitationsExpiring(
+        owner.id,
         owner.email,
         owner.name,
         owner.invitations

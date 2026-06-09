@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { normalizePrefs } from '@/lib/notification-prefs';
 import type { NotificationPrefs, User } from '@/types/database';
 
 interface SettingsFormProps {
@@ -27,7 +28,9 @@ export function SettingsForm({
   managers,
 }: SettingsFormProps) {
   const router = useRouter();
-  const [prefs, setPrefs] = useState<NotificationPrefs>(user.notification_prefs);
+  const [prefs, setPrefs] = useState<NotificationPrefs>(
+    normalizePrefs(user.notification_prefs)
+  );
   const [managerEmail, setManagerEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -85,25 +88,58 @@ export function SettingsForm({
     <div className="max-w-xl space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Notification preferences</CardTitle>
+          <CardTitle className="text-base">Email preferences</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {(
-            [
-              ['booking_requests', 'New booking requests'],
-              ['booking_cancelled', 'Booking cancellations'],
-              ['invitation_expiring', 'Invitations expiring soon'],
-            ] as const
-          ).map(([key, label]) => (
-            <div key={key} className="flex items-center justify-between">
-              <Label htmlFor={key}>{label}</Label>
-              <Switch
-                id={key}
-                checked={prefs[key]}
-                onCheckedChange={(v) => setPrefs({ ...prefs, [key]: v })}
-              />
-            </div>
-          ))}
+        <CardContent className="space-y-6">
+          <PrefGroup
+            title="Stay reminders"
+            description="Trip reminders, checkout details, and post-stay notes for stays you're a guest on. Essential emails like booking confirmations are always sent."
+          >
+            <PrefToggle
+              prefs={prefs}
+              setPrefs={setPrefs}
+              prefKey="guest_reminders"
+              label="Stay reminders & follow-ups"
+            />
+          </PrefGroup>
+
+          {isPropertyOwner && (
+            <>
+              <PrefGroup
+                title="Host activity"
+                description="Notifications about what's happening at homes you host."
+              >
+                {(
+                  [
+                    ['booking_requests', 'New booking requests'],
+                    ['booking_cancelled', 'Booking cancellations'],
+                    ['invitation_expiring', 'Invitations expiring soon'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <PrefToggle
+                    key={key}
+                    prefs={prefs}
+                    setPrefs={setPrefs}
+                    prefKey={key}
+                    label={label}
+                  />
+                ))}
+              </PrefGroup>
+
+              <PrefGroup
+                title="Product updates"
+                description="Occasional news about new GuestHouse features. Marketing only — opt out anytime."
+              >
+                <PrefToggle
+                  prefs={prefs}
+                  setPrefs={setPrefs}
+                  prefKey="product_updates"
+                  label="Product updates & announcements"
+                />
+              </PrefGroup>
+            </>
+          )}
+
           <Button onClick={savePrefs} disabled={loading}>
             Save preferences
           </Button>
@@ -159,6 +195,49 @@ export function SettingsForm({
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+function PrefGroup({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function PrefToggle({
+  prefs,
+  setPrefs,
+  prefKey,
+  label,
+}: {
+  prefs: NotificationPrefs;
+  setPrefs: (prefs: NotificationPrefs) => void;
+  prefKey: keyof NotificationPrefs;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <Label htmlFor={prefKey}>{label}</Label>
+      <Switch
+        id={prefKey}
+        checked={prefs[prefKey]}
+        onCheckedChange={(v) => setPrefs({ ...prefs, [prefKey]: v })}
+      />
     </div>
   );
 }

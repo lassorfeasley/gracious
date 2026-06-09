@@ -5,17 +5,20 @@ interface Props {
   ownerName: string;
   invitations: { guestName: string; propertyName: string; expiresAt: string }[];
   dashboardUrl: string;
+  unsubscribeUrl?: string;
 }
 
 export default function InvitationExpiringEmail({
   ownerName,
   invitations,
   dashboardUrl,
+  unsubscribeUrl,
 }: Props) {
   return (
     <EmailLayout
       preview="Invitations expiring in 48 hours"
       heading="Invitations expiring soon"
+      unsubscribeUrl={unsubscribeUrl}
     >
       <Text>Hi {ownerName},</Text>
       <Text>The following invitations expire within 48 hours:</Text>

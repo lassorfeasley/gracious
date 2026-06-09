@@ -5,7 +5,41 @@ import { inviteUrl } from '@/lib/invitations';
 import { buildAuthenticatedInviteUrl } from '@/lib/auth-links';
 import { getBookingWithDetails } from '@/lib/bookings';
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { BookingWithDetails } from '@/types/database';
+import { wantsEmail } from '@/lib/notification-prefs';
+import { unsubscribePageUrl, listUnsubscribeHeaders } from '@/lib/unsubscribe';
+import type { BookingWithDetails, NotificationPrefs } from '@/types/database';
+
+async function getUserPrefs(
+  userId: string
+): Promise<NotificationPrefs | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('users')
+    .select('notification_prefs')
+    .eq('id', userId)
+    .maybeSingle();
+  return (data?.notification_prefs as NotificationPrefs) ?? null;
+}
+
+/**
+ * Resolves whether a guest stay-reminder may send, plus the unsubscribe link
+ * and one-click headers to attach. Guests without an account can't set prefs,
+ * so they always receive (and get no unsubscribe link).
+ */
+async function guestReminderDelivery(guestId: string | null): Promise<{
+  ok: boolean;
+  unsubscribeUrl?: string;
+  headers?: Record<string, string>;
+}> {
+  if (!guestId) return { ok: true };
+  const prefs = await getUserPrefs(guestId);
+  if (!wantsEmail(prefs, 'guest_reminders')) return { ok: false };
+  return {
+    ok: true,
+    unsubscribeUrl: unsubscribePageUrl(guestId, 'guest_reminders'),
+    headers: listUnsubscribeHeaders(guestId, 'guest_reminders'),
+  };
+}
 
 import InvitationSentEmail from '../../../emails/invitation-sent';
 import StayRequestedEmail from '../../../emails/stay-requested';
@@ -65,27 +99,27 @@ export async function notifyStayRequested(bookingId: string) {
 
   const { data: managers } = await admin
     .from('property_managers')
-    .select('user:users(email, notification_prefs)')
+    .select('user:users(id, email, notification_prefs)')
     .eq('property_id', booking.property_id);
 
-  const recipients: string[] = [];
-  const ownerRaw = property.owner;
-  const owner = (Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw) as {
+  type HostRecipient = {
+    id: string;
     email: string;
-    notification_prefs?: { booking_requests?: boolean };
+    notification_prefs?: NotificationPrefs;
   };
-  if (owner.notification_prefs?.booking_requests !== false) {
-    recipients.push(owner.email);
+
+  const recipients = new Map<string, HostRecipient>();
+  const ownerRaw = property.owner;
+  const owner = (Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw) as HostRecipient;
+  if (wantsEmail(owner.notification_prefs, 'booking_requests')) {
+    recipients.set(owner.id, owner);
   }
 
   for (const m of managers ?? []) {
     const userRaw = m.user;
-    const user = (Array.isArray(userRaw) ? userRaw[0] : userRaw) as {
-      email: string;
-      notification_prefs?: { booking_requests?: boolean };
-    };
-    if (user.notification_prefs?.booking_requests !== false) {
-      recipients.push(user.email);
+    const user = (Array.isArray(userRaw) ? userRaw[0] : userRaw) as HostRecipient;
+    if (wantsEmail(user.notification_prefs, 'booking_requests')) {
+      recipients.set(user.id, user);
     }
   }
 
@@ -96,9 +130,9 @@ export async function notifyStayRequested(bookingId: string) {
   const guestLabel =
     booking.guest.name ?? booking.guest.email ?? 'A guest';
 
-  for (const email of Array.from(new Set(recipients))) {
+  for (const recipient of recipients.values()) {
     await sendEmail({
-      to: email,
+      to: recipient.email,
       subject: `Stay request from ${guestLabel}`,
       react: StayRequestedEmail({
         guestName: guestLabel,
@@ -109,7 +143,9 @@ export async function notifyStayRequested(bookingId: string) {
         notes: booking.notes ?? undefined,
         approveUrl: `${base}/dashboard/${booking.property.slug}/requests?booking=${bookingId}&action=approve`,
         declineUrl: `${base}/dashboard/${booking.property.slug}/requests?booking=${bookingId}&action=decline`,
+        unsubscribeUrl: unsubscribePageUrl(recipient.id, 'host_activity'),
       }),
+      headers: listUnsubscribeHeaders(recipient.id, 'host_activity'),
     });
   }
 
@@ -220,21 +256,29 @@ export async function notifyBookingCancelled(
   if (cancelledBy === 'guest') {
     const ownerRaw = property.owner;
     const owner = (Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw) as {
+      id: string;
       email: string;
       name: string | null;
+      notification_prefs?: NotificationPrefs;
     };
-    await sendEmail({
-      to: owner.email,
-      subject: `${guestName} cancelled their stay`,
-      react: BookingCancelledEmail({
-        recipientName: owner.name ?? 'there',
-        guestName,
-        propertyName: booking.property.name,
-        dates,
-        cancelledBy: 'guest',
-      }),
-    });
+    // Host copy is an opt-out activity notification.
+    if (wantsEmail(owner.notification_prefs, 'booking_cancelled')) {
+      await sendEmail({
+        to: owner.email,
+        subject: `${guestName} cancelled their stay`,
+        react: BookingCancelledEmail({
+          recipientName: owner.name ?? 'there',
+          guestName,
+          propertyName: booking.property.name,
+          dates,
+          cancelledBy: 'guest',
+          unsubscribeUrl: unsubscribePageUrl(owner.id, 'host_activity'),
+        }),
+        headers: listUnsubscribeHeaders(owner.id, 'host_activity'),
+      });
+    }
   } else if (booking.notify_guest && booking.guest.email) {
+    // Guest copy is mandatory — they must know their stay was cancelled.
     await sendEmail({
       to: booking.guest.email,
       subject: `Your stay at ${booking.property.name} was cancelled`,
@@ -257,6 +301,9 @@ export async function notifyTripReminder(
 ) {
   if (!booking.notify_guest || !booking.guest.email) return;
 
+  const delivery = await guestReminderDelivery(booking.guest.id);
+  if (!delivery.ok) return;
+
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
 
   await sendEmail({
@@ -277,7 +324,9 @@ export async function notifyTripReminder(
       profileUrl: booking.invitation
         ? inviteUrl(booking.invitation.token)
         : undefined,
+      unsubscribeUrl: delivery.unsubscribeUrl,
     }),
+    headers: delivery.headers,
   });
 
   await logNotification({
@@ -290,6 +339,9 @@ export async function notifyTripReminder(
 export async function notifyCheckoutInstructions(booking: BookingWithDetails) {
   if (!booking.notify_guest || !booking.guest.email) return;
 
+  const delivery = await guestReminderDelivery(booking.guest.id);
+  if (!delivery.ok) return;
+
   await sendEmail({
     to: booking.guest.email,
     subject: `Checkout details for ${booking.property.name}`,
@@ -299,7 +351,9 @@ export async function notifyCheckoutInstructions(booking: BookingWithDetails) {
       checkoutTime: booking.property.checkout_time ?? undefined,
       checkoutInstructions: booking.property.checkout_instructions ?? undefined,
       houseRules: booking.property.house_rules ?? undefined,
+      unsubscribeUrl: delivery.unsubscribeUrl,
     }),
+    headers: delivery.headers,
   });
 
   await logNotification({
@@ -312,6 +366,9 @@ export async function notifyCheckoutInstructions(booking: BookingWithDetails) {
 export async function notifyPostStay(booking: BookingWithDetails) {
   if (!booking.notify_guest || !booking.guest.email) return;
 
+  const delivery = await guestReminderDelivery(booking.guest.id);
+  if (!delivery.ok) return;
+
   await sendEmail({
     to: booking.guest.email,
     subject: `Thanks for staying at ${booking.property.name}`,
@@ -321,7 +378,9 @@ export async function notifyPostStay(booking: BookingWithDetails) {
       profileUrl: booking.invitation
         ? inviteUrl(booking.invitation.token)
         : undefined,
+      unsubscribeUrl: delivery.unsubscribeUrl,
     }),
+    headers: delivery.headers,
   });
 
   await logNotification({
@@ -332,6 +391,7 @@ export async function notifyPostStay(booking: BookingWithDetails) {
 }
 
 export async function notifyInvitationsExpiring(
+  ownerId: string,
   ownerEmail: string,
   ownerName: string,
   invitations: { guestName: string; propertyName: string; expiresAt: string }[]
@@ -343,6 +403,8 @@ export async function notifyInvitationsExpiring(
       ownerName,
       invitations,
       dashboardUrl: `${appUrl()}/dashboard`,
+      unsubscribeUrl: unsubscribePageUrl(ownerId, 'host_activity'),
     }),
+    headers: listUnsubscribeHeaders(ownerId, 'host_activity'),
   });
 }

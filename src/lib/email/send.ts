@@ -20,17 +20,19 @@ export async function sendEmail({
   subject,
   react,
   attachments,
+  headers,
 }: {
   to: string | string[];
   subject: string;
   react: React.ReactElement;
   attachments?: { filename: string; content: Buffer | string }[];
+  headers?: Record<string, string>;
 }) {
   const client = getResend();
   const html = await render(react);
 
   if (!client) {
-    console.log('[email:dev]', { to, subject, html: html.slice(0, 200) });
+    console.log('[email:dev]', { to, subject, headers, html: html.slice(0, 200) });
     return { id: 'dev' };
   }
 
@@ -40,6 +42,7 @@ export async function sendEmail({
     subject,
     html,
     attachments,
+    headers,
   });
 
   if (error) throw new Error(error.message);

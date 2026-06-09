@@ -10,6 +10,7 @@ interface Props {
   notes?: string;
   approveUrl: string;
   declineUrl: string;
+  unsubscribeUrl?: string;
 }
 
 export default function StayRequestedEmail({
@@ -21,11 +22,13 @@ export default function StayRequestedEmail({
   notes,
   approveUrl,
   declineUrl,
+  unsubscribeUrl,
 }: Props) {
   return (
     <EmailLayout
       preview={`${guestName} requested a stay at ${propertyName}`}
       heading="New stay request"
+      unsubscribeUrl={unsubscribeUrl}
     >
       <Text>
         <strong>{guestName}</strong> has requested a stay at{' '}

@@ -11,6 +11,7 @@ interface Props {
   wifiName?: string;
   wifiPassword?: string;
   profileUrl?: string;
+  unsubscribeUrl?: string;
 }
 
 export default function TripReminderEmail({
@@ -23,6 +24,7 @@ export default function TripReminderEmail({
   wifiName,
   wifiPassword,
   profileUrl,
+  unsubscribeUrl,
 }: Props) {
   const heading =
     daysUntil <= 1
@@ -30,7 +32,7 @@ export default function TripReminderEmail({
       : `Your trip is in ${daysUntil} days`;
 
   return (
-    <EmailLayout preview={heading} heading={heading}>
+    <EmailLayout preview={heading} heading={heading} unsubscribeUrl={unsubscribeUrl}>
       <Text>Hi {guestName},</Text>
       <Text>
         Just a reminder — your stay at <strong>{propertyName}</strong> is

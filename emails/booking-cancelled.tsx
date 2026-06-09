@@ -7,6 +7,7 @@ interface Props {
   propertyName: string;
   dates: string;
   cancelledBy: 'guest' | 'owner';
+  unsubscribeUrl?: string;
 }
 
 export default function BookingCancelledEmail({
@@ -15,12 +16,14 @@ export default function BookingCancelledEmail({
   propertyName,
   dates,
   cancelledBy,
+  unsubscribeUrl,
 }: Props) {
   const isOwnerRecipient = cancelledBy === 'guest';
   return (
     <EmailLayout
       preview={`Stay cancelled at ${propertyName}`}
       heading="Stay cancelled"
+      unsubscribeUrl={unsubscribeUrl}
     >
       <Text>Hi {recipientName},</Text>
       {isOwnerRecipient ? (
