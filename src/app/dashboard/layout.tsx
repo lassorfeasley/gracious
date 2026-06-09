@@ -1,4 +1,5 @@
 import { requireOwner } from '@/lib/auth';
+import { PendingUpgradeCheckout } from '@/components/dashboard/pending-upgrade-checkout';
 
 export default async function DashboardRootLayout({
   children,
@@ -6,5 +7,10 @@ export default async function DashboardRootLayout({
   children: React.ReactNode;
 }) {
   await requireOwner();
-  return <>{children}</>;
+  return (
+    <>
+      <PendingUpgradeCheckout />
+      {children}
+    </>
+  );
 }

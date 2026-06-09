@@ -16,5 +16,8 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  // For invited guests, fall back to the booking page (where they can request a
+  // fresh sign-in link) instead of the host-oriented login form.
+  const fallback = token ? `/invite/${token}` : '/login?error=auth';
+  return NextResponse.redirect(`${origin}${fallback}`);
 }

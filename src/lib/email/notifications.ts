@@ -2,6 +2,7 @@ import { sendEmail, logNotification, appUrl } from '@/lib/email/send';
 import { generateIcs } from '@/lib/ical';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { inviteUrl } from '@/lib/invitations';
+import { buildAuthenticatedInviteUrl } from '@/lib/auth-links';
 import { getBookingWithDetails } from '@/lib/bookings';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { BookingWithDetails } from '@/types/database';
@@ -13,6 +14,8 @@ import BookingDeclinedEmail from '../../../emails/booking-declined';
 import BookingCancelledEmail from '../../../emails/booking-cancelled';
 import TripReminderEmail from '../../../emails/trip-reminder';
 import InvitationExpiringEmail from '../../../emails/invitation-expiring';
+import CheckoutInstructionsEmail from '../../../emails/checkout-instructions';
+import PostStayThankYouEmail from '../../../emails/post-stay-thankyou';
 
 export async function notifyInvitationSent(invitationId: string) {
   const admin = createAdminClient();
@@ -24,13 +27,19 @@ export async function notifyInvitationSent(invitationId: string) {
 
   if (!inv) return;
 
+  const signInUrl = await buildAuthenticatedInviteUrl(
+    admin,
+    inv.guest_email,
+    inv.token
+  );
+
   await sendEmail({
     to: inv.guest_email,
     subject: `You're invited to ${inv.property.name}`,
     react: InvitationSentEmail({
       guestName: inv.guest_name ?? inv.guest_email.split('@')[0],
       propertyName: inv.property.name,
-      inviteUrl: inviteUrl(inv.token),
+      inviteUrl: signInUrl,
       message: inv.message ?? undefined,
       expiresAt: inv.expires_at
         ? formatDate(inv.expires_at)
@@ -275,6 +284,50 @@ export async function notifyTripReminder(
     userId: booking.guest_user_id ?? undefined,
     bookingId: booking.id,
     type,
+  });
+}
+
+export async function notifyCheckoutInstructions(booking: BookingWithDetails) {
+  if (!booking.notify_guest || !booking.guest.email) return;
+
+  await sendEmail({
+    to: booking.guest.email,
+    subject: `Checkout details for ${booking.property.name}`,
+    react: CheckoutInstructionsEmail({
+      guestName: booking.guest.name ?? 'there',
+      propertyName: booking.property.name,
+      checkoutTime: booking.property.checkout_time ?? undefined,
+      checkoutInstructions: booking.property.checkout_instructions ?? undefined,
+      houseRules: booking.property.house_rules ?? undefined,
+    }),
+  });
+
+  await logNotification({
+    userId: booking.guest_user_id ?? undefined,
+    bookingId: booking.id,
+    type: 'checkout_instructions',
+  });
+}
+
+export async function notifyPostStay(booking: BookingWithDetails) {
+  if (!booking.notify_guest || !booking.guest.email) return;
+
+  await sendEmail({
+    to: booking.guest.email,
+    subject: `Thanks for staying at ${booking.property.name}`,
+    react: PostStayThankYouEmail({
+      guestName: booking.guest.name ?? 'there',
+      propertyName: booking.property.name,
+      profileUrl: booking.invitation
+        ? inviteUrl(booking.invitation.token)
+        : undefined,
+    }),
+  });
+
+  await logNotification({
+    userId: booking.guest_user_id ?? undefined,
+    bookingId: booking.id,
+    type: 'post_stay',
   });
 }
 

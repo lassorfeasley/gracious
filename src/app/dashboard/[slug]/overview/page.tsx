@@ -323,7 +323,7 @@ export default async function OverviewPage({
           </h2>
           <PropertyEditDialog
             property={property}
-            fields={['address', 'directions']}
+            fields={['address', 'directions', 'timezone']}
             title="Edit location"
             trigger={
               <Button variant="ghost" size="icon" aria-label="Edit location">
@@ -410,7 +410,13 @@ export default async function OverviewPage({
           </h2>
           <PropertyEditDialog
             property={property}
-            fields={['check_in_instructions', 'wifi', 'house_rules']}
+            fields={[
+              'check_in_instructions',
+              'checkout_instructions',
+              'checkout_time',
+              'wifi',
+              'house_rules',
+            ]}
             title="Edit guest information"
             trigger={
               <Button variant="ghost" size="icon" aria-label="Edit guest information">
@@ -424,6 +430,15 @@ export default async function OverviewPage({
             <dt className="text-base font-medium">Check-in instructions</dt>
             <dd className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
               {property.check_in_instructions || 'Not set'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-base font-medium">
+              Checkout instructions
+              {property.checkout_time ? ` · ${property.checkout_time}` : ''}
+            </dt>
+            <dd className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+              {property.checkout_instructions || 'Not set'}
             </dd>
           </div>
           <div>

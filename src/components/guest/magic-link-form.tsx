@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -16,17 +15,18 @@ export function MagicLinkForm({ email, token }: MagicLinkFormProps) {
 
   async function sendLink() {
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?token=${token}`,
-      },
+    const res = await fetch('/api/auth/invite-magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
     });
     setLoading(false);
 
-    if (error) {
-      toast.error(error.message);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast.error(
+        typeof data.error === 'string' ? data.error : 'Could not send link'
+      );
       return;
     }
 

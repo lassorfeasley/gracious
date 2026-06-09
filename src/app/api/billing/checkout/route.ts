@@ -3,8 +3,12 @@ import { z } from 'zod';
 import { getCurrentUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { appUrl } from '@/lib/env';
-import { getStripe, isStripeConfigured } from '@/lib/stripe';
-import { STRIPE_PRICE_IDS, type BillingInterval } from '@/lib/pricing';
+import {
+  getStripe,
+  isStripeConfigured,
+  resolvePriceIdByLookupKey,
+} from '@/lib/stripe';
+import { STRIPE_PRICE_LOOKUP_KEYS, type BillingInterval } from '@/lib/pricing';
 
 const checkoutSchema = z.object({
   interval: z.enum(['annual', 'monthly']),
@@ -39,10 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     const interval = parsed.data.interval as BillingInterval;
-    const priceId = STRIPE_PRICE_IDS[interval];
+    const lookupKey = STRIPE_PRICE_LOOKUP_KEYS[interval];
+    const priceId = await resolvePriceIdByLookupKey(lookupKey);
     if (!priceId) {
       return NextResponse.json(
-        { error: `Missing Stripe price for ${interval} billing` },
+        {
+          error: `No active Stripe price found for ${interval} billing (lookup key "${lookupKey}")`,
+        },
         { status: 503 }
       );
     }

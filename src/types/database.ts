@@ -45,6 +45,9 @@ export interface Property {
   wifi_password: string | null;
   house_rules: string | null;
   check_in_instructions: string | null;
+  checkout_instructions: string | null;
+  checkout_time: string | null;
+  timezone: string;
   hero_image_url: string | null;
   latitude: number | null;
   longitude: number | null;

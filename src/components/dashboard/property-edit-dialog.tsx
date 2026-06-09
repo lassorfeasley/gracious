@@ -33,6 +33,16 @@ import { LocationPicker } from '@/components/dashboard/location-picker';
 import { PhotoManager } from '@/components/dashboard/photo-manager';
 import type { Property, PropertyImage } from '@/types/database';
 
+const US_TIMEZONES = [
+  { value: 'America/New_York', label: 'Eastern (New York)' },
+  { value: 'America/Chicago', label: 'Central (Chicago)' },
+  { value: 'America/Denver', label: 'Mountain (Denver)' },
+  { value: 'America/Phoenix', label: 'Mountain — no DST (Phoenix)' },
+  { value: 'America/Los_Angeles', label: 'Pacific (Los Angeles)' },
+  { value: 'America/Anchorage', label: 'Alaska (Anchorage)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii (Honolulu)' },
+] as const;
+
 export type PropertyEditField =
   | 'name'
   | 'description'
@@ -42,6 +52,9 @@ export type PropertyEditField =
   | 'directions'
   | 'wifi'
   | 'check_in_instructions'
+  | 'checkout_instructions'
+  | 'checkout_time'
+  | 'timezone'
   | 'house_rules';
 
 interface PropertyEditDialogProps {
@@ -63,6 +76,9 @@ function toFormValues(property: Property): PropertyInput {
     wifi_password: property.wifi_password ?? '',
     house_rules: property.house_rules ?? '',
     check_in_instructions: property.check_in_instructions ?? '',
+    checkout_instructions: property.checkout_instructions ?? '',
+    checkout_time: property.checkout_time ?? '',
+    timezone: property.timezone ?? 'America/Denver',
     latitude: property.latitude ?? null,
     longitude: property.longitude ?? null,
     amenities: property.amenities ?? [],
@@ -218,6 +234,67 @@ export function PropertyEditDialog({
                     <FormLabel>Check-in instructions</FormLabel>
                     <FormControl>
                       <Textarea rows={3} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {has('checkout_instructions') && (
+              <FormField
+                control={form.control}
+                name="checkout_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Checkout instructions</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={3}
+                        placeholder="e.g. Strip the beds, start the dishwasher, drop keys in the lockbox."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {has('checkout_time') && (
+              <FormField
+                control={form.control}
+                name="checkout_time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Checkout time</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 11:00 AM" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {has('timezone') && (
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property timezone</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        {...field}
+                      >
+                        {US_TIMEZONES.map((tz) => (
+                          <option key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </option>
+                        ))}
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

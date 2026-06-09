@@ -75,7 +75,11 @@ export const PRO_MONTHLY_PRICE = '$39 / month';
 
 export type BillingInterval = 'annual' | 'monthly';
 
-export const STRIPE_PRICE_IDS: Record<BillingInterval, string | undefined> = {
-  annual: process.env.STRIPE_PRICE_PRO_ANNUAL,
-  monthly: process.env.STRIPE_PRICE_PRO_MONTHLY,
+// Stable Stripe Price lookup keys. Attach these to the matching prices in the
+// Stripe dashboard (Product catalog → price → "Lookup key"). Price IDs are
+// resolved from Stripe at runtime, so the same code works in test and live
+// mode without storing any price_... IDs in env or source.
+export const STRIPE_PRICE_LOOKUP_KEYS: Record<BillingInterval, string> = {
+  annual: 'pro_annual',
+  monthly: 'pro_monthly',
 };

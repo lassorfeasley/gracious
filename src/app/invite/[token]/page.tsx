@@ -22,7 +22,7 @@ import {
   parseGuestPreviewBookingStatus,
 } from '@/lib/guest-preview';
 import { Badge } from '@/components/ui/badge';
-import { MapPin } from 'lucide-react';
+import { CalendarCheck, CalendarRange, MapPin, Sparkles } from 'lucide-react';
 import { summarizeBeds } from '@/lib/validations';
 import { PhotoGallery } from '@/components/photo-gallery';
 
@@ -84,9 +84,44 @@ export default async function InvitePage({
         ? 'Date offer'
         : 'Fixed stay';
 
+  const typeDescription =
+    invitation.type === 'standing'
+      ? 'There’s no set window — request any available dates within your invited rooms.'
+      : invitation.type === 'date_offer'
+        ? 'Choose your dates within the windows your host has opened on the calendar.'
+        : 'Your host has offered specific dates — accept the stay exactly as proposed.';
+
+  const TypeIcon =
+    invitation.type === 'standing'
+      ? Sparkles
+      : invitation.type === 'date_offer'
+        ? CalendarRange
+        : CalendarCheck;
+
+  const host = (
+    property as unknown as {
+      owner?: { first_name: string | null; last_name: string | null } | null;
+    }
+  ).owner;
+  const hostName = host?.first_name?.trim() || 'Your host';
+  const inviteTypeWord =
+    invitation.type === 'standing'
+      ? 'open'
+      : invitation.type === 'date_offer'
+        ? 'date offer'
+        : 'fixed stay';
+  const inviteArticle = invitation.type === 'standing' ? 'an' : 'a';
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-24">
+        {/* Invitation headline */}
+        <h1 className="mb-8 max-w-4xl text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+          {hostName} has sent you {inviteArticle} {inviteTypeWord} invitation to
+          stay at{' '}
+          <span className="text-muted-foreground">{property.name}</span>.
+        </h1>
+
         {/* House card */}
         <div className="relative flex h-72 w-full flex-col justify-end overflow-hidden rounded-2xl sm:h-96">
           {property.hero_image_url ? (
@@ -104,9 +139,9 @@ export default async function InvitePage({
             <div className="absolute inset-0 bg-linear-to-br from-slate-700 via-slate-800 to-slate-950" />
           )}
           <div className="relative p-8">
-            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <p className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               {property.name}
-            </h1>
+            </p>
             {property.address && (
               <p className="mt-2 flex items-center gap-1.5 text-base text-white/80">
                 <MapPin className="h-4 w-4" />
@@ -122,28 +157,6 @@ export default async function InvitePage({
           className="py-6"
         />
 
-        {/* Invitation badges */}
-        <div className="mt-8 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{typeLabel}</Badge>
-          {invitation.expires_at && (
-            <Badge variant="outline">
-              Expires {formatDate(invitation.expires_at)}
-            </Badge>
-          )}
-        </div>
-
-        {!active && (
-          <div className="mt-6 rounded-2xl border border-destructive/50 bg-destructive/10 p-5 text-center text-base">
-            This invitation is no longer active.
-          </div>
-        )}
-
-        {invitation.message && (
-          <blockquote className="mt-6 border-l-2 border-foreground/20 pl-5 text-lg italic leading-relaxed text-muted-foreground">
-            &ldquo;{invitation.message}&rdquo;
-          </blockquote>
-        )}
-
         <BookingProvider
           rooms={bookableRooms}
           roomAvailability={roomAvailability}
@@ -153,55 +166,71 @@ export default async function InvitePage({
           defaultGuests={1}
         >
           <div className="mt-8 grid gap-x-12 gap-y-12 lg:grid-cols-[1fr_360px]">
-            <div className="min-w-0 divide-y">
+            <div className="min-w-0">
+              {/* Invitation type */}
+              <div className="flex items-center gap-4 rounded-2xl border p-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <TypeIcon className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium">{typeLabel}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {typeDescription}
+                  </p>
+                </div>
+                {invitation.expires_at && (
+                  <Badge variant="outline" className="ml-auto shrink-0">
+                    Expires {formatDate(invitation.expires_at)}
+                  </Badge>
+                )}
+              </div>
+
+              {!active && (
+                <div className="mt-6 rounded-2xl border border-destructive/50 bg-destructive/10 p-5 text-center text-base">
+                  This invitation is no longer active.
+                </div>
+              )}
+
+              {invitation.message && (
+                <blockquote className="mt-6 border-l-2 border-foreground/20 pl-5 text-lg italic leading-relaxed text-muted-foreground">
+                  &ldquo;{invitation.message}&rdquo;
+                </blockquote>
+              )}
+
+              <div className="mt-2 divide-y">
               {/* Available dates */}
               <section className="py-10 first:pt-0">
                 <h2 className="text-2xl font-semibold tracking-tight">
                   Available dates
                 </h2>
-                {invitation.type === 'standing' ? (
-                  <p className="mt-6 text-base text-muted-foreground">
-                    You can request any available dates within your invited
-                    rooms.
-                  </p>
-                ) : invitation.windows.length > 0 ? (
-                  <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {invitation.windows.map((w) => (
-                      <li
-                        key={w.id}
-                        className="rounded-2xl border px-5 py-4 text-base font-medium"
-                      >
-                        {formatDateRange(w.start_date, w.end_date)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-6 text-base text-muted-foreground">
-                    Contact your host for date details.
-                  </p>
-                )}
-              </section>
+                {invitation.type !== 'standing' &&
+                  (invitation.windows.length > 0 ? (
+                    <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                      {invitation.windows.map((w) => (
+                        <li
+                          key={w.id}
+                          className="rounded-2xl border px-5 py-4 text-base font-medium"
+                        >
+                          {formatDateRange(w.start_date, w.end_date)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-base text-muted-foreground">
+                      Contact your host for date details.
+                    </p>
+                  ))}
 
-              {/* Availability calendar */}
-              {(active || previewMode) && showBookingCalendar && (
-                <section className="py-10">
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    Availability
-                  </h2>
-                  <p className="mt-2 text-base text-muted-foreground">
-                    {isPrixFixe
-                      ? 'This is a fixed-date stay.'
-                      : 'Select your dates — crossed-out days are unavailable for your selected rooms.'}
-                  </p>
-                  <div className="mt-6">
+                {(active || previewMode) && showBookingCalendar && (
+                  <div className="mt-8">
                     <HouseCalendar
                       allowedRanges={allowedRanges}
                       monthsToShow={2}
                       disabled={isPrixFixe}
                     />
                   </div>
-                </section>
-              )}
+                )}
+              </section>
 
               {/* Rooms available to you */}
               <section className="py-10">
@@ -281,6 +310,7 @@ export default async function InvitePage({
                   </p>
                 )}
               </section>
+              </div>
             </div>
 
             <aside className="lg:sticky lg:top-8 lg:self-start">

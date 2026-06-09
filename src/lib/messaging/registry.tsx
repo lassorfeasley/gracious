@@ -8,10 +8,19 @@ import BookingDeclinedEmail from '../../../emails/booking-declined';
 import BookingCancelledEmail from '../../../emails/booking-cancelled';
 import TripReminderEmail from '../../../emails/trip-reminder';
 import InvitationExpiringEmail from '../../../emails/invitation-expiring';
+import CheckoutInstructionsEmail from '../../../emails/checkout-instructions';
+import PostStayThankYouEmail from '../../../emails/post-stay-thankyou';
+import AuthConfirmSignupEmail from '../../../emails/auth-confirm-signup';
+import AuthMagicLinkEmail from '../../../emails/auth-magic-link';
+import AuthRecoveryEmail from '../../../emails/auth-recovery';
 
 export type MessageChannel = 'email' | 'sms';
 
+/** Who an email is addressed to, used to group the admin view into flows. */
+export type MessageRecipient = 'guest' | 'host' | 'account';
+
 export type MessageCategory =
+  | 'Account'
   | 'Invitations'
   | 'Booking requests'
   | 'Confirmations'
@@ -32,6 +41,8 @@ export interface AutomatedMessage {
   name: string;
   channel: MessageChannel;
   category: MessageCategory;
+  /** Structured recipient(s) — used to bucket messages into Guest/Host/Account flows. */
+  recipients: MessageRecipient[];
   /** Whether the message is wired up today or planned for the future. */
   status: 'active' | 'planned';
   /** Who receives this message. */
@@ -82,15 +93,91 @@ const SAMPLE = {
   wifiPassword: 'sunset2026',
   checkIn: 'Self check-in after 3pm. Lockbox code is 4821.',
   houseRules: 'No smoking indoors. Quiet hours after 10pm.',
+  checkoutTime: '11:00 AM',
+  checkoutInstructions:
+    'Strip the beds, start the dishwasher, and drop the keys back in the lockbox.',
   expiresAt: 'Jun 14, 2026',
+  authUrl: 'https://guesthouse.app/auth/confirm?token_hash=sample',
 };
 
 export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
+  {
+    id: 'auth-confirm-signup',
+    name: 'Confirm email (signup)',
+    channel: 'email',
+    category: 'Account',
+    recipients: ['account'],
+    status: 'active',
+    audience: 'New user',
+    description:
+      'Confirms a new account\u2019s email address. Sent by Supabase Auth through our Send Email hook so it matches the GuestHouse design.',
+    trigger: 'A user signs up and Supabase requests email confirmation.',
+    timing: 'Immediately',
+    logTypes: [],
+    notificationPref: null,
+    source: 'src/app/api/auth/email-hook/route.ts',
+    variants: [
+      {
+        label: 'Default',
+        subject: 'Confirm your email for GuestHouse',
+        element: (
+          <AuthConfirmSignupEmail confirmUrl={SAMPLE.authUrl} token="123456" />
+        ),
+      },
+    ],
+  },
+  {
+    id: 'auth-magic-link',
+    name: 'Sign-in link (magic link)',
+    channel: 'email',
+    category: 'Account',
+    recipients: ['account'],
+    status: 'active',
+    audience: 'Existing user',
+    description:
+      'A passwordless sign-in link. Sent by Supabase Auth through our Send Email hook.',
+    trigger: 'A user requests a magic-link sign-in.',
+    timing: 'Immediately',
+    logTypes: [],
+    notificationPref: null,
+    source: 'src/app/api/auth/email-hook/route.ts',
+    variants: [
+      {
+        label: 'Default',
+        subject: 'Your GuestHouse sign-in link',
+        element: <AuthMagicLinkEmail signInUrl={SAMPLE.authUrl} token="123456" />,
+      },
+    ],
+  },
+  {
+    id: 'auth-recovery',
+    name: 'Password reset',
+    channel: 'email',
+    category: 'Account',
+    recipients: ['account'],
+    status: 'active',
+    audience: 'Existing user',
+    description:
+      'A password reset link. Sent by Supabase Auth through our Send Email hook.',
+    trigger: 'A user requests a password reset.',
+    timing: 'Immediately',
+    logTypes: [],
+    notificationPref: null,
+    source: 'src/app/api/auth/email-hook/route.ts',
+    variants: [
+      {
+        label: 'Default',
+        subject: 'Reset your GuestHouse password',
+        element: <AuthRecoveryEmail resetUrl={SAMPLE.authUrl} token="123456" />,
+      },
+    ],
+  },
   {
     id: 'invitation-sent',
     name: 'Invitation sent',
     channel: 'email',
     category: 'Invitations',
+    recipients: ['guest'],
     status: 'active',
     audience: 'Invited guest',
     description:
@@ -121,6 +208,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     name: 'Stay request',
     channel: 'email',
     category: 'Booking requests',
+    recipients: ['host'],
     status: 'active',
     audience: 'Property owner + co-managers',
     description:
@@ -158,6 +246,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     name: 'Booking confirmed',
     channel: 'email',
     category: 'Confirmations',
+    recipients: ['guest'],
     status: 'active',
     audience: 'Guest',
     description:
@@ -196,6 +285,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     name: 'Booking declined',
     channel: 'email',
     category: 'Confirmations',
+    recipients: ['guest'],
     status: 'active',
     audience: 'Guest',
     description:
@@ -226,6 +316,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     name: 'Booking cancelled',
     channel: 'email',
     category: 'Confirmations',
+    recipients: ['guest', 'host'],
     status: 'active',
     audience: 'Host or guest (whoever did not cancel)',
     description:
@@ -273,6 +364,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     name: 'Trip reminder',
     channel: 'email',
     category: 'Reminders',
+    recipients: ['guest'],
     status: 'active',
     audience: 'Guest',
     description:
@@ -319,10 +411,72 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     ],
   },
   {
+    id: 'checkout-instructions',
+    name: 'Checkout instructions',
+    channel: 'email',
+    category: 'Reminders',
+    recipients: ['guest'],
+    status: 'active',
+    audience: 'Guest',
+    description:
+      'Proactively sends checkout steps and a house-rules reminder on the morning the guest leaves.',
+    trigger: 'A confirmed booking reaches its check-out date.',
+    timing: 'Scheduled — ~8am local on the day of checkout',
+    logTypes: ['checkout_instructions'],
+    notificationPref: null,
+    source: 'src/app/api/cron/reminders/route.ts',
+    variants: [
+      {
+        label: 'Default',
+        subject: `Checkout details for ${SAMPLE.propertyName}`,
+        element: (
+          <CheckoutInstructionsEmail
+            guestName={SAMPLE.guestName}
+            propertyName={SAMPLE.propertyName}
+            checkoutTime={SAMPLE.checkoutTime}
+            checkoutInstructions={SAMPLE.checkoutInstructions}
+            houseRules={SAMPLE.houseRules}
+          />
+        ),
+      },
+    ],
+  },
+  {
+    id: 'post-stay',
+    name: 'Post-stay thank-you',
+    channel: 'email',
+    category: 'Reminders',
+    recipients: ['guest'],
+    status: 'active',
+    audience: 'Guest',
+    description:
+      'A warm thank-you the day after a guest checks out, with a link back to the house.',
+    trigger: 'The day after a confirmed booking\u2019s check-out date.',
+    timing: 'Scheduled — ~8am local the day after checkout',
+    logTypes: ['post_stay'],
+    notificationPref: null,
+    source: 'src/app/api/cron/reminders/route.ts',
+    variants: [
+      {
+        label: 'Default',
+        subject: `Thanks for staying at ${SAMPLE.propertyName}`,
+        element: (
+          <PostStayThankYouEmail
+            guestName={SAMPLE.guestName}
+            propertyName={SAMPLE.propertyName}
+            hostName={SAMPLE.ownerName}
+            profileUrl={SAMPLE.inviteUrl}
+          />
+        ),
+      },
+    ],
+  },
+  {
     id: 'invitation-expiring',
     name: 'Invitations expiring',
     channel: 'email',
     category: 'Reminders',
+    recipients: ['host'],
     status: 'active',
     audience: 'Property owner',
     description:
@@ -377,4 +531,124 @@ export function messageForLogType(
   type: string
 ): AutomatedMessage | undefined {
   return AUTOMATED_MESSAGES.find((m) => m.logTypes.includes(type));
+}
+
+// ---------------------------------------------------------------------------
+// Journeys — the ordered sequence of emails a guest (and host) experiences,
+// described in their own words with a strong sense of timing. Steps link to a
+// real registered email when one exists; steps we envision but haven't built
+// yet are flagged `planned` so the timeline stays honest about what sends today.
+// ---------------------------------------------------------------------------
+
+export interface JourneyStep {
+  /** How the recipient would perceive this moment. */
+  title: string;
+  /** Plain-language timing — a strong suggestion of when it arrives. */
+  when: string;
+  /** Optional context, especially for planned steps. */
+  description?: string;
+  /** Registered email message id(s) this step maps to, if built. */
+  messageIds?: string[];
+  /** Envisioned but not yet implemented. */
+  planned?: boolean;
+}
+
+export const GUEST_JOURNEY: JourneyStep[] = [
+  {
+    title: "You've been invited",
+    when: 'As soon as a host invites you',
+    messageIds: ['invitation-sent'],
+  },
+  {
+    title: 'Your sign-in link',
+    when: 'When you open your invite and sign in',
+    messageIds: ['auth-magic-link'],
+  },
+  {
+    title: 'Your dates have been requested',
+    when: 'Moments after you submit your dates',
+    description:
+      'A confirmation to the guest that their request is in. Not built yet — today only the host is notified of a new request.',
+    planned: true,
+  },
+  {
+    title: 'Your dates were approved — or declined',
+    when: 'When the host responds to your request',
+    messageIds: ['booking-approved', 'booking-declined'],
+  },
+  {
+    title: 'Your visit is coming up',
+    when: 'About a week before check-in',
+    messageIds: ['trip-reminder'],
+  },
+  {
+    title: 'Your visit is tomorrow',
+    when: 'The day before check-in',
+    messageIds: ['trip-reminder'],
+  },
+  {
+    title: "Welcome — here's how to get in",
+    when: 'The morning of check-in',
+    description:
+      'Day-of arrival details: parking, lockbox, what to do first. Not built yet.',
+    planned: true,
+  },
+  {
+    title: 'Tomorrow is your last day',
+    when: 'The evening before checkout',
+    description:
+      'A gentle heads-up the night before departure. Not built yet — checkout details currently send the morning you leave.',
+    planned: true,
+  },
+  {
+    title: 'Time to head out',
+    when: 'The morning you leave',
+    messageIds: ['checkout-instructions'],
+  },
+  {
+    title: 'Thanks for visiting',
+    when: 'The morning after you check out',
+    messageIds: ['post-stay'],
+  },
+];
+
+export const HOST_JOURNEY: JourneyStep[] = [
+  {
+    title: 'A guest requested a stay',
+    when: 'As soon as a guest submits their dates',
+    messageIds: ['stay-requested'],
+  },
+  {
+    title: 'A stay was cancelled',
+    when: 'If a guest cancels a confirmed booking',
+    messageIds: ['booking-cancelled'],
+  },
+];
+
+// Account/auth touchpoints. Not a chronological journey like a booking — these
+// fire whenever the matching auth event happens — but listing them as a short
+// flow keeps the "what arrives when" framing consistent.
+export const ACCOUNT_JOURNEY: JourneyStep[] = [
+  {
+    title: 'Confirm your email',
+    when: 'Right after you sign up',
+    messageIds: ['auth-confirm-signup'],
+  },
+  {
+    title: 'Your sign-in link',
+    when: 'When you request a passwordless sign-in',
+    messageIds: ['auth-magic-link'],
+  },
+  {
+    title: 'Reset your password',
+    when: 'When you ask to reset your password',
+    messageIds: ['auth-recovery'],
+  },
+];
+
+/** All messages addressed to a given recipient, in registry order. */
+export function messagesForRecipient(
+  recipient: MessageRecipient
+): AutomatedMessage[] {
+  return AUTOMATED_MESSAGES.filter((m) => m.recipients.includes(recipient));
 }

@@ -20,7 +20,7 @@ export async function getInvitationByToken(
     .select(
       `
       *,
-      property:properties(*, property_images(*)),
+      property:properties(*, property_images(*), owner:users!owner_id(first_name, last_name)),
       invitation_rooms(room:rooms(*, room_images(*))),
       invitation_windows(*)
     `

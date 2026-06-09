@@ -16,12 +16,15 @@ interface InvitationsManagerProps {
   propertyId: string;
   rooms: Room[];
   invitations: Invitation[];
+  /** Hide the built-in "invite guest" button when the page already has one. */
+  hideInviteAction?: boolean;
 }
 
 export function InvitationsManager({
   propertyId,
   rooms,
   invitations,
+  hideInviteAction = false,
 }: InvitationsManagerProps) {
   const router = useRouter();
 
@@ -64,7 +67,9 @@ export function InvitationsManager({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Invitations</h2>
-        <InviteGuestDialog propertyId={propertyId} rooms={rooms} />
+        {!hideInviteAction && (
+          <InviteGuestDialog propertyId={propertyId} rooms={rooms} />
+        )}
       </div>
 
       {rooms.length === 0 && (

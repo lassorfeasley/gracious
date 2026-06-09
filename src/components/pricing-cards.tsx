@@ -36,6 +36,13 @@ export function PricingCards({ className }: { className?: string }) {
               <Link href="/signup">Get started free</Link>
             </Button>
 
+            <Link
+              href="/signup?upgrade=pro&interval=annual"
+              className="mt-3 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Or go Pro now &rarr;
+            </Link>
+
             <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground lg:justify-start">
               <Check className="size-4 shrink-0 text-green-600" />
               Unlimited stays &amp; homes · Guests always free

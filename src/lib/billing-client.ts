@@ -23,6 +23,28 @@ export function isLimitReachedResponse(
   );
 }
 
+// Carries "upgrade to Pro" intent from the unauthenticated landing/signup flow
+// into the dashboard, where a session cookie exists and checkout can be started.
+const PENDING_UPGRADE_KEY = 'gh:pendingUpgrade';
+
+export function storePendingUpgrade(interval: BillingInterval): void {
+  try {
+    sessionStorage.setItem(PENDING_UPGRADE_KEY, interval);
+  } catch {
+    // sessionStorage may be unavailable (SSR/private mode); intent is best-effort.
+  }
+}
+
+export function consumePendingUpgrade(): BillingInterval | null {
+  try {
+    const value = sessionStorage.getItem(PENDING_UPGRADE_KEY);
+    sessionStorage.removeItem(PENDING_UPGRADE_KEY);
+    return value === 'annual' || value === 'monthly' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function startCheckout(
   interval: BillingInterval = 'annual',
   returnPath?: string

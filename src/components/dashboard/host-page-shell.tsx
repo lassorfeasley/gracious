@@ -1,6 +1,8 @@
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { HostPageLayout } from '@/components/dashboard/host-page-layout';
+import { AddRoomSidebar } from '@/components/dashboard/add-room-sidebar';
 import { BookingProvider } from '@/components/guest/booking-context';
+import { cn } from '@/lib/utils';
 import type { Room } from '@/types/database';
 
 /** Two-column layout: scrollable page content + sticky booking sidebar. */
@@ -21,10 +23,25 @@ export async function HostPageShell({
   className?: string;
   children: React.ReactNode;
 }) {
-  // No rooms yet (e.g. a freshly created home): skip the sidebar layout, but
-  // still provide the booking context so calendar children don't crash.
+  // No rooms yet (e.g. a freshly created home): the booking sidebar can't be
+  // used, so show an "add your first room" call to action in its place. Still
+  // provide the booking context so calendar children don't crash.
   if (rooms.length === 0) {
-    return <BookingProvider>{children}</BookingProvider>;
+    return (
+      <BookingProvider>
+        <div
+          className={cn(
+            'grid gap-x-12 gap-y-12 lg:grid-cols-[1fr_360px]',
+            className
+          )}
+        >
+          <div className="min-w-0 divide-y">{children}</div>
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <AddRoomSidebar propertyId={propertyId} />
+          </aside>
+        </div>
+      </BookingProvider>
+    );
   }
 
   const roomAvailability = await getInvitationRoomAvailability(

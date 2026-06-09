@@ -17,9 +17,34 @@ export function getStripeWebhookSecret(): string {
 }
 
 export function isStripeConfigured(): boolean {
-  return Boolean(
-    getEnvOptional('STRIPE_SECRET_KEY') &&
-      getEnvOptional('STRIPE_PRICE_PRO_ANNUAL') &&
-      getEnvOptional('STRIPE_PRICE_PRO_MONTHLY')
-  );
+  return Boolean(getEnvOptional('STRIPE_SECRET_KEY'));
+}
+
+const priceIdCache = new Map<string, string>();
+
+/**
+ * Resolve a Stripe Price ID from its stable lookup key. Results are cached for
+ * the lifetime of the server process. Returns null if no active price carries
+ * the given lookup key.
+ */
+export async function resolvePriceIdByLookupKey(
+  lookupKey: string
+): Promise<string | null> {
+  const cached = priceIdCache.get(lookupKey);
+  if (cached) {
+    return cached;
+  }
+
+  const stripe = getStripe();
+  const prices = await stripe.prices.list({
+    lookup_keys: [lookupKey],
+    active: true,
+    limit: 1,
+  });
+
+  const priceId = prices.data[0]?.id ?? null;
+  if (priceId) {
+    priceIdCache.set(lookupKey, priceId);
+  }
+  return priceId;
 }

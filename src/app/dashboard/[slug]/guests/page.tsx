@@ -4,6 +4,7 @@ import { buildGuestRoster } from '@/lib/guest-roster';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { GuestsScheduleView } from '@/components/dashboard/guests-schedule-view';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
+import { InvitationsManager } from '@/components/dashboard/invitations-manager';
 import { buildScheduleStays } from '@/lib/schedule-stays';
 import type { Invitation } from '@/types/database';
 
@@ -78,6 +79,15 @@ export default async function GuestsPage({
 
       <section>
         <GuestsScheduleView slug={slug} stays={scheduleStays} />
+      </section>
+
+      <section>
+        <InvitationsManager
+          propertyId={property.id}
+          rooms={rooms ?? []}
+          invitations={(invitations ?? []) as Invitation[]}
+          hideInviteAction
+        />
       </section>
     </div>
   );
