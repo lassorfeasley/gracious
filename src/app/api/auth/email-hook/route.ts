@@ -118,7 +118,9 @@ export async function POST(request: NextRequest) {
 
     await sendEmail({ to: user.email, subject, react });
 
-    return new NextResponse(null, { status: 200 });
+    // Supabase's hook client requires a JSON body; a bare 200 is reported
+    // back to the auth API as "Invalid Content-Type".
+    return NextResponse.json({});
   } catch (err) {
     console.error('[auth-hook] failed to send email:', err);
     return NextResponse.json(
