@@ -12,7 +12,8 @@ function getResend(): Resend | null {
   return resend;
 }
 
-const from = () =>
+/** The configured sender for every outgoing email. */
+export const fromAddress = () =>
   process.env.RESEND_FROM ?? 'GuestHouse <onboarding@resend.dev>';
 
 export async function sendEmail({
@@ -21,28 +22,32 @@ export async function sendEmail({
   react,
   attachments,
   headers,
+  replyTo,
 }: {
   to: string | string[];
   subject: string;
   react: React.ReactElement;
   attachments?: { filename: string; content: Buffer | string }[];
   headers?: Record<string, string>;
+  /** Where replies should go when it differs from the sender. */
+  replyTo?: string;
 }) {
   const client = getResend();
   const html = await render(react);
 
   if (!client) {
-    console.log('[email:dev]', { to, subject, headers, html: html.slice(0, 200) });
+    console.log('[email:dev]', { to, subject, replyTo, headers, html: html.slice(0, 200) });
     return { id: 'dev' };
   }
 
   const { data, error } = await client.emails.send({
-    from: from(),
+    from: fromAddress(),
     to: Array.isArray(to) ? to : [to],
     subject,
     html,
     attachments,
     headers,
+    replyTo,
   });
 
   if (error) throw new Error(error.message);

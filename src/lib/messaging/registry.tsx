@@ -64,6 +64,11 @@ export interface AutomatedMessage {
    */
   logTypes: string[];
   /**
+   * Where replies go, when it differs from the sender. Undefined means replies
+   * go to the configured RESEND_FROM address.
+   */
+  replyTo?: string;
+  /**
    * Host notification preference that can suppress this message, plus whether
    * that preference is currently enforced in code.
    */
@@ -220,6 +225,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       'Notifies hosts that a guest has requested a stay, with Approve/Decline buttons that deep-link into the dashboard.',
     trigger: 'A guest submits a booking that requires approval.',
     timing: 'Immediately',
+    replyTo: 'The guest\u2019s email address — hosts can reply directly',
     logTypes: ['stay_requested'],
     notificationPref: {
       key: 'booking_requests',
@@ -288,6 +294,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       'Tells hosts a guest booked a stay that didn\u2019t need approval, so confirmed bookings never appear on the calendar silently.',
     trigger: 'A guest books via an invitation that doesn\u2019t require approval.',
     timing: 'Immediately',
+    replyTo: 'The guest\u2019s email address — hosts can reply directly',
     logTypes: ['stay_booked'],
     notificationPref: {
       key: 'booking_requests',

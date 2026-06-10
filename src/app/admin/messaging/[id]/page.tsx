@@ -11,6 +11,7 @@ import {
   BellOff,
 } from 'lucide-react';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { fromAddress } from '@/lib/email/send';
 import { requireSiteAdmin } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { EmailPreview } from '@/components/admin/email-preview';
@@ -125,7 +126,11 @@ export default async function AdminMessageDetailPage({
         <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
           What it looks like
         </h2>
-        <EmailPreview variants={renderedVariants} />
+        <EmailPreview
+          variants={renderedVariants}
+          from={fromAddress()}
+          replyTo={message.replyTo}
+        />
       </section>
 
       {/* Recent sends */}

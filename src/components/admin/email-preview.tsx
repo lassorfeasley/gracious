@@ -9,7 +9,17 @@ interface PreviewVariant {
   html: string;
 }
 
-export function EmailPreview({ variants }: { variants: PreviewVariant[] }) {
+export function EmailPreview({
+  variants,
+  from,
+  replyTo,
+}: {
+  variants: PreviewVariant[];
+  /** Live sender address (from RESEND_FROM). */
+  from?: string;
+  /** Where replies go; defaults to the sender. */
+  replyTo?: string;
+}) {
   const [active, setActive] = useState(0);
   const current = variants[active] ?? variants[0];
 
@@ -36,9 +46,25 @@ export function EmailPreview({ variants }: { variants: PreviewVariant[] }) {
       )}
 
       <div className="overflow-hidden rounded-xl border">
-        <div className="flex items-center gap-2 border-b bg-muted/40 px-4 py-2.5 text-sm">
-          <span className="text-muted-foreground">Subject:</span>
-          <span className="font-medium">{current.subject}</span>
+        <div className="space-y-1 border-b bg-muted/40 px-4 py-2.5 text-sm">
+          {from && (
+            <div className="flex items-baseline gap-2">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">From</span>
+              <span className="truncate">{from}</span>
+            </div>
+          )}
+          {from && (
+            <div className="flex items-baseline gap-2">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">Reply-to</span>
+              <span className="truncate">
+                {replyTo ?? <span className="text-muted-foreground">Same as sender</span>}
+              </span>
+            </div>
+          )}
+          <div className="flex items-baseline gap-2">
+            <span className="w-16 shrink-0 text-xs text-muted-foreground">Subject</span>
+            <span className="font-medium">{current.subject}</span>
+          </div>
         </div>
         <iframe
           title={`Preview: ${current.label}`}

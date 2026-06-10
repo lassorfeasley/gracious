@@ -149,6 +149,8 @@ export async function notifyStayRequested(bookingId: string) {
         unsubscribeUrl: unsubscribePageUrl(recipient.id, 'host_activity'),
       }),
       headers: listUnsubscribeHeaders(recipient.id, 'host_activity'),
+      // Hosts can reply straight to the guest to ask a question.
+      replyTo: booking.guest.email ?? undefined,
     });
   }
 
@@ -218,6 +220,8 @@ export async function notifyStayBooked(bookingId: string) {
         unsubscribeUrl: unsubscribePageUrl(recipient.id, 'host_activity'),
       }),
       headers: listUnsubscribeHeaders(recipient.id, 'host_activity'),
+      // Hosts can reply straight to the guest.
+      replyTo: booking.guest.email ?? undefined,
     });
   }
 
