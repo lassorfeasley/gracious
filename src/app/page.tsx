@@ -27,65 +27,47 @@ export default async function HomePage({
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <span className="font-display text-xl tracking-tight">Gracious</span>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild>
+        <div className="container mx-auto flex h-20 items-center justify-between px-6">
+          <span className="font-display text-2xl tracking-tight sm:text-3xl">
+            Gracious
+          </span>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="lg" className="text-base" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
-            <Button asChild>
-              <Link href="/signup">Open your house</Link>
+            <Button size="lg" className="text-base" asChild>
+              <Link href="/signup">Get started</Link>
             </Button>
           </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-28 text-center sm:py-36">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-brass">
-          The art of having people to stay
+        <p className="text-sm font-medium tracking-wide text-brass">
+          For guest homes and guest rooms
         </p>
         <h1 className="mt-6 font-display text-4xl font-medium tracking-tight sm:text-6xl">
-          Run your house the way
-          <br />
-          a great house is run.
+          The gracious way to invite house guests.
         </h1>
         <p className="mx-auto mt-8 max-w-md text-lg leading-relaxed text-muted-foreground">
-          Gracious is the staff you don&apos;t have. A graceful invitation, a
-          calendar that already knows the answer, house notes waiting when your
-          guests arrive. Never public. Always yours to give.
+          We take care of inviting, booking, coordinating, directions &amp;
+          conflicts graciously. Be a great host while we do the rest.
         </p>
         <div className="mt-12 flex justify-center gap-4">
           <Button size="lg" asChild>
-            <Link href="/signup">Open your house</Link>
+            <Link href="/signup">Get started</Link>
           </Button>
         </div>
       </main>
 
       <section id="how-it-works" className="border-t border-border/60 py-28">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-xl text-center">
-            <h2 className="font-display text-3xl font-medium tracking-tight">
-              How the house runs
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Three steps from a quiet calendar to friends at the door.
-            </p>
-          </div>
-          <HowItWorksCarousel className="mt-14" />
+          <HowItWorksCarousel />
         </div>
       </section>
 
       <section id="pricing" className="border-t border-border/60 py-28">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-xl text-center">
-            <h2 className="font-display text-3xl font-medium tracking-tight">
-              A hospitality habit
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Have your first two stays on the house. Carry on when it feels
-              like yours.
-            </p>
-          </div>
-          <PricingCards className="mt-14" />
+          <PricingCards />
         </div>
       </section>
 

@@ -38,7 +38,7 @@ export function PricingCards({ className }: { className?: string }) {
             </p>
 
             <Button asChild size="lg" className="mt-5 w-full">
-              <Link href="/signup">Begin with two stays</Link>
+              <Link href="/signup">Get started</Link>
             </Button>
 
             <Link

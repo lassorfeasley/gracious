@@ -85,7 +85,7 @@ const LEXICON: { use: string; never: string }[] = [
   { use: 'the house', never: 'the property / the unit' },
   { use: 'having people to stay', never: 'managing guests' },
   { use: 'weeks you are keeping', never: 'blocked availability' },
-  { use: 'open your house', never: 'create your account' },
+  { use: 'Get started', never: 'create your account' },
 ];
 
 const VOICE_SAMPLES = [
