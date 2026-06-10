@@ -7,6 +7,7 @@ import { getBookingWithDetails } from '@/lib/bookings';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { wantsEmail } from '@/lib/notification-prefs';
 import { unsubscribePageUrl, listUnsubscribeHeaders } from '@/lib/unsubscribe';
+import { formatPersonName } from '@/lib/names';
 import type { BookingWithDetails, NotificationPrefs } from '@/types/database';
 
 async function getUserPrefs(
@@ -58,7 +59,9 @@ export async function notifyInvitationSent(invitationId: string) {
   const admin = createAdminClient();
   const { data: inv } = await admin
     .from('invitations')
-    .select('*, property:properties(name)')
+    .select(
+      '*, property:properties(name), creator:users!created_by(first_name, last_name, email)'
+    )
     .eq('id', invitationId)
     .single();
 
@@ -70,11 +73,26 @@ export async function notifyInvitationSent(invitationId: string) {
     inv.token
   );
 
+  const creatorRaw = inv.creator;
+  const creator = (Array.isArray(creatorRaw) ? creatorRaw[0] : creatorRaw) as {
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+  } | null;
+  // Only personalize with an actual name — "bob@x.com via Gracious" is worse
+  // than the plain brand sender.
+  const hostName = formatPersonName(
+    creator ? { ...creator, email: null } : null
+  );
+
   await sendEmail({
     to: inv.guest_email,
-    subject: `You're invited to ${inv.property.name}`,
+    subject: hostName
+      ? `${hostName} has invited you to ${inv.property.name}`
+      : `You're invited to ${inv.property.name}`,
     react: InvitationSentEmail({
       guestName: inv.guest_name ?? inv.guest_email.split('@')[0],
+      hostName,
       propertyName: inv.property.name,
       inviteUrl: signInUrl,
       message: inv.message ?? undefined,
@@ -82,6 +100,9 @@ export async function notifyInvitationSent(invitationId: string) {
         ? formatDate(inv.expires_at)
         : undefined,
     }),
+    fromName: hostName,
+    // Guests can reply straight to their host.
+    replyTo: creator?.email ?? undefined,
   });
 
   await logNotification({ invitationId, type: 'invitation_sent' });

@@ -58,14 +58,27 @@ const main = {
   backgroundColor: '#f7f4ed',
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  // Breathing room so the card never touches pane edges on narrow clients.
+  padding: '0 12px',
 };
 
+/*
+ * Email-client geometry notes:
+ * - width 100% + maxWidth + border-box keeps the card inside narrow preview
+ *   panes and phones; without border-box the padding pushes the rendered
+ *   table past maxWidth and clients clip it horizontally.
+ * - tableLayout fixed stops long unbreakable content (token URLs) from
+ *   stretching the table wider than the pane.
+ */
 const container = {
   backgroundColor: '#fdfcf8',
   margin: '40px auto',
-  padding: '32px',
+  padding: '32px 28px',
   borderRadius: '8px',
-  maxWidth: '560px',
+  width: '100%',
+  maxWidth: '520px',
+  boxSizing: 'border-box' as const,
+  tableLayout: 'fixed' as const,
 };
 
 const logo = {
@@ -83,12 +96,16 @@ const h1 = {
   fontFamily: 'Georgia, "Times New Roman", serif',
   color: '#221e19',
   margin: '0 0 16px',
+  overflowWrap: 'anywhere' as const,
 };
 
 const content = {
   color: '#48433c',
   fontSize: '16px',
   lineHeight: '24px',
+  // Long tokens/URLs wrap instead of widening the card. Unlike break-all,
+  // this never breaks ordinary words.
+  overflowWrap: 'anywhere' as const,
 };
 
 const hr = { borderColor: '#e4ddd0', margin: '24px 0' };
@@ -104,6 +121,18 @@ const footerLink = {
   color: '#8a8273',
   fontSize: '12px',
   textDecoration: 'underline',
+};
+
+/**
+ * For raw URL fallbacks ("Or copy this link: …"). Token URLs are long
+ * unbreakable strings; without break-all they widen the layout and get
+ * clipped in most mail clients.
+ */
+export const fallbackLinkStyle = {
+  color: '#1f3d31',
+  textDecoration: 'underline',
+  wordBreak: 'break-all' as const,
+  overflowWrap: 'anywhere' as const,
 };
 
 export const buttonStyle = {

@@ -191,19 +191,21 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Invited guest',
     description:
-      'Invites a guest to view a property and request a stay, with an optional personal message and expiry date.',
+      'Invites a guest to view a property and request a stay, with an optional personal message and expiry date. Sent as "{host} via Gracious" so the inbox row leads with the host.',
     trigger: 'A host creates and sends an invitation.',
     timing: 'Immediately',
+    replyTo: 'The host\u2019s email address — guests can reply directly',
     logTypes: ['invitation_sent'],
     notificationPref: null,
     source: 'src/app/api/invitations/route.ts',
     variants: [
       {
         label: 'Default',
-        subject: `You're invited to ${SAMPLE.propertyName}`,
+        subject: `${SAMPLE.ownerName} has invited you to ${SAMPLE.propertyName}`,
         element: (
           <InvitationSentEmail
             guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
             propertyName={SAMPLE.propertyName}
             inviteUrl={SAMPLE.inviteUrl}
             message="We'd love to have you for the long weekend — the lake is perfect this time of year."

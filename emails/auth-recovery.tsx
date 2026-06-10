@@ -1,5 +1,5 @@
 import { Button, Link, Text } from '@react-email/components';
-import { EmailLayout, buttonStyle } from './components/layout';
+import { EmailLayout, buttonStyle, fallbackLinkStyle } from './components/layout';
 
 interface Props {
   resetUrl: string;
@@ -24,12 +24,15 @@ export default function AuthRecoveryEmail({ resetUrl, token }: Props) {
           Or enter this code: <strong>{token}</strong>
         </Text>
       )}
-      <Text style={{ fontSize: '12px', color: '#999', marginTop: '16px' }}>
+      <Text style={{ fontSize: '12px', color: '#8a8273', marginTop: '16px' }}>
         This link expires soon and can only be used once. If you didn&apos;t
         request a password reset, you can safely ignore this email — your
         password won&apos;t change.
         <br />
-        Or copy this link: <Link href={resetUrl}>{resetUrl}</Link>
+        Or copy this link:{' '}
+        <Link href={resetUrl} style={fallbackLinkStyle}>
+          {resetUrl}
+        </Link>
       </Text>
     </EmailLayout>
   );

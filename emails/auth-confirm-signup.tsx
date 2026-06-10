@@ -1,5 +1,5 @@
 import { Button, Link, Text } from '@react-email/components';
-import { EmailLayout, buttonStyle } from './components/layout';
+import { EmailLayout, buttonStyle, fallbackLinkStyle } from './components/layout';
 
 interface Props {
   confirmUrl: string;
@@ -24,11 +24,14 @@ export default function AuthConfirmSignupEmail({ confirmUrl, token }: Props) {
           Or enter this code: <strong>{token}</strong>
         </Text>
       )}
-      <Text style={{ fontSize: '12px', color: '#999', marginTop: '16px' }}>
+      <Text style={{ fontSize: '12px', color: '#8a8273', marginTop: '16px' }}>
         This link expires soon and can only be used once. If you didn&apos;t
         create a Gracious account, you can safely ignore this email.
         <br />
-        Or copy this link: <Link href={confirmUrl}>{confirmUrl}</Link>
+        Or copy this link:{' '}
+        <Link href={confirmUrl} style={fallbackLinkStyle}>
+          {confirmUrl}
+        </Link>
       </Text>
     </EmailLayout>
   );

@@ -16,6 +16,19 @@ function getResend(): Resend | null {
 export const fromAddress = () =>
   process.env.RESEND_FROM ?? 'Gracious <onboarding@resend.dev>';
 
+/**
+ * Personalized sender: keeps the verified sending address but swaps the
+ * display name to "{name} via Gracious" (e.g. for invitations, so the inbox
+ * row leads with the host). Falls back to the plain sender without a name.
+ */
+export function fromAddressAs(name?: string | null): string {
+  const configured = fromAddress();
+  if (!name?.trim()) return configured;
+  const email = configured.match(/<([^>]+)>/)?.[1] ?? configured;
+  const display = name.replace(/["<>]/g, '').trim();
+  return `"${display} via Gracious" <${email}>`;
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -23,6 +36,7 @@ export async function sendEmail({
   attachments,
   headers,
   replyTo,
+  fromName,
 }: {
   to: string | string[];
   subject: string;
@@ -31,6 +45,8 @@ export async function sendEmail({
   headers?: Record<string, string>;
   /** Where replies should go when it differs from the sender. */
   replyTo?: string;
+  /** Personalizes the sender display name: "{fromName} via Gracious". */
+  fromName?: string | null;
 }) {
   const client = getResend();
   const html = await render(react);
@@ -41,7 +57,7 @@ export async function sendEmail({
   }
 
   const { data, error } = await client.emails.send({
-    from: fromAddress(),
+    from: fromAddressAs(fromName),
     to: Array.isArray(to) ? to : [to],
     subject,
     html,
