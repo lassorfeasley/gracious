@@ -11,7 +11,7 @@ import { formatDate, formatDateRange } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { SelectableRoomCard } from '@/components/room-card';
 import {
   AvailabilityCalendar,
   type CalendarSelection,
@@ -44,6 +44,10 @@ import { UserPlus } from 'lucide-react';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
 import { cn } from '@/lib/utils';
+import {
+  INVITATION_TYPE_LABELS,
+  INVITATION_TYPE_OPTIONS,
+} from '@/lib/invitation-types';
 
 interface InviteGuestDialogProps {
   propertyId: string;
@@ -64,34 +68,6 @@ const STEP_TITLES: Record<StepKey, string> = {
   rooms: 'Which rooms can they book?',
   details: 'Add a personal touch',
   review: 'Review and send',
-};
-
-const TYPE_OPTIONS: {
-  value: InvitationInput['type'];
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'standing',
-    label: 'Standing',
-    description: 'Open invite — they can request any available dates.',
-  },
-  {
-    value: 'date_offer',
-    label: 'Date offer',
-    description: 'They choose dates within specific windows you offer.',
-  },
-  {
-    value: 'prix_fixe',
-    label: 'Prix fixe',
-    description: 'A fixed set of dates they can accept as-is.',
-  },
-];
-
-const TYPE_LABELS: Record<InvitationInput['type'], string> = {
-  standing: 'Standing invitation',
-  date_offer: 'Date offer',
-  prix_fixe: 'Fixed stay',
 };
 
 export function InviteGuestDialog({
@@ -427,7 +403,7 @@ export function InviteGuestDialog({
 
           {stepKey === 'type' && (
             <div className="space-y-3">
-              {TYPE_OPTIONS.map((opt) => {
+              {INVITATION_TYPE_OPTIONS.map((opt) => {
                 const selected = invType === opt.value;
                 return (
                   <button
@@ -525,25 +501,20 @@ export function InviteGuestDialog({
           )}
 
           {stepKey === 'rooms' && (
-            <div className="space-y-2">
-              {rooms.map((room) => {
-                const checked = form.watch('room_ids').includes(room.id);
-                return (
-                  <label
-                    key={room.id}
-                    className={cn(
-                      'flex cursor-pointer items-center gap-3 rounded-xl border p-4 text-sm transition-colors',
-                      checked ? 'border-foreground' : 'hover:bg-muted'
-                    )}
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={() => toggleRoom(room.id)}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                {rooms.map((room) => {
+                  const selected = values.room_ids.includes(room.id);
+                  return (
+                    <SelectableRoomCard
+                      key={room.id}
+                      room={room}
+                      selected={selected}
+                      onToggle={() => toggleRoom(room.id)}
                     />
-                    {room.name}
-                  </label>
-                );
-              })}
+                  );
+                })}
+              </div>
               {form.formState.errors.room_ids && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.room_ids.message}
@@ -681,7 +652,7 @@ export function InviteGuestDialog({
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Invitation
                 </dt>
-                <dd className="mt-1 font-medium">{TYPE_LABELS[invType]}</dd>
+                <dd className="mt-1 font-medium">{INVITATION_TYPE_LABELS[invType]}</dd>
                 <dd className="mt-1 text-muted-foreground">
                   {values.requires_approval
                     ? 'Requires your approval'

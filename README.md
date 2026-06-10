@@ -1,6 +1,6 @@
-# GuestHouse
+# Gracious
 
-Private, invitation-only booking platform for vacation/second homeowners to share properties with friends and family.
+A warm, private way for second-home owners to have friends and family to stay. Lives at [gracious.host](https://gracious.host).
 
 ## Stack
 

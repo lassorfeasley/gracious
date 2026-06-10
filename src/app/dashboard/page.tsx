@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center px-4">
-          <span className="font-semibold">GuestHouse</span>
+          <span className="font-semibold">Gracious</span>
         </div>
       </header>
       <main className="container mx-auto w-full max-w-2xl px-4 py-12">

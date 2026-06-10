@@ -87,7 +87,7 @@ export function PropertyMap({
     return (
       <div
         className={cn(
-          'flex h-64 items-center justify-center rounded-xl border bg-muted/30 text-center text-sm text-muted-foreground',
+          'flex h-80 items-center justify-center rounded-xl border bg-muted/30 text-center text-sm text-muted-foreground sm:h-96',
           className
         )}
       >
@@ -106,7 +106,10 @@ export function PropertyMap({
 
   return (
     <div
-      className={cn('relative h-64 overflow-hidden rounded-xl border', className)}
+      className={cn(
+        'relative h-80 overflow-hidden rounded-xl border sm:h-96',
+        className
+      )}
     >
       <div ref={containerRef} className="h-full w-full" />
       {status === 'error' && (

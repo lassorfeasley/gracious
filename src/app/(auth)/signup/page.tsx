@@ -335,7 +335,7 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between px-6 py-5">
-        <span className="text-sm font-semibold tracking-tight">GuestHouse</span>
+        <span className="text-sm font-semibold tracking-tight">Gracious</span>
         <p className="text-sm text-muted-foreground">
           Already have an account?{' '}
           <Link href="/login" className="font-medium text-foreground underline">

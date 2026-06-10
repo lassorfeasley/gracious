@@ -77,7 +77,7 @@ export const CATEGORY_META: Record<UnsubscribeCategory, CategoryMeta> = {
   },
   product_updates: {
     label: 'Product updates',
-    description: 'Occasional news about new GuestHouse features. Marketing only.',
+    description: 'Occasional news about new Gracious features. Marketing only.',
     audience: 'host',
   },
 };

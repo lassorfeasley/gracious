@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { openBillingPortal, startCheckout } from '@/lib/billing-client';
 import { PRICING_PLANS, type PlanId } from '@/lib/pricing';
@@ -40,16 +39,14 @@ export function SubscriptionCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Subscription</CardTitle>
-          <Badge variant={isPro ? 'default' : 'secondary'}>
-            {isPro ? 'Pro' : 'Free'} plan
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-5">
+    <section className="py-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-medium">Subscription</h2>
+        <Badge variant={isPro ? 'default' : 'secondary'}>
+          {isPro ? 'Pro' : 'Free'} plan
+        </Badge>
+      </div>
+      <div className="mt-4 space-y-5">
         {isPro ? (
           <>
             <p className="text-sm text-muted-foreground">
@@ -136,7 +133,7 @@ export function SubscriptionCard({
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

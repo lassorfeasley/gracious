@@ -80,11 +80,11 @@ export async function POST(request: NextRequest) {
 
     switch (emailData.email_action_type) {
       case 'magiclink':
-        subject = 'Your GuestHouse sign-in link';
+        subject = 'Your Gracious sign-in link';
         react = AuthMagicLinkEmail({ signInUrl: actionUrl, token });
         break;
       case 'recovery':
-        subject = 'Reset your GuestHouse password';
+        subject = 'Reset your Gracious password';
         react = AuthRecoveryEmail({ resetUrl: actionUrl, token });
         break;
       case 'email_change':
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       case 'invite':
       case 'email':
       default:
-        subject = 'Confirm your email for GuestHouse';
+        subject = 'Confirm your email for Gracious';
         react = AuthConfirmSignupEmail({ confirmUrl: actionUrl, token });
         break;
     }

@@ -1,6 +1,6 @@
-const INVITE_TOKEN_KEY = 'guesthouse:dev:inviteToken';
-const PROPERTY_SLUG_KEY = 'guesthouse:dev:propertySlug';
-const DEV_TOOLBAR_OPEN_KEY = 'guesthouse:dev:toolbarOpen';
+const INVITE_TOKEN_KEY = 'gracious:dev:inviteToken';
+const PROPERTY_SLUG_KEY = 'gracious:dev:propertySlug';
+const DEV_TOOLBAR_OPEN_KEY = 'gracious:dev:toolbarOpen';
 
 export function getStoredInviteToken(): string | null {
   if (typeof window === 'undefined') return null;

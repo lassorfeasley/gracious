@@ -31,7 +31,7 @@ export function AdminNav({ userEmail }: { userEmail: string }) {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
           <Link href="/admin" className="font-semibold tracking-tight">
-            GuestHouse Admin
+            Gracious Admin
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
             {LINKS.map(({ href, label, icon: Icon, exact }) => {

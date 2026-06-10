@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatDateRange } from '@/lib/dates';
+import { INVITATION_TYPE_LABELS } from '@/lib/invitation-types';
 import type { GuestRosterEntry } from '@/lib/guest-roster';
 
 function initials(name: string): string {
@@ -43,12 +44,6 @@ function guestStatus(
   return { label: '—', variant: 'outline' };
 }
 
-const typeLabels: Record<string, string> = {
-  standing: 'Standing',
-  date_offer: 'Date offer',
-  prix_fixe: 'Fixed stay',
-};
-
 export function GuestsTable({
   guests,
   slug,
@@ -79,7 +74,8 @@ export function GuestsTable({
               guest.upcomingStay.checkOut
             )
           : guest.invitation
-            ? typeLabels[guest.invitation.type] ?? guest.invitation.type
+            ? INVITATION_TYPE_LABELS[guest.invitation.type] ??
+              guest.invitation.type
             : guest.pastStaysCount > 0
               ? `${guest.pastStaysCount} past stay${guest.pastStaysCount !== 1 ? 's' : ''}`
               : null;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -25,12 +26,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { CreatePropertyForm } from '@/components/dashboard/create-property-form';
 
 interface DashboardTopNavProps {
   properties: Property[];
   currentProperty: Property;
   requestCount?: number;
   userEmail?: string;
+  userId?: string;
 }
 
 export function DashboardTopNav({
@@ -38,9 +47,11 @@ export function DashboardTopNav({
   currentProperty,
   requestCount = 0,
   userEmail,
+  userId,
 }: DashboardTopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [addHomeOpen, setAddHomeOpen] = useState(false);
   const base = `/dashboard/${currentProperty.slug}`;
   const settingsHref = `${base}/settings`;
 
@@ -68,7 +79,7 @@ export function DashboardTopNav({
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
         <Link href="/dashboard" className="font-semibold tracking-tight">
-          GuestHouse
+          Gracious
         </Link>
 
         <nav className="ml-auto flex items-center gap-1">
@@ -104,23 +115,40 @@ export function DashboardTopNav({
                   </Link>
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={`${settingsHref}#homes`} className="flex items-center">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add another home
-                </Link>
-              </DropdownMenuItem>
+              {userId && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setAddHomeOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add another home
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {userId && (
+            <Dialog open={addHomeOpen} onOpenChange={setAddHomeOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add another home</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">
+                  Create a separate listing with its own rooms, calendar, and
+                  guest invitations.
+                </p>
+                <CreatePropertyForm userId={userId} />
+              </DialogContent>
+            </Dialog>
+          )}
+
           <Link
             href={`${base}/guests`}
-            aria-label="Guests and bookings"
+            aria-label="Bookings"
             className={navLinkClass(isActive('guests'))}
           >
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Guests & bookings</span>
+            <span className="hidden sm:inline">Bookings</span>
           </Link>
 
           <Link

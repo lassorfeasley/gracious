@@ -9,11 +9,11 @@ interface Props {
 export default function AuthRecoveryEmail({ resetUrl, token }: Props) {
   return (
     <EmailLayout
-      preview="Reset your GuestHouse password"
+      preview="Reset your Gracious password"
       heading="Reset your password"
     >
       <Text>
-        We received a request to reset your GuestHouse password. Click below to
+        We received a request to reset your Gracious password. Click below to
         choose a new one.
       </Text>
       <Button style={buttonStyle} href={resetUrl}>

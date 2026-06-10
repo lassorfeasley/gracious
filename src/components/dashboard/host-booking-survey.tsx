@@ -5,6 +5,10 @@ import { ArrowLeft, Check, ChevronRight, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/lib/dates';
+import {
+  INVITATION_TYPE_DESCRIPTIONS,
+  INVITATION_TYPE_LABELS,
+} from '@/lib/invitation-types';
 import type { Room } from '@/types/database';
 import { useBooking } from '@/components/guest/booking-context';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
@@ -51,18 +55,11 @@ const INVITE_TYPE_OPTIONS: {
   value: HostInviteType;
   label: string;
   description: string;
-}[] = [
-  {
-    value: 'date_offer',
-    label: 'Date range',
-    description: 'They choose dates within the windows you added on the calendar.',
-  },
-  {
-    value: 'prix_fixe',
-    label: 'Specific dates',
-    description: 'Exact dates — they accept the stay as offered.',
-  },
-];
+}[] = (['date_offer', 'prix_fixe'] as const).map((value) => ({
+  value,
+  label: INVITATION_TYPE_LABELS[value],
+  description: INVITATION_TYPE_DESCRIPTIONS[value],
+}));
 
 function guestDisplayName(first: string, last: string): string {
   return [first.trim(), last.trim()].filter(Boolean).join(' ');
@@ -603,9 +600,7 @@ export function HostBookingSurvey({
                   <dd className="mt-1 font-medium">
                     {actionType === 'manual'
                       ? 'Manual stay'
-                      : inviteType === 'date_offer'
-                        ? 'Date range invitation'
-                        : 'Specific dates invitation'}
+                      : INVITATION_TYPE_LABELS[inviteType]}
                   </dd>
                 </div>
                 <div className="rounded-xl border p-4">

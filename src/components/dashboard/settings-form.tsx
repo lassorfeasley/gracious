@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { normalizePrefs } from '@/lib/notification-prefs';
 import type { NotificationPrefs, User } from '@/types/database';
@@ -85,15 +84,16 @@ export function SettingsForm({
   }
 
   return (
-    <div className="max-w-xl space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Email preferences</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <>
+      <section className="py-8">
+        <h2 className="text-lg font-medium">Email preferences</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose which emails you receive from Gracious.
+        </p>
+        <div className="mt-6 space-y-8">
           <PrefGroup
-            title="Stay reminders"
-            description="Trip reminders, checkout details, and post-stay notes for stays you're a guest on. Essential emails like booking confirmations are always sent."
+            title="Guest emails"
+            description="For stays you're a guest on — trip reminders, checkout details, and post-stay notes. Essential emails like booking confirmations are always sent."
           >
             <PrefToggle
               prefs={prefs}
@@ -106,14 +106,15 @@ export function SettingsForm({
           {isPropertyOwner && (
             <>
               <PrefGroup
-                title="Host activity"
-                description="Notifications about what's happening at homes you host."
+                title="Host emails"
+                description="Activity and tips for homes you host."
               >
                 {(
                   [
                     ['booking_requests', 'New booking requests'],
                     ['booking_cancelled', 'Booking cancellations'],
                     ['invitation_expiring', 'Invitations expiring soon'],
+                    ['host_tips', 'Hosting tips & suggestions'],
                   ] as const
                 ).map(([key, label]) => (
                   <PrefToggle
@@ -127,20 +128,8 @@ export function SettingsForm({
               </PrefGroup>
 
               <PrefGroup
-                title="Tips & nudges"
-                description="Occasional suggestions to help you get the most out of hosting, like finishing your home profile."
-              >
-                <PrefToggle
-                  prefs={prefs}
-                  setPrefs={setPrefs}
-                  prefKey="host_tips"
-                  label="Hosting tips & suggestions"
-                />
-              </PrefGroup>
-
-              <PrefGroup
-                title="Product updates"
-                description="Occasional news about new GuestHouse features. Marketing only — opt out anytime."
+                title="Account emails"
+                description="News about Gracious itself. Marketing only — opt out anytime."
               >
                 <PrefToggle
                   prefs={prefs}
@@ -155,20 +144,18 @@ export function SettingsForm({
           <Button onClick={savePrefs} disabled={loading}>
             Save preferences
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {isPropertyOwner && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Home managers</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Home managers can run <strong>{propertyName}</strong> with you —
-              calendar, guests, and requests — but cannot add other managers or
-              delete the home.
-            </p>
+        <section className="py-8">
+          <h2 className="text-lg font-medium">Home managers</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Home managers can run <strong>{propertyName}</strong> with you —
+            calendar, guests, and requests — but cannot add other managers or
+            delete the home.
+          </p>
+          <div className="mt-6 space-y-4">
             <div className="flex gap-2">
               <Input
                 type="email"
@@ -204,10 +191,10 @@ export function SettingsForm({
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       )}
-    </div>
+    </>
   );
 }
 
@@ -223,8 +210,8 @@ function PrefGroup({
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       </div>
       <div className="space-y-3">{children}</div>
     </div>

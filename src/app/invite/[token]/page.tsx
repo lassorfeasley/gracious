@@ -23,7 +23,13 @@ import {
 } from '@/lib/guest-preview';
 import { Badge } from '@/components/ui/badge';
 import { CalendarCheck, CalendarRange, MapPin, Sparkles } from 'lucide-react';
-import { summarizeBeds } from '@/lib/validations';
+import { RoomCard } from '@/components/room-card';
+import { formatPersonName } from '@/lib/names';
+import {
+  INVITATION_TYPE_GUEST_DESCRIPTIONS,
+  INVITATION_TYPE_HEADLINE_PHRASE,
+  INVITATION_TYPE_LABELS,
+} from '@/lib/invitation-types';
 import { PhotoGallery } from '@/components/photo-gallery';
 
 export default async function InvitePage({
@@ -77,19 +83,9 @@ export default async function InvitePage({
     max_occupancy: r.max_occupancy,
   }));
 
-  const typeLabel =
-    invitation.type === 'standing'
-      ? 'Open invitation'
-      : invitation.type === 'date_offer'
-        ? 'Date offer'
-        : 'Fixed stay';
-
+  const typeLabel = INVITATION_TYPE_LABELS[invitation.type];
   const typeDescription =
-    invitation.type === 'standing'
-      ? 'There’s no set window — request any available dates within your invited rooms.'
-      : invitation.type === 'date_offer'
-        ? 'Choose your dates within the windows your host has opened on the calendar.'
-        : 'Your host has offered specific dates — accept the stay exactly as proposed.';
+    INVITATION_TYPE_GUEST_DESCRIPTIONS[invitation.type];
 
   const TypeIcon =
     invitation.type === 'standing'
@@ -100,16 +96,15 @@ export default async function InvitePage({
 
   const host = (
     property as unknown as {
-      owner?: { first_name: string | null; last_name: string | null } | null;
+      owner?: {
+        first_name: string | null;
+        last_name: string | null;
+        email: string;
+      } | null;
     }
   ).owner;
-  const hostName = host?.first_name?.trim() || 'Your host';
-  const inviteTypeWord =
-    invitation.type === 'standing'
-      ? 'open'
-      : invitation.type === 'date_offer'
-        ? 'date offer'
-        : 'fixed stay';
+  const hostName = formatPersonName(host, 'Your host') ?? 'Your host';
+  const inviteTypeWord = INVITATION_TYPE_HEADLINE_PHRASE[invitation.type];
   const inviteArticle = invitation.type === 'standing' ? 'an' : 'a';
 
   return (
@@ -252,38 +247,7 @@ export default async function InvitePage({
                       }
                       className="group block"
                     >
-                      {room.image_url ? (
-                        <>
-                          <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
-                            <Image
-                              src={room.image_url}
-                              alt={room.name}
-                              fill
-                              className="object-cover transition duration-300 group-hover:scale-105"
-                            />
-                          </div>
-                          <p className="mt-4 text-lg font-medium">{room.name}</p>
-                          <p className="text-base text-muted-foreground">
-                            {summarizeBeds(room.beds)} · Up to{' '}
-                            {room.max_occupancy} guests
-                          </p>
-                        </>
-                      ) : (
-                        <div className="relative flex aspect-4/3 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-5 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900">
-                          <p className="text-lg font-medium text-white">
-                            {room.name}
-                          </p>
-                          <p className="text-base text-white/70">
-                            {summarizeBeds(room.beds)} · Up to{' '}
-                            {room.max_occupancy} guests
-                          </p>
-                        </div>
-                      )}
-                      {room.description && (
-                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                          {room.description}
-                        </p>
-                      )}
+                      <RoomCard room={room} showDescription />
                     </Link>
                   ))}
                 </div>

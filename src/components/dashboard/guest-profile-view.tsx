@@ -10,17 +10,12 @@ import {
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { formatDate, formatDateRange } from '@/lib/dates';
+import { INVITATION_TYPE_LABELS } from '@/lib/invitation-types';
 import { StaySummaryList } from '@/components/stay-summary-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GuestProfileActions } from '@/components/dashboard/guest-profile-actions';
 import type { GuestRosterEntry } from '@/lib/guest-roster';
-
-const typeLabels: Record<string, string> = {
-  standing: 'Standing invitation',
-  date_offer: 'Date offer',
-  prix_fixe: 'Fixed stay',
-};
 
 const statusVariant: Record<
   string,
@@ -90,7 +85,7 @@ export function GuestProfileView({
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Guests & bookings
+        Bookings
       </Link>
 
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
@@ -231,7 +226,7 @@ export function GuestProfileView({
                     {guest.invitation.status}
                   </Badge>
                   <Badge variant="outline">
-                    {typeLabels[guest.invitation.type] ??
+                    {INVITATION_TYPE_LABELS[guest.invitation.type] ??
                       guest.invitation.type}
                   </Badge>
                   <Badge variant="outline">

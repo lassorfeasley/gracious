@@ -13,6 +13,7 @@ import { HostManageStayCard } from '@/components/dashboard/host-manage-stay-card
 import { BookingMainActions } from '@/components/dashboard/booking-main-actions';
 import type { CalendarBooking, RoomAvailability } from '@/lib/guest-calendar';
 import type { BookingWithDetails } from '@/types/database';
+import { INVITATION_TYPE_LABELS } from '@/lib/invitation-types';
 
 function bookingTypeInfo(booking: BookingWithDetails): {
   label: string;
@@ -28,19 +29,19 @@ function bookingTypeInfo(booking: BookingWithDetails): {
   switch (booking.invitation.type) {
     case 'standing':
       return {
-        label: 'Open invitation',
+        label: INVITATION_TYPE_LABELS.standing,
         description:
           'The guest was invited to request any available dates within their invited rooms.',
       };
     case 'date_offer':
       return {
-        label: 'Date range invitation',
+        label: INVITATION_TYPE_LABELS.date_offer,
         description:
           'The guest chose these dates from within the date windows you offered.',
       };
     case 'prix_fixe':
       return {
-        label: 'Specific dates invitation',
+        label: INVITATION_TYPE_LABELS.prix_fixe,
         description: 'The guest accepted the exact dates you offered.',
       };
     default:

@@ -32,6 +32,7 @@ export default async function PropertyDashboardLayout({
         currentProperty={currentProperty}
         requestCount={requestCount ?? 0}
         userEmail={user.email ?? undefined}
+        userId={user.id}
       />
       <main className="flex-1 px-6 pt-6 pb-32">{children}</main>
       <SiteFooter name={currentProperty.name} />

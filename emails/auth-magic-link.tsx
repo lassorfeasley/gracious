@@ -9,10 +9,10 @@ interface Props {
 export default function AuthMagicLinkEmail({ signInUrl, token }: Props) {
   return (
     <EmailLayout
-      preview="Your GuestHouse sign-in link"
-      heading="Sign in to GuestHouse"
+      preview="Your Gracious sign-in link"
+      heading="Sign in to Gracious"
     >
-      <Text>Click below to securely sign in to your GuestHouse account.</Text>
+      <Text>Click below to securely sign in to your Gracious account.</Text>
       <Button style={buttonStyle} href={signInUrl}>
         Sign in
       </Button>

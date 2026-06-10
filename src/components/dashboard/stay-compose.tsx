@@ -291,7 +291,7 @@ function HostComposeForm({
         onSubmitManual={submitManual}
       />
       <p className="mt-4 text-center text-sm text-muted-foreground">
-        Need a standing invitation?{' '}
+        Need an open invitation?{' '}
         <InviteGuestDialog
           propertyId={propertyId}
           rooms={rooms}

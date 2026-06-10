@@ -14,7 +14,7 @@ function getResend(): Resend | null {
 
 /** The configured sender for every outgoing email. */
 export const fromAddress = () =>
-  process.env.RESEND_FROM ?? 'GuestHouse <onboarding@resend.dev>';
+  process.env.RESEND_FROM ?? 'Gracious <onboarding@resend.dev>';
 
 export async function sendEmail({
   to,

@@ -32,12 +32,12 @@ export function EmailLayout({
       <Preview>{preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Text style={logo}>GuestHouse</Text>
+          <Text style={logo}>Gracious</Text>
           <Heading style={h1}>{heading}</Heading>
           <Section style={content}>{children}</Section>
           <Hr style={hr} />
           <Text style={footer}>
-            GuestHouse — private stays with people you trust.
+            Gracious — the art of having people to stay.
             {unsubscribeUrl && (
               <>
                 <br />
@@ -53,14 +53,15 @@ export function EmailLayout({
   );
 }
 
+/* Brand palette — paper, ink, pine, brass (see src/app/globals.css). */
 const main = {
-  backgroundColor: '#f6f6f6',
+  backgroundColor: '#f7f4ed',
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 };
 
 const container = {
-  backgroundColor: '#ffffff',
+  backgroundColor: '#fdfcf8',
   margin: '40px auto',
   padding: '32px',
   borderRadius: '8px',
@@ -70,8 +71,8 @@ const container = {
 const logo = {
   fontSize: '14px',
   fontWeight: '600' as const,
-  color: '#111',
-  letterSpacing: '0.05em',
+  color: '#a2773e',
+  letterSpacing: '0.2em',
   textTransform: 'uppercase' as const,
   margin: '0 0 24px',
 };
@@ -79,34 +80,35 @@ const logo = {
 const h1 = {
   fontSize: '24px',
   fontWeight: '600' as const,
-  color: '#111',
+  fontFamily: 'Georgia, "Times New Roman", serif',
+  color: '#221e19',
   margin: '0 0 16px',
 };
 
 const content = {
-  color: '#444',
+  color: '#48433c',
   fontSize: '16px',
   lineHeight: '24px',
 };
 
-const hr = { borderColor: '#eee', margin: '24px 0' };
+const hr = { borderColor: '#e4ddd0', margin: '24px 0' };
 
 const footer = {
-  color: '#999',
+  color: '#8a8273',
   fontSize: '12px',
   margin: 0,
   lineHeight: '20px',
 };
 
 const footerLink = {
-  color: '#999',
+  color: '#8a8273',
   fontSize: '12px',
   textDecoration: 'underline',
 };
 
 export const buttonStyle = {
-  backgroundColor: '#111',
-  color: '#fff',
+  backgroundColor: '#1f3d31',
+  color: '#f7f4ed',
   padding: '12px 24px',
   borderRadius: '6px',
   textDecoration: 'none',

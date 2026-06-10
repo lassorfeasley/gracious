@@ -32,7 +32,7 @@ export default async function MyTripsPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <span className="font-semibold">GuestHouse</span>
+          <span className="font-semibold">Gracious</span>
           <div className="flex items-center gap-2">
             {isHost && (
               <Button variant="outline" size="sm" asChild>

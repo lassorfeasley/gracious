@@ -11,7 +11,7 @@ import {
   type PreferenceRow,
 } from '@/components/unsubscribe-preferences';
 
-export const metadata = { title: 'Email preferences · GuestHouse' };
+export const metadata = { title: 'Email preferences · Gracious' };
 
 export default async function UnsubscribePage({
   searchParams,
@@ -47,7 +47,7 @@ export default async function UnsubscribePage({
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
       <div className="rounded-2xl border bg-card p-8 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          GuestHouse
+          Gracious
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           Email preferences

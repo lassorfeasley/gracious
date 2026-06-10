@@ -20,21 +20,21 @@ interface HostStep {
 
 const HOST_STEPS: HostStep[] = [
   {
-    title: 'Set up your home',
+    title: 'Make the house ready',
     description:
-      'Add your property, rooms, and photos. Block dates you need and write the house rules guests will see before they arrive.',
+      'Add your rooms, your photographs, and the house notes guests should read before they arrive. Set aside the weeks you are keeping for yourselves.',
     icon: Home,
   },
   {
-    title: 'Invite guests privately',
+    title: 'Extend the invitation',
     description:
-      'Send personal invitations to friends and family — never a public listing. Choose dates, rooms, and whether stays need your approval.',
+      'Invitations go to the people you would trust with a key — never a public page. You choose the dates, the rooms, and whether a stay waits for your word.',
     icon: UserPlus,
   },
   {
-    title: 'Manage every stay',
+    title: 'Receive your guests',
     description:
-      'See who is arriving, staying, or departing on your calendar. Approve requests, track bookings, and keep everyone on the same page.',
+      'The calendar already knows who arrives Friday and who stays through Sunday. Everyone is on the same page before they reach the door.',
     icon: CalendarDays,
   },
 ];
@@ -49,7 +49,7 @@ export function HowItWorksCarousel({ className }: { className?: string }) {
 
   return (
     <div className={cn('mx-auto max-w-3xl', className)}>
-      <div className="relative overflow-hidden rounded-3xl border bg-card p-8 shadow-sm sm:p-10">
+      <div className="relative overflow-hidden p-8 sm:p-10">
         <div
           className="flex transition-transform duration-300 ease-out"
           style={{ transform: `translateX(-${activeIndex * 100}%)` }}
@@ -63,16 +63,16 @@ export function HowItWorksCarousel({ className }: { className?: string }) {
                 aria-hidden={index !== activeIndex}
               >
                 <div className="flex flex-col items-center text-center">
-                  <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <StepIcon className="size-7" strokeWidth={1.75} />
+                  <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <StepIcon className="size-7" strokeWidth={1.5} />
                   </div>
-                  <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <p className="mt-6 text-xs font-medium uppercase tracking-[0.2em] text-brass">
                     Step {index + 1} of {HOST_STEPS.length}
                   </p>
-                  <h3 className="mt-2 text-2xl font-semibold tracking-tight">
+                  <h3 className="mt-3 font-display text-2xl font-medium tracking-tight">
                     {item.title}
                   </h3>
-                  <p className="mt-3 max-w-md text-muted-foreground">
+                  <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
                     {item.description}
                   </p>
                 </div>

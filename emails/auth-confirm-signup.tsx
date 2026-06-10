@@ -9,11 +9,11 @@ interface Props {
 export default function AuthConfirmSignupEmail({ confirmUrl, token }: Props) {
   return (
     <EmailLayout
-      preview="Confirm your email to finish setting up GuestHouse"
+      preview="Confirm your email to finish setting up Gracious"
       heading="Confirm your email"
     >
       <Text>
-        Welcome to GuestHouse! Confirm this email address to finish setting up
+        Welcome to Gracious! Confirm this email address to finish setting up
         your account.
       </Text>
       <Button style={buttonStyle} href={confirmUrl}>
@@ -26,7 +26,7 @@ export default function AuthConfirmSignupEmail({ confirmUrl, token }: Props) {
       )}
       <Text style={{ fontSize: '12px', color: '#999', marginTop: '16px' }}>
         This link expires soon and can only be used once. If you didn&apos;t
-        create a GuestHouse account, you can safely ignore this email.
+        create a Gracious account, you can safely ignore this email.
         <br />
         Or copy this link: <Link href={confirmUrl}>{confirmUrl}</Link>
       </Text>

@@ -4,7 +4,7 @@ import { isDevToolsEnabled } from '@/lib/dev-tools';
 import { StyleGuide } from '@/components/dev/style-guide';
 
 export const metadata: Metadata = {
-  title: 'Design System · GuestHouse',
+  title: 'Design System · Gracious',
   robots: { index: false, follow: false },
 };
 

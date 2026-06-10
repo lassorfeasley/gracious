@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { formatDateRange } from '@/lib/dates';
-import { summarizeBeds } from '@/lib/validations';
+import { RoomCard } from '@/components/room-card';
 import { Button } from '@/components/ui/button';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
@@ -46,18 +46,6 @@ export default async function OverviewPage({
     )
     .eq('property_id', property.id)
     .in('status', ['approved', 'requested']);
-
-  const { count: pendingCount } = await supabase
-    .from('bookings')
-    .select('*', { count: 'exact', head: true })
-    .eq('property_id', property.id)
-    .eq('status', 'requested');
-
-  const { count: inviteCount } = await supabase
-    .from('invitations')
-    .select('*', { count: 'exact', head: true })
-    .eq('property_id', property.id)
-    .in('status', ['pending', 'accepted']);
 
   const normalized = (bookings ?? []).map((b) => {
     const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
@@ -224,67 +212,11 @@ export default async function OverviewPage({
                 href={`/dashboard/${slug}/rooms/${room.id}`}
                 className="group block"
               >
-                {room.image_url ? (
-                  <>
-                    <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
-                      <Image
-                        src={room.image_url}
-                        alt={room.name}
-                        fill
-                        className="object-cover transition duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                    <p className="mt-4 text-lg font-medium">{room.name}</p>
-                    <p className="text-base text-muted-foreground">
-                      {summarizeBeds(room.beds)} · Up to {room.max_occupancy}{' '}
-                      guests
-                    </p>
-                  </>
-                ) : (
-                  <div className="relative flex aspect-4/3 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-5 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900">
-                    <p className="text-lg font-medium text-white">{room.name}</p>
-                    <p className="text-base text-white/70">
-                      {summarizeBeds(room.beds)} · Up to {room.max_occupancy}{' '}
-                      guests
-                    </p>
-                  </div>
-                )}
+                <RoomCard room={room} />
               </Link>
             ))}
           </div>
         )}
-      </section>
-
-      {/* Quick stats */}
-      <section className="py-10">
-      <div className="grid grid-cols-1 divide-y overflow-hidden rounded-2xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <div className="p-7">
-          <p className="text-base text-muted-foreground">Pending requests</p>
-          <p className="mt-2 text-3xl font-semibold">{pendingCount ?? 0}</p>
-          {(pendingCount ?? 0) > 0 && (
-            <Link
-              href={`/dashboard/${slug}/requests`}
-              className="text-sm text-primary hover:underline"
-            >
-              Review requests
-            </Link>
-          )}
-        </div>
-        <div className="p-7">
-          <p className="text-base text-muted-foreground">Rooms</p>
-          <p className="mt-2 text-3xl font-semibold">{roomCount}</p>
-        </div>
-        <div className="p-7">
-          <p className="text-base text-muted-foreground">Active invitations</p>
-          <p className="mt-2 text-3xl font-semibold">{inviteCount ?? 0}</p>
-          <Link
-            href={`/dashboard/${slug}/guests`}
-            className="text-sm text-primary hover:underline"
-          >
-            Manage invitations
-          </Link>
-        </div>
-      </div>
       </section>
 
       {/* About */}

@@ -67,6 +67,7 @@ const SEMANTIC_COLORS = [
   { name: 'background', fg: 'foreground' },
   { name: 'card', fg: 'card-foreground' },
   { name: 'primary', fg: 'primary-foreground' },
+  { name: 'brass', fg: 'brass-foreground' },
   { name: 'secondary', fg: 'secondary-foreground' },
   { name: 'muted', fg: 'muted-foreground' },
   { name: 'accent', fg: 'accent-foreground' },
@@ -74,6 +75,25 @@ const SEMANTIC_COLORS = [
   { name: 'warning', fg: 'warning-foreground' },
   { name: 'destructive', fg: 'destructive-foreground' },
 ] as const;
+
+/* ------------------------------ brand voice ------------------------------- */
+
+const LEXICON: { use: string; never: string }[] = [
+  { use: 'invitation', never: 'listing' },
+  { use: 'stay', never: 'booking / reservation' },
+  { use: 'arrival', never: 'check-in' },
+  { use: 'the house', never: 'the property / the unit' },
+  { use: 'having people to stay', never: 'managing guests' },
+  { use: 'weeks you are keeping', never: 'blocked availability' },
+  { use: 'open your house', never: 'create your account' },
+];
+
+const VOICE_SAMPLES = [
+  { good: true, text: 'Your invitation is waiting. The house notes are inside.' },
+  { good: true, text: 'The Calloways arrive Friday and stay through Sunday.' },
+  { good: false, text: 'Manage your bookings and availability in one dashboard.' },
+  { good: false, text: 'Sign up now to unlock unlimited listings!' },
+];
 
 function Swatch({ name, fg }: { name: string; fg: string }) {
   return (
@@ -98,11 +118,12 @@ function Swatch({ name, fg }: { name: string; fg: string }) {
 }
 
 const TYPE_SCALE = [
-  { label: 'Display', cls: 'font-display text-5xl font-bold tracking-tight' },
-  { label: 'Heading 1', cls: 'font-display text-4xl font-semibold tracking-tight' },
-  { label: 'Heading 2', cls: 'font-display text-3xl font-semibold tracking-tight' },
-  { label: 'Heading 3', cls: 'font-display text-2xl font-semibold tracking-tight' },
-  { label: 'Heading 4', cls: 'font-display text-xl font-semibold tracking-tight' },
+  { label: 'Display', cls: 'font-display text-5xl font-medium tracking-tight' },
+  { label: 'Heading 1', cls: 'font-display text-4xl font-medium tracking-tight' },
+  { label: 'Heading 2', cls: 'font-display text-3xl font-medium tracking-tight' },
+  { label: 'Heading 3', cls: 'font-display text-2xl font-medium tracking-tight' },
+  { label: 'Heading 4', cls: 'font-display text-xl font-medium tracking-tight' },
+  { label: 'Eyebrow', cls: 'text-xs font-medium uppercase tracking-[0.2em] text-brass' },
   { label: 'Lead', cls: 'text-lg text-muted-foreground' },
   { label: 'Body', cls: 'text-base' },
   { label: 'Small', cls: 'text-sm' },
@@ -142,11 +163,11 @@ export function StyleGuide() {
         <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
             <div>
-              <h1 className="text-lg font-bold tracking-tight">
-                GuestHouse — Design System
+              <h1 className="text-lg font-semibold tracking-tight">
+                Gracious — Design System
               </h1>
               <p className="text-xs text-muted-foreground">
-                Living style guide · tokens &amp; components
+                Living style guide · brand, tokens &amp; components
               </p>
             </div>
             <Button
@@ -162,8 +183,113 @@ export function StyleGuide() {
 
         <main className="mx-auto max-w-5xl space-y-16 px-6 py-12">
           <Section
+            title="Brand"
+            description="Gracious sells an identity — being a great host — not software. Hospitality as a practiced art, not a logistics problem."
+          >
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Generosity, not commerce
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  The product exists to give stays away. Never borrow language
+                  from rental marketplaces — no listings, bookings, or
+                  availability management.
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Private, not exclusive
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  The absence of a public page isn&apos;t a velvet rope — it&apos;s
+                  the discretion of a home. Privacy keeps a stay personal and
+                  warm, never a transaction with a stranger. This is about being
+                  known for your hospitality, not for being hard to reach.
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    The owner as protagonist
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  Airbnb&apos;s hero is the traveler; ours is the host. Every
+                  image and sentence is from the host&apos;s vantage point —
+                  their table, their porch, their guests arriving.
+                </CardContent>
+              </Card>
+            </div>
+          </Section>
+
+          <Section
+            title="Voice"
+            description="Write like correspondence, not UI copy. Short declarative sentences; slightly formal warmth. The test: could this sentence appear in a well-written house manual?"
+          >
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Lexicon</CardTitle>
+                  <CardDescription>
+                    Words we use, and the marketplace register we never do.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="divide-y text-sm">
+                    {LEXICON.map((row) => (
+                      <div
+                        key={row.use}
+                        className="grid grid-cols-2 gap-4 py-2.5"
+                      >
+                        <span className="font-medium">{row.use}</span>
+                        <span className="text-muted-foreground line-through">
+                          {row.never}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">The house-manual test</CardTitle>
+                  <CardDescription>
+                    Sentences that pass, and sentences that fail.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {VOICE_SAMPLES.map((s) => (
+                    <p
+                      key={s.text}
+                      className={cn(
+                        'flex items-start gap-2 text-sm',
+                        s.good ? '' : 'text-muted-foreground line-through'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'mt-0.5 shrink-0 text-xs font-medium',
+                          s.good ? 'text-success' : 'text-destructive'
+                        )}
+                      >
+                        {s.good ? 'PASS' : 'FAIL'}
+                      </span>
+                      {s.text}
+                    </p>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </Section>
+
+          <Section
             title="Colors"
-            description="Semantic tokens driven by CSS variables in globals.css. These adapt automatically to light and dark mode."
+            description="Paper, ink, pine, brass. A warm ivory ground, near-black ink, deep pine green as the single anchor color, and a restrained brass accent. No blue anywhere — blue reads transactional."
           >
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {SEMANTIC_COLORS.map((c) => (
@@ -174,7 +300,7 @@ export function StyleGuide() {
 
           <Section
             title="Typography"
-            description="Headings use Plus Jakarta Sans (display); body uses Inter."
+            description="Headings use Fraunces, a serif with personality — the serif is the brand and does the luxury work. Body and UI use Inter, a quiet sans. Prefer narrower measures and generous whitespace."
           >
             <Card>
               <CardContent className="space-y-4 pt-6">
@@ -304,16 +430,18 @@ export function StyleGuide() {
             <div className="grid gap-6 sm:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Lakeside Cabin</CardTitle>
+                  <CardTitle>The Lake House</CardTitle>
                   <CardDescription>Tahoe City, California</CardDescription>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
-                  A cozy two-bedroom retreat with a private dock and a wood-burning
-                  fireplace.
+                  Two bedrooms, a private dock, and a wood-burning fireplace.
+                  The house notes are by the kettle.
                 </CardContent>
                 <CardFooter className="justify-between">
-                  <span className="text-sm font-semibold">$220 / night</span>
-                  <Button size="sm">Request stay</Button>
+                  <span className="text-sm text-muted-foreground">
+                    Open the last week of June
+                  </span>
+                  <Button size="sm">Extend an invitation</Button>
                 </CardFooter>
               </Card>
               <Card className="transition-shadow hover:shadow-md">
@@ -324,7 +452,7 @@ export function StyleGuide() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center gap-2 text-sm text-success">
-                  <Check className="size-4" /> Available this weekend
+                  <Check className="size-4" /> The house is free this weekend
                 </CardContent>
               </Card>
             </div>
@@ -334,9 +462,9 @@ export function StyleGuide() {
             <div className="space-y-3">
               <Alert>
                 <Info />
-                <AlertTitle>Heads up</AlertTitle>
+                <AlertTitle>A note before you arrive</AlertTitle>
                 <AlertDescription>
-                  Your invitation link expires in 7 days.
+                  Your invitation is good for another seven days.
                 </AlertDescription>
               </Alert>
               <Alert variant="destructive">

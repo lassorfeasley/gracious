@@ -94,9 +94,9 @@ const SAMPLE = {
   dates: 'Jul 12, 2026 – Jul 16, 2026',
   rooms: 'Master Suite, Bunk Room',
   partySize: 4,
-  inviteUrl: 'https://guesthouse.app/invite/sample-token',
-  dashboardUrl: 'https://guesthouse.app/dashboard',
-  requestUrl: 'https://guesthouse.app/dashboard/the-lake-house/requests',
+  inviteUrl: 'https://gracious.host/invite/sample-token',
+  dashboardUrl: 'https://gracious.host/dashboard',
+  requestUrl: 'https://gracious.host/dashboard/the-lake-house/requests',
   address: '482 Shoreline Dr, Tahoe City, CA',
   directions: 'Gate code is 1995. Park in the gravel area to the right.',
   wifiName: 'LakeHouse-5G',
@@ -107,7 +107,7 @@ const SAMPLE = {
   checkoutInstructions:
     'Strip the beds, start the dishwasher, and drop the keys back in the lockbox.',
   expiresAt: 'Jun 14, 2026',
-  authUrl: 'https://guesthouse.app/auth/confirm?token_hash=sample',
+  authUrl: 'https://gracious.host/auth/confirm?token_hash=sample',
 };
 
 export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
@@ -120,7 +120,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'New user',
     description:
-      'Confirms a new account\u2019s email address. Sent by Supabase Auth through our Send Email hook so it matches the GuestHouse design.',
+      'Confirms a new account\u2019s email address. Sent by Supabase Auth through our Send Email hook so it matches the Gracious design.',
     trigger: 'A user signs up and Supabase requests email confirmation.',
     timing: 'Immediately',
     logTypes: [],
@@ -129,7 +129,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: 'Confirm your email for GuestHouse',
+        subject: 'Confirm your email for Gracious',
         element: (
           <AuthConfirmSignupEmail confirmUrl={SAMPLE.authUrl} token="123456" />
         ),
@@ -154,7 +154,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: 'Your GuestHouse sign-in link',
+        subject: 'Your Gracious sign-in link',
         element: <AuthMagicLinkEmail signInUrl={SAMPLE.authUrl} token="123456" />,
       },
     ],
@@ -177,7 +177,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: 'Reset your GuestHouse password',
+        subject: 'Reset your Gracious password',
         element: <AuthRecoveryEmail resetUrl={SAMPLE.authUrl} token="123456" />,
       },
     ],
@@ -653,7 +653,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'planned',
     audience: 'Hosts (anyone who owns a home)',
     description:
-      'Occasional marketing email about new GuestHouse features. The only non-transactional email — subscribed by default once a host adds a home, opt-out anytime. No broadcast tooling is built yet.',
+      'Occasional marketing email about new Gracious features. The only non-transactional email — subscribed by default once a host adds a home, opt-out anytime. No broadcast tooling is built yet.',
     trigger: 'Sent manually when there\u2019s something worth sharing.',
     timing: 'Ad hoc',
     logTypes: [],
@@ -666,7 +666,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: "What's new in GuestHouse",
+        subject: "What's new in Gracious",
         element: (
           <ProductUpdateEmail
             hostName={SAMPLE.ownerName}

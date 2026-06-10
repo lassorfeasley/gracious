@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { requireOwner, getOwnerProperties } from '@/lib/auth';
+import { requireOwner } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
-import { PropertyHomesSection } from '@/components/dashboard/property-homes-section';
 import { SettingsForm } from '@/components/dashboard/settings-form';
 import { SubscriptionCard } from '@/components/dashboard/subscription-card';
 import { getAccountUsage } from '@/lib/billing';
@@ -14,7 +13,6 @@ export default async function SettingsPage({
   const { slug } = await params;
   const user = await requireOwner();
   const property = await getDashboardProperty(slug);
-  const properties = await getOwnerProperties(user.id);
   const isPropertyOwner = property.owner_id === user.id;
   const supabase = await createClient();
 
@@ -36,38 +34,32 @@ export default async function SettingsPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl">
       <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-muted-foreground">
-          Account, your homes, and who can help manage them
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Your account, notifications, and billing.
         </p>
       </div>
 
-      <PropertyHomesSection
-        properties={properties}
-        currentPropertyId={property.id}
-        userId={user.id}
-      />
-
-      {isPropertyOwner && usage && (
-        <div className="max-w-xl">
+      <div className="mt-4 divide-y">
+        {isPropertyOwner && usage && (
           <SubscriptionCard
             currentPlan={usage.plan}
             hostedStaysUsed={usage.used}
             hostedStaysLimit={usage.limit}
             returnPath={`/dashboard/${slug}/settings`}
           />
-        </div>
-      )}
+        )}
 
-      <SettingsForm
-        user={user}
-        propertyId={property.id}
-        propertyName={property.name}
-        isPropertyOwner={isPropertyOwner}
-        managers={managers}
-      />
+        <SettingsForm
+          user={user}
+          propertyId={property.id}
+          propertyName={property.name}
+          isPropertyOwner={isPropertyOwner}
+          managers={managers}
+        />
+      </div>
     </div>
   );
 }

@@ -42,8 +42,8 @@ export function generateIcs(booking: BookingWithDetails): string {
     status: 'CONFIRMED',
     busyStatus: 'BUSY',
     organizer: {
-      name: 'GuestHouse',
-      email: 'noreply@guesthouse.app',
+      name: 'Gracious',
+      email: 'noreply@gracious.host',
     },
   });
 
