@@ -5,6 +5,20 @@ export const loginSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Enter a valid email'),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
 export const signupSchema = z
   .object({
     first_name: z.string().min(1, 'First name is required'),
@@ -150,6 +164,8 @@ export const bookingUpdateSchema = z.object({
 export type BookingUpdateInput = z.infer<typeof bookingUpdateSchema>;
 
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type PropertyInput = z.infer<typeof propertySchema>;
 export type RoomInput = z.infer<typeof roomSchema>;

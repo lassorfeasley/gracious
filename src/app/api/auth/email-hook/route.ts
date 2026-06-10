@@ -20,6 +20,22 @@ interface SupabaseEmailHookPayload {
 }
 
 /**
+ * Supabase sends redirect_to as a full URL (whatever the client passed to
+ * redirectTo), but /auth/confirm expects a same-origin path. Reduce it to
+ * path + query so links like the password-reset redirect survive the trip.
+ */
+function toNextPath(redirectTo: string): string {
+  if (!redirectTo) return '/dashboard';
+  if (redirectTo.startsWith('/')) return redirectTo;
+  try {
+    const url = new URL(redirectTo);
+    return `${url.pathname}${url.search}` || '/dashboard';
+  } catch {
+    return '/dashboard';
+  }
+}
+
+/**
  * Builds the link that completes the auth action. It points at our own
  * /auth/confirm route (token_hash flow) so the styling and post-verify
  * redirect stay under our control.
@@ -30,7 +46,7 @@ function buildActionUrl(
   const params = new URLSearchParams({
     token_hash: emailData.token_hash,
     type: emailData.email_action_type,
-    next: emailData.redirect_to || '/dashboard',
+    next: toNextPath(emailData.redirect_to),
   });
   return `${appUrl()}/auth/confirm?${params.toString()}`;
 }

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
-import { loginSchema, type LoginInput } from '@/lib/validations';
+import {
+  resetPasswordSchema,
+  type ResetPasswordInput,
+} from '@/lib/validations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,22 +28,19 @@ import {
 } from '@/components/ui/card';
 import { toast } from 'sonner';
 
-export default function LoginForm() {
+export default function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') ?? '/dashboard';
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+  const form = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
   });
 
-  async function onSubmit(values: LoginInput) {
+  async function onSubmit(values: ResetPasswordInput) {
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
+    const { error } = await supabase.auth.updateUser({
       password: values.password,
     });
     setLoading(false);
@@ -51,7 +50,8 @@ export default function LoginForm() {
       return;
     }
 
-    router.push(redirect);
+    toast.success('Your new password is set.');
+    router.push('/');
     router.refresh();
   }
 
@@ -59,20 +59,23 @@ export default function LoginForm() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to manage your properties</CardDescription>
+          <CardTitle className="text-2xl">Set a new password</CardTitle>
+          <CardDescription>
+            Choose a new password for your account. You&apos;ll stay signed in
+            once it&apos;s saved.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>New password</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} />
+                      <Input type="password" autoFocus {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -80,18 +83,10 @@ export default function LoginForm() {
               />
               <FormField
                 control={form.control}
-                name="password"
+                name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Password</FormLabel>
-                      <Link
-                        href="/forgot-password"
-                        className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                      >
-                        Forgot it?
-                      </Link>
-                    </div>
+                    <FormLabel>Confirm new password</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -100,16 +95,10 @@ export default function LoginForm() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Saving…' : 'Save new password'}
               </Button>
             </form>
           </Form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-medium text-foreground underline">
-              Sign up
-            </Link>
-          </p>
         </CardContent>
       </Card>
     </div>
