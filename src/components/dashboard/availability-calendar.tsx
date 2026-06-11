@@ -188,6 +188,8 @@ function MonthGrid({
   selectable,
   value,
   isSelectable,
+  isAllowed,
+  restrictToAllowed,
   onSelect,
   bookingHrefBase,
 }: {
@@ -200,6 +202,8 @@ function MonthGrid({
   selectable: boolean;
   value?: CalendarSelection;
   isSelectable: (dateStr: string) => boolean;
+  isAllowed: (dateStr: string) => boolean;
+  restrictToAllowed: boolean;
   onSelect: (dateStr: string) => void;
   bookingHrefBase?: string;
 }) {
@@ -256,6 +260,10 @@ function MonthGrid({
             ? taken.some((t) => t.pending)
             : booked.some((b) => b.pending);
           const hasConfirmed = booked.some((b) => !b.pending);
+          const hasConfirmedTaken = roomMode
+            ? taken.some((t) => !t.pending && !t.blocked)
+            : hasConfirmed;
+          const pendingOnly = hasPending && !hasConfirmedTaken;
           const unavailable = fullyBooked;
 
           const representativeBookingId = roomMode
@@ -300,7 +308,11 @@ function MonthGrid({
 
             const partialDot = partial ? (
               <span
-                className="pointer-events-none absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-red-500"
+                className={cn(
+                  'pointer-events-none absolute bottom-0.5 left-1/2 size-[5px] -translate-x-1/2 rounded-full',
+                  pendingOnly ? 'bg-amber-400' : 'bg-foreground/70',
+                  endpoint && 'bg-white/80'
+                )}
                 aria-hidden
               />
             ) : null;
@@ -318,7 +330,7 @@ function MonthGrid({
                       {format(day, 'd')}
                       {anyTaken && (
                         <span
-                          className="pointer-events-none absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-red-500/40"
+                          className="pointer-events-none absolute bottom-0.5 left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-foreground/25"
                           aria-hidden
                         />
                       )}
@@ -348,24 +360,29 @@ function MonthGrid({
                     </button>
                   </DayTooltip>
                 ) : bookingHref ? (
+                  // Fully booked, host context — solid pill that opens the booking.
                   <DayTooltip label={title}>
                     <Link
                       href={bookingHref}
                       className={cn(
                         INNER,
-                        'bg-red-500/10 font-medium text-red-600 line-through decoration-red-400/60 ring-1 ring-inset ring-red-500/30 transition hover:ring-2 hover:ring-red-500/50 dark:text-red-400'
+                        'font-medium transition hover:opacity-80',
+                        pendingOnly
+                          ? 'bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-300'
+                          : 'bg-foreground text-background'
                       )}
                     >
                       {format(day, 'd')}
                     </Link>
                   </DayTooltip>
                 ) : (
+                  // Fully booked, guest context — quiet strikethrough.
                   <DayTooltip label={title}>
                     <span
                       className={cn(
                         INNER,
                         unavailable
-                          ? 'bg-red-500/10 font-medium text-red-600 line-through decoration-red-400/60 ring-1 ring-inset ring-red-500/30 dark:text-red-400'
+                          ? 'text-muted-foreground/50 line-through decoration-muted-foreground/40'
                           : 'text-muted-foreground/40'
                       )}
                     >
@@ -378,13 +395,43 @@ function MonthGrid({
           }
 
           const blockedOnly = isBlocked && booked.length === 0;
+          const isTaken = hasConfirmed || hasPending || blockedOnly;
+
+          // Read-only invited-window highlight: when the calendar is scoped to
+          // specific allowed ranges (e.g. a fixed-date invitation), mark the
+          // invited dates and dim everything outside them.
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const isStart = value?.checkIn === dateStr;
+          const isEnd = value?.checkOut === dateStr;
+          const endpoint = isStart || isEnd;
+          const inRange =
+            !!value?.checkIn &&
+            !!value?.checkOut &&
+            dateStr > value.checkIn &&
+            dateStr < value.checkOut;
+          const invitedEndpoint = restrictToAllowed && !isTaken && endpoint;
+          const invitedInRange =
+            restrictToAllowed && !isTaken && inRange && !endpoint;
+          const dimmedOutOfWindow =
+            restrictToAllowed && !isAllowed(dateStr) && !isTaken && !isPast;
+
           const dayClass = cn(
             INNER,
             isToday &&
               !unavailable &&
+              !invitedEndpoint &&
               'font-semibold ring-1 ring-inset ring-foreground',
             isPast && !unavailable && 'text-muted-foreground/50',
-            !unavailable && !isPast && 'text-foreground hover:bg-muted',
+            !unavailable &&
+              !isPast &&
+              !invitedEndpoint &&
+              !invitedInRange &&
+              !dimmedOutOfWindow &&
+              'text-foreground hover:bg-muted',
+            dimmedOutOfWindow && 'text-muted-foreground/40',
+            invitedInRange && 'bg-blue-500/15 text-foreground',
+            invitedEndpoint &&
+              'bg-blue-600 font-semibold text-white dark:bg-blue-500',
             hasConfirmed && 'bg-foreground font-medium text-background',
             hasPending &&
               !hasConfirmed &&
@@ -450,6 +497,10 @@ export function AvailabilityCalendar({
     addMonths(base, i)
   );
 
+  // Read-only calendar scoped to specific windows (e.g. a fixed-date invite):
+  // the invited dates are highlighted instead of being selectable.
+  const restrictToAllowed = !selectable && allowedRanges.length > 0;
+
   /** A single room is free for the whole stay [start, end) (nights only). */
   function roomFreeForRange(roomId: string, start: string, end: string): boolean {
     const avail = roomAvailability?.[roomId];
@@ -480,17 +531,17 @@ export function AvailabilityCalendar({
     return booked || blocked;
   }
 
+  function isAllowed(dateStr: string): boolean {
+    if (allowedRanges.length === 0) return true;
+    return allowedRanges.some((r) => dateStr >= r.start && dateStr <= r.end);
+  }
+
   function isSelectable(dateStr: string): boolean {
     if (!selectable) return false;
     const day = parseISO(dateStr);
     if (isBefore(day, today)) return false;
     if (dayFullyBooked(day)) return false;
-    if (
-      allowedRanges.length > 0 &&
-      !allowedRanges.some((r) => dateStr >= r.start && dateStr <= r.end)
-    ) {
-      return false;
-    }
+    if (!isAllowed(dateStr)) return false;
     return true;
   }
 
@@ -587,14 +638,55 @@ export function AvailabilityCalendar({
               selectable={selectable}
               value={value}
               isSelectable={isSelectable}
+              isAllowed={isAllowed}
+              restrictToAllowed={restrictToAllowed}
               onSelect={handleSelect}
               bookingHrefBase={bookingHrefBase}
             />
           ))}
         </div>
       </div>
-      {!selectable && (bookings.length > 0 || blocks.length > 0) && (
+      {selectable && bookingHrefBase && bookings.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-flex size-5 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
+              1
+            </span>
+            Fully booked
+          </span>
+          {roomMode && rooms!.length > 1 && (
+            <span className="flex items-center gap-1.5">
+              <span className="relative inline-flex size-5 items-center justify-center rounded-full text-[10px] font-medium text-foreground">
+                1
+                <span className="absolute bottom-0 left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-foreground/70" />
+              </span>
+              Some rooms booked
+            </span>
+          )}
+          {bookings.some((b) => b.pending) && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex size-5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-medium text-amber-900 ring-1 ring-inset ring-amber-300">
+                1
+              </span>
+              Pending request
+            </span>
+          )}
+          <span className="w-full sm:w-auto">
+            Hover a date to see who&apos;s staying.
+          </span>
+        </div>
+      )}
+      {!selectable &&
+        (restrictToAllowed || bookings.length > 0 || blocks.length > 0) && (
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          {restrictToAllowed && (
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white">
+                1
+              </span>
+              Your invited dates
+            </span>
+          )}
           {bookings.some((b) => !b.pending) && (
             <span className="flex items-center gap-1.5">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
@@ -619,9 +711,11 @@ export function AvailabilityCalendar({
               Blocked
             </span>
           )}
-          <span className="w-full sm:w-auto">
-            Hover a date to see who&apos;s staying.
-          </span>
+          {(bookings.length > 0 || blocks.length > 0) && (
+            <span className="w-full sm:w-auto">
+              Hover a date to see who&apos;s staying.
+            </span>
+          )}
         </div>
       )}
     </div>

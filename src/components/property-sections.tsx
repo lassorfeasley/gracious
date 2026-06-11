@@ -1,5 +1,7 @@
-import { Check } from 'lucide-react';
+import { Check, Navigation } from 'lucide-react';
 import { PropertyMap } from '@/components/dashboard/property-map';
+import { DirectionsDialog } from '@/components/directions-dialog';
+import { Button } from '@/components/ui/button';
 import type { Property } from '@/types/database';
 
 /**
@@ -23,9 +25,21 @@ export function PropertySections({ property }: { property: Property }) {
 
       {property.address && (
         <section className="py-10">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Where you&apos;re staying
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Where you&apos;re staying
+            </h2>
+            <DirectionsDialog
+              address={property.address}
+              latitude={property.latitude}
+              longitude={property.longitude}
+            >
+              <Button variant="outline" size="sm">
+                <Navigation />
+                Directions
+              </Button>
+            </DirectionsDialog>
+          </div>
           <div className="mt-6">
             <PropertyMap
               address={property.address}

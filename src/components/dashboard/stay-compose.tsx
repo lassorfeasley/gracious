@@ -250,7 +250,7 @@ function HostComposeForm({
 
   const calendarHint =
     actionType === 'manual'
-      ? 'Crossed-out dates are already booked. Select check-in and check-out.'
+      ? 'Solid dates are fully booked. Select check-in and check-out.'
       : inviteType === 'prix_fixe'
         ? 'Select the exact stay dates you are offering.'
         : 'Select a range, then add it as an offered window below.';

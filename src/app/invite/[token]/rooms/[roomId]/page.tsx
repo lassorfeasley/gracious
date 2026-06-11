@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, BedDouble, Check } from 'lucide-react';
+import { ArrowLeft, BedDouble, Check, Navigation } from 'lucide-react';
 import {
   getInvitationByToken,
   isInvitationActive,
@@ -11,6 +11,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds, BED_SIZE_LABELS } from '@/lib/validations';
 import { PropertyMap } from '@/components/dashboard/property-map';
+import { DirectionsDialog } from '@/components/directions-dialog';
+import { Button } from '@/components/ui/button';
 import { SectionNav } from '@/components/dashboard/section-nav';
 import { SiteFooter } from '@/components/site-footer';
 import { BookingProvider } from '@/components/guest/booking-context';
@@ -266,9 +268,21 @@ export default async function GuestRoomPage({
               {/* Location */}
               {property.address && (
                 <section id="location" className="scroll-mt-24 py-10 first:pt-0">
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    Where you&apos;re staying
-                  </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-2xl font-semibold tracking-tight">
+                      Where you&apos;re staying
+                    </h2>
+                    <DirectionsDialog
+                      address={property.address}
+                      latitude={property.latitude}
+                      longitude={property.longitude}
+                    >
+                      <Button variant="outline" size="sm">
+                        <Navigation />
+                        Directions
+                      </Button>
+                    </DirectionsDialog>
+                  </div>
                   <div className="mt-6">
                     <PropertyMap
                       address={property.address}

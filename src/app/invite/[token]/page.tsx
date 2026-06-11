@@ -11,6 +11,7 @@ import { getAuthUser } from '@/lib/auth';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { PropertySections } from '@/components/property-sections';
+import { DirectionsDialog } from '@/components/directions-dialog';
 import { SiteFooter } from '@/components/site-footer';
 import { BookingProvider } from '@/components/guest/booking-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
@@ -117,6 +118,23 @@ export default async function InvitePage({
           <span className="text-muted-foreground">{property.name}</span>.
         </h1>
 
+        {/* Compact address + directions trigger */}
+        {property.address && (
+          <DirectionsDialog
+            address={property.address}
+            latitude={property.latitude}
+            longitude={property.longitude}
+          >
+            <button className="group mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span className="truncate">{property.address}</span>
+              <span className="shrink-0 font-medium text-foreground underline underline-offset-4">
+                Get directions
+              </span>
+            </button>
+          </DirectionsDialog>
+        )}
+
         {/* House card */}
         <div className="relative flex h-72 w-full flex-col justify-end overflow-hidden rounded-2xl sm:h-96">
           {property.hero_image_url ? (
@@ -137,12 +155,6 @@ export default async function InvitePage({
             <p className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
               {property.name}
             </p>
-            {property.address && (
-              <p className="mt-2 flex items-center gap-1.5 text-base text-white/80">
-                <MapPin className="h-4 w-4" />
-                {property.address}
-              </p>
-            )}
           </div>
         </div>
 
