@@ -27,6 +27,7 @@ import {
 } from '@/lib/invitation-booking';
 import { useBooking } from './booking-context';
 import type { InvitationWithDetails, Room } from '@/types/database';
+import type { GuestStaySummary } from '@/lib/bookings';
 
 interface CalendarBooking {
   id: string;
@@ -51,6 +52,8 @@ interface BookingSidebarProps {
   propertyName: string;
   room: Room;
   isAuthenticated: boolean;
+  /** The guest's active booking for this invitation, when one exists. */
+  existingStay?: GuestStaySummary | null;
   previewMode?: boolean;
   guestPreviewAs?: GuestPreviewAs;
   guestPreviewBookingStatus?: GuestPreviewBookingStatus;
@@ -111,6 +114,7 @@ export function BookingSidebar({
   propertyName,
   room,
   isAuthenticated,
+  existingStay,
   previewMode = false,
   guestPreviewAs = 'booking',
   guestPreviewBookingStatus = 'requested',
@@ -204,6 +208,22 @@ export function BookingSidebar({
     checkIn ?? invitation.windows[0]?.start_date ?? '2026-06-10';
   const sampleCheckOut =
     checkOut ?? invitation.windows[0]?.end_date ?? '2026-06-15';
+
+  // A real booked guest revisiting the room page sees their stay — with
+  // add-to-calendar — instead of the booking widget.
+  if (!previewMode && existingStay) {
+    return (
+      <GuestManageStayCard
+        propertyName={propertyName}
+        checkIn={existingStay.checkIn}
+        checkOut={existingStay.checkOut}
+        roomNames={existingStay.roomNames}
+        partySize={existingStay.partySize}
+        bookingStatus={existingStay.status}
+        bookingId={existingStay.id}
+      />
+    );
+  }
 
   if (previewUi.showManageStay) {
     return (

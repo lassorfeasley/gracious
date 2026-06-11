@@ -1,0 +1,102 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  LayoutDashboard,
+  Users,
+  Home,
+  CalendarDays,
+  Mail,
+  LogOut,
+  ExternalLink,
+} from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar';
+
+const LINKS = [
+  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
+  { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/properties', label: 'Properties', icon: Home },
+  { href: '/admin/bookings', label: 'Bookings', icon: CalendarDays },
+  { href: '/admin/messaging', label: 'Messaging', icon: Mail },
+];
+
+export function AdminSidebar({ userEmail }: { userEmail: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  }
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <Link
+          href="/admin"
+          className="px-2 py-1.5 font-semibold tracking-tight group-data-[collapsible=icon]:hidden"
+        >
+          Gracious Admin
+        </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {LINKS.map(({ href, label, icon: Icon, exact }) => {
+                const active = exact
+                  ? pathname === href
+                  : pathname.startsWith(href);
+                return (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton asChild isActive={active} tooltip={label}>
+                      <Link href={href}>
+                        <Icon />
+                        <span>{label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="truncate px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+          {userEmail}
+        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Exit admin">
+              <Link href="/">
+                <ExternalLink />
+                <span>Exit admin</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout} tooltip="Log out">
+              <LogOut />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}

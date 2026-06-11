@@ -1,5 +1,7 @@
 import { Button, Link, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle, fallbackLinkStyle } from './components/layout';
+import { EmailHero } from './components/hero';
+import { QuoteCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -9,6 +11,8 @@ interface Props {
   inviteUrl: string;
   message?: string;
   expiresAt?: string;
+  /** Featured property photo, shown as a banner above the heading. */
+  heroImageUrl?: string;
 }
 
 export default function InvitationSentEmail({
@@ -18,12 +22,17 @@ export default function InvitationSentEmail({
   inviteUrl,
   message,
   expiresAt,
+  heroImageUrl,
 }: Props) {
   const headline = hostName
     ? `${hostName} has invited you to ${propertyName}`
     : `You're invited to ${propertyName}`;
   return (
-    <EmailLayout preview={headline} heading={headline}>
+    <EmailLayout
+      preview={headline}
+      heading={headline}
+      hero={<EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />}
+    >
       <Text>Hi {guestName},</Text>
       <Text>
         {hostName ? (
@@ -38,7 +47,7 @@ export default function InvitationSentEmail({
           </>
         )}
       </Text>
-      {message && <Text style={{ fontStyle: 'italic' }}>&ldquo;{message}&rdquo;</Text>}
+      {message && <QuoteCard attribution={hostName}>{message}</QuoteCard>}
       {expiresAt && (
         <Text>This invitation expires on {expiresAt}.</Text>
       )}

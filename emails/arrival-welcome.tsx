@@ -1,5 +1,7 @@
 import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
+import { EmailHero } from './components/hero';
+import { EmailSection, FactsCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -11,6 +13,8 @@ interface Props {
   wifiPassword?: string;
   profileUrl?: string;
   unsubscribeUrl?: string;
+  /** Featured property photo, shown as a banner above the heading. */
+  heroImageUrl?: string;
 }
 
 export default function ArrivalWelcomeEmail({
@@ -23,39 +27,44 @@ export default function ArrivalWelcomeEmail({
   wifiPassword,
   profileUrl,
   unsubscribeUrl,
+  heroImageUrl,
 }: Props) {
   return (
     <EmailLayout
       preview={`Today's the day — here's how to get into ${propertyName}`}
       heading="Welcome — here's how to get in"
       unsubscribeUrl={unsubscribeUrl}
+      hero={<EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />}
     >
       <Text>Hi {guestName},</Text>
       <Text>
         Today&apos;s the day! Everything you need for arriving at{' '}
         <strong>{propertyName}</strong> is below.
       </Text>
+
+      <FactsCard
+        facts={[
+          { label: 'Address', value: address },
+          {
+            label: 'WiFi',
+            value: wifiName
+              ? `${wifiName}${wifiPassword ? ` · Password: ${wifiPassword}` : ''}`
+              : undefined,
+          },
+        ]}
+      />
+
       {checkIn && (
-        <Text>
-          <strong>Getting in:</strong>
-          <br />
-          {checkIn}
-        </Text>
+        <EmailSection title="Getting in">
+          <Text style={{ margin: '0' }}>{checkIn}</Text>
+        </EmailSection>
       )}
-      {address && <Text><strong>Address:</strong> {address}</Text>}
       {directions && (
-        <Text>
-          <strong>Directions:</strong>
-          <br />
-          {directions}
-        </Text>
+        <EmailSection title="Directions">
+          <Text style={{ margin: '0' }}>{directions}</Text>
+        </EmailSection>
       )}
-      {wifiName && (
-        <Text>
-          <strong>WiFi:</strong> {wifiName}
-          {wifiPassword ? ` / ${wifiPassword}` : ''}
-        </Text>
-      )}
+
       {profileUrl && (
         <Button style={buttonStyle} href={profileUrl}>
           View house details

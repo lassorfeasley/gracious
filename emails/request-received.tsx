@@ -1,17 +1,22 @@
 import { Text } from '@react-email/components';
 import { EmailLayout } from './components/layout';
+import { FactsCard, StayDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
   propertyName: string;
-  dates: string;
+  /** yyyy-MM-dd */
+  checkInDate: string;
+  /** yyyy-MM-dd */
+  checkOutDate: string;
   rooms: string;
 }
 
 export default function RequestReceivedEmail({
   guestName,
   propertyName,
-  dates,
+  checkInDate,
+  checkOutDate,
   rooms,
 }: Props) {
   return (
@@ -25,11 +30,11 @@ export default function RequestReceivedEmail({
         <strong>{propertyName}</strong>. You&apos;ll get an email as soon as
         they respond.
       </Text>
-      <Text>
-        <strong>Dates:</strong> {dates}
-        <br />
-        <strong>Rooms:</strong> {rooms}
-      </Text>
+
+      <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
+
+      <FactsCard facts={[{ label: 'Rooms', value: rooms }]} />
+
       <Text>No need to do anything in the meantime — sit tight!</Text>
     </EmailLayout>
   );

@@ -1,5 +1,10 @@
 import { requireSiteAdmin } from '@/lib/auth';
-import { AdminNav } from '@/components/admin/admin-nav';
+import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 
 export default async function AdminLayout({
   children,
@@ -9,9 +14,16 @@ export default async function AdminLayout({
   const user = await requireSiteAdmin();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <AdminNav userEmail={user.email} />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AdminSidebar userEmail={user.email} />
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-2 border-b px-4">
+          <SidebarTrigger />
+        </header>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

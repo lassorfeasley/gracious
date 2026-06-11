@@ -16,6 +16,8 @@ interface EmailLayoutProps {
   preview: string;
   heading: string;
   children: React.ReactNode;
+  /** Optional banner (e.g. <EmailHero />) shown above the heading. */
+  hero?: React.ReactNode;
   /** When provided, an unsubscribe link is shown in the footer (opt-out emails). */
   unsubscribeUrl?: string;
 }
@@ -24,6 +26,7 @@ export function EmailLayout({
   preview,
   heading,
   children,
+  hero,
   unsubscribeUrl,
 }: EmailLayoutProps) {
   return (
@@ -33,6 +36,7 @@ export function EmailLayout({
       <Body style={main}>
         <Container style={container}>
           <Text style={logo}>Gracious</Text>
+          {hero}
           <Heading style={h1}>{heading}</Heading>
           <Section style={content}>{children}</Section>
           <Hr style={hr} />

@@ -7,6 +7,7 @@ import {
   isInvitationActive,
 } from '@/lib/invitations';
 import { getCoGuestsForInvitation } from '@/lib/coguests';
+import { getGuestStayForInvitation } from '@/lib/bookings';
 import { getAuthUser } from '@/lib/auth';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { formatDateRange, formatDate } from '@/lib/dates';
@@ -54,6 +55,11 @@ export default async function InvitePage({
   const active = isInvitationActive(invitation);
   const authUser = await getAuthUser();
   const isAuthenticated = guestMatchesInvitation(authUser, invitation);
+
+  const existingStay =
+    isAuthenticated && authUser
+      ? await getGuestStayForInvitation(invitation.id, authUser.id)
+      : null;
 
   const coguests = await getCoGuestsForInvitation(
     invitation.property_id,
@@ -290,11 +296,12 @@ export default async function InvitePage({
             </div>
 
             <aside className="lg:sticky lg:top-8 lg:self-start">
-              {active || previewMode ? (
+              {active || previewMode || existingStay ? (
                 <HouseBookingSidebar
                   invitation={invitation}
                   propertyName={property.name}
                   isAuthenticated={isAuthenticated}
+                  existingStay={existingStay}
                   previewMode={previewMode}
                   guestPreviewAs={guestPreviewAs}
                   guestPreviewBookingStatus={guestPreviewBookingStatus}

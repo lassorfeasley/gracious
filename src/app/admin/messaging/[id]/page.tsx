@@ -17,6 +17,10 @@ import { Badge } from '@/components/ui/badge';
 import { EmailPreview } from '@/components/admin/email-preview';
 import { formatDate } from '@/lib/dates';
 import { getMessage } from '@/lib/messaging/registry';
+import {
+  INVITATION_TYPE_OPTIONS,
+  INVITATION_TYPE_GUEST_DESCRIPTIONS,
+} from '@/lib/invitation-types';
 
 export default async function AdminMessageDetailPage({
   params,
@@ -132,6 +136,48 @@ export default async function AdminMessageDetailPage({
           replyTo={message.replyTo}
         />
       </section>
+
+      {/* Invite type phrasing — only relevant to the invitation email */}
+      {message.id === 'invitation-sent' && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Invite type phrasing
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            The invitation email is the same for every type. The wording below is
+            what changes by type — hosts see the host description when choosing a
+            type, and guests see the guest description on the invite page.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {INVITATION_TYPE_OPTIONS.map((opt) => (
+              <div key={opt.value} className="rounded-xl border bg-card p-4">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{opt.label}</span>
+                  <code className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                    {opt.value}
+                  </code>
+                </div>
+                <dl className="mt-3 space-y-3 text-sm">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Host description
+                    </dt>
+                    <dd className="mt-1">{opt.description}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Guest description
+                    </dt>
+                    <dd className="mt-1">
+                      {INVITATION_TYPE_GUEST_DESCRIPTIONS[opt.value]}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Recent sends */}
       {recentSends && (

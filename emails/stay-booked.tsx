@@ -1,10 +1,14 @@
 import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
+import { FactsCard, QuoteCard, StayDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
   propertyName: string;
-  dates: string;
+  /** yyyy-MM-dd */
+  checkInDate: string;
+  /** yyyy-MM-dd */
+  checkOutDate: string;
   rooms: string;
   partySize: number;
   notes?: string;
@@ -15,7 +19,8 @@ interface Props {
 export default function StayBookedEmail({
   guestName,
   propertyName,
-  dates,
+  checkInDate,
+  checkOutDate,
   rooms,
   partySize,
   notes,
@@ -33,14 +38,21 @@ export default function StayBookedEmail({
         <strong>{propertyName}</strong>. Their invitation didn&apos;t require
         approval, so the booking is confirmed and on your calendar.
       </Text>
-      <Text>
-        <strong>Dates:</strong> {dates}
-        <br />
-        <strong>Rooms:</strong> {rooms}
-        <br />
-        <strong>Party size:</strong> {partySize}
-      </Text>
-      {notes && <Text><strong>Note:</strong> {notes}</Text>}
+
+      <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
+
+      <FactsCard
+        facts={[
+          { label: 'Rooms', value: rooms },
+          {
+            label: 'Guests',
+            value: `${partySize} ${partySize === 1 ? 'guest' : 'guests'}`,
+          },
+        ]}
+      />
+
+      {notes && <QuoteCard attribution={guestName}>{notes}</QuoteCard>}
+
       <Button style={buttonStyle} href={bookingUrl}>
         View booking
       </Button>

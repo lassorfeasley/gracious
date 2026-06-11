@@ -1,19 +1,32 @@
 import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
+import { EmailHero } from './components/hero';
+import { EmailCalendarLinks } from './components/calendar-links';
+import { EmailSection, FactsCard, StayDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
   propertyName: string;
-  dates: string;
+  /** yyyy-MM-dd */
+  checkInDate: string;
+  /** yyyy-MM-dd */
+  checkOutDate: string;
   rooms: string;
+  partySize?: number;
   address?: string;
   directions?: string;
   wifiName?: string;
   wifiPassword?: string;
+  /** Check-in instructions (prose). */
   checkIn?: string;
   houseRules?: string;
   coguestNote?: string;
   profileUrl?: string;
+  /** Featured property photo, shown as a banner above the heading. */
+  heroImageUrl?: string;
+  /** Pre-filled add-to-calendar links. */
+  googleCalendarUrl?: string;
+  outlookCalendarUrl?: string;
 }
 
 export default function BookingApprovedEmail(props: Props) {
@@ -21,28 +34,71 @@ export default function BookingApprovedEmail(props: Props) {
     <EmailLayout
       preview={`Your stay at ${props.propertyName} is confirmed`}
       heading="Your stay is confirmed!"
+      hero={
+        <EmailHero
+          propertyName={props.propertyName}
+          imageUrl={props.heroImageUrl}
+        />
+      }
     >
       <Text>Hi {props.guestName},</Text>
       <Text>
         Your stay at <strong>{props.propertyName}</strong> has been approved.
       </Text>
-      <Text>
-        <strong>Dates:</strong> {props.dates}
-        <br />
-        <strong>Rooms:</strong> {props.rooms}
-      </Text>
-      {props.address && <Text><strong>Address:</strong> {props.address}</Text>}
-      {props.directions && <Text><strong>Directions:</strong> {props.directions}</Text>}
-      {props.wifiName && (
+
+      <StayDatesCard
+        checkInDate={props.checkInDate}
+        checkOutDate={props.checkOutDate}
+      />
+
+      <FactsCard
+        facts={[
+          { label: 'Rooms', value: props.rooms },
+          {
+            label: 'Guests',
+            value: props.partySize
+              ? `${props.partySize} ${props.partySize === 1 ? 'guest' : 'guests'}`
+              : undefined,
+          },
+          { label: 'Address', value: props.address },
+          {
+            label: 'WiFi',
+            value: props.wifiName
+              ? `${props.wifiName}${props.wifiPassword ? ` · Password: ${props.wifiPassword}` : ''}`
+              : undefined,
+          },
+        ]}
+      />
+
+      {props.coguestNote && <Text>{props.coguestNote}</Text>}
+
+      {props.checkIn && (
+        <EmailSection title="Getting in">
+          <Text style={{ margin: '0' }}>{props.checkIn}</Text>
+        </EmailSection>
+      )}
+      {props.directions && (
+        <EmailSection title="Directions">
+          <Text style={{ margin: '0' }}>{props.directions}</Text>
+        </EmailSection>
+      )}
+      {props.houseRules && (
+        <EmailSection title="House rules">
+          <Text style={{ margin: '0' }}>{props.houseRules}</Text>
+        </EmailSection>
+      )}
+
+      {props.googleCalendarUrl && props.outlookCalendarUrl ? (
+        <EmailCalendarLinks
+          googleUrl={props.googleCalendarUrl}
+          outlookUrl={props.outlookCalendarUrl}
+          icsAttached
+        />
+      ) : (
         <Text>
-          <strong>WiFi:</strong> {props.wifiName}
-          {props.wifiPassword ? ` / Password: ${props.wifiPassword}` : ''}
+          A calendar file (.ics) is attached to add this stay to your calendar.
         </Text>
       )}
-      {props.checkIn && <Text><strong>Check-in:</strong> {props.checkIn}</Text>}
-      {props.houseRules && <Text><strong>House rules:</strong> {props.houseRules}</Text>}
-      {props.coguestNote && <Text>{props.coguestNote}</Text>}
-      <Text>A calendar file (.ics) is attached to add this stay to your calendar.</Text>
       {props.profileUrl && (
         <Button style={buttonStyle} href={props.profileUrl}>
           View house details

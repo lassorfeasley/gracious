@@ -1,5 +1,6 @@
 import { sendEmail, logNotification, appUrl } from '@/lib/email/send';
-import { generateIcs } from '@/lib/ical';
+import { buildStayEvent, generateIcs } from '@/lib/ical';
+import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { inviteUrl } from '@/lib/invitations';
 import { buildAuthenticatedInviteUrl } from '@/lib/auth-links';
@@ -60,7 +61,7 @@ export async function notifyInvitationSent(invitationId: string) {
   const { data: inv } = await admin
     .from('invitations')
     .select(
-      '*, property:properties(name), creator:users!created_by(first_name, last_name, email)'
+      '*, property:properties(name, hero_image_url), creator:users!created_by(first_name, last_name, email)'
     )
     .eq('id', invitationId)
     .single();
@@ -99,6 +100,7 @@ export async function notifyInvitationSent(invitationId: string) {
       expiresAt: inv.expires_at
         ? formatDate(inv.expires_at)
         : undefined,
+      heroImageUrl: inv.property.hero_image_url ?? undefined,
     }),
     fromName: hostName,
     // Guests can reply straight to their host.
@@ -148,7 +150,6 @@ export async function notifyStayRequested(bookingId: string) {
   }
 
   const base = appUrl();
-  const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
   const rooms = booking.rooms.map((r) => r.name).join(', ');
 
   const guestLabel =
@@ -161,7 +162,8 @@ export async function notifyStayRequested(bookingId: string) {
       react: StayRequestedEmail({
         guestName: guestLabel,
         propertyName: booking.property.name,
-        dates,
+        checkInDate: booking.dates.check_in,
+        checkOutDate: booking.dates.check_out,
         rooms,
         partySize: booking.party_size,
         notes: booking.notes ?? undefined,
@@ -222,7 +224,6 @@ export async function notifyStayBooked(bookingId: string) {
   }
 
   const base = appUrl();
-  const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
   const rooms = booking.rooms.map((r) => r.name).join(', ');
   const guestLabel = booking.guest.name ?? booking.guest.email ?? 'A guest';
 
@@ -233,7 +234,8 @@ export async function notifyStayBooked(bookingId: string) {
       react: StayBookedEmail({
         guestName: guestLabel,
         propertyName: booking.property.name,
-        dates,
+        checkInDate: booking.dates.check_in,
+        checkOutDate: booking.dates.check_out,
         rooms,
         partySize: booking.party_size,
         notes: booking.notes ?? undefined,
@@ -263,7 +265,8 @@ export async function notifyRequestReceived(bookingId: string) {
     react: RequestReceivedEmail({
       guestName: booking.guest.name ?? 'there',
       propertyName: booking.property.name,
-      dates: formatDateRange(booking.dates.check_in, booking.dates.check_out),
+      checkInDate: booking.dates.check_in,
+      checkOutDate: booking.dates.check_out,
       rooms: booking.rooms.map((r) => r.name).join(', '),
     }),
   });
@@ -280,7 +283,7 @@ export async function notifyBookingApproved(bookingId: string) {
   if (!booking || !booking.notify_guest || !booking.guest.email) return;
 
   const icsContent = generateIcs(booking);
-  const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
+  const stayEvent = buildStayEvent(booking);
   const rooms = booking.rooms.map((r) => r.name).join(', ');
 
   const { getCoGuestsForDates } = await import('@/lib/coguests');
@@ -302,7 +305,9 @@ export async function notifyBookingApproved(bookingId: string) {
     react: BookingApprovedEmail({
       guestName: booking.guest.name ?? 'there',
       propertyName: booking.property.name,
-      dates,
+      checkInDate: booking.dates.check_in,
+      checkOutDate: booking.dates.check_out,
+      partySize: booking.party_size,
       rooms,
       address: booking.property.address ?? undefined,
       directions: booking.property.directions ?? undefined,
@@ -314,6 +319,9 @@ export async function notifyBookingApproved(bookingId: string) {
       profileUrl: booking.invitation
         ? inviteUrl(booking.invitation.token)
         : undefined,
+      heroImageUrl: booking.property.hero_image_url ?? undefined,
+      googleCalendarUrl: googleCalendarUrl(stayEvent),
+      outlookCalendarUrl: outlookCalendarUrl(stayEvent),
     }),
     attachments: [
       {
@@ -428,6 +436,7 @@ export async function notifyTripReminder(
   if (!delivery.ok) return;
 
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
+  const stayEvent = buildStayEvent(booking);
 
   await sendEmail({
     to: booking.guest.email,
@@ -438,7 +447,8 @@ export async function notifyTripReminder(
     react: TripReminderEmail({
       guestName: booking.guest.name ?? 'there',
       propertyName: booking.property.name,
-      dates: formatDateRange(booking.dates.check_in, booking.dates.check_out),
+      checkInDate: booking.dates.check_in,
+      checkOutDate: booking.dates.check_out,
       daysUntil,
       checkIn: booking.property.check_in_instructions ?? undefined,
       address: booking.property.address ?? undefined,
@@ -448,6 +458,9 @@ export async function notifyTripReminder(
         ? inviteUrl(booking.invitation.token)
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
+      heroImageUrl: booking.property.hero_image_url ?? undefined,
+      googleCalendarUrl: googleCalendarUrl(stayEvent),
+      outlookCalendarUrl: outlookCalendarUrl(stayEvent),
     }),
     headers: delivery.headers,
   });
@@ -480,6 +493,7 @@ export async function notifyArrivalWelcome(booking: BookingWithDetails) {
         ? inviteUrl(booking.invitation.token)
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
+      heroImageUrl: booking.property.hero_image_url ?? undefined,
     }),
     headers: delivery.headers,
   });

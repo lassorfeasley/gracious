@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { NotificationPrefs } from '@/types/database';
+import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 
 import InvitationSentEmail from '../../../emails/invitation-sent';
 import StayRequestedEmail from '../../../emails/stay-requested';
@@ -92,6 +93,8 @@ const SAMPLE = {
   ownerName: 'Sam Patel',
   propertyName: 'The Lake House',
   dates: 'Jul 12, 2026 – Jul 16, 2026',
+  checkInDate: '2026-07-12',
+  checkOutDate: '2026-07-16',
   rooms: 'Master Suite, Bunk Room',
   partySize: 4,
   inviteUrl: 'https://gracious.host/invite/sample-token',
@@ -108,7 +111,20 @@ const SAMPLE = {
     'Strip the beds, start the dishwasher, and drop the keys back in the lockbox.',
   expiresAt: 'Jun 14, 2026',
   authUrl: 'https://gracious.host/auth/confirm?token_hash=sample',
+  heroImageUrl:
+    'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=928&q=70',
 };
+
+const SAMPLE_STAY_EVENT = {
+  title: `Stay at ${SAMPLE.propertyName}`,
+  description: `Property: ${SAMPLE.propertyName}\nRooms: ${SAMPLE.rooms}`,
+  location: SAMPLE.address,
+  checkIn: '2026-07-12',
+  checkOut: '2026-07-16',
+};
+
+const SAMPLE_GOOGLE_CAL_URL = googleCalendarUrl(SAMPLE_STAY_EVENT);
+const SAMPLE_OUTLOOK_CAL_URL = outlookCalendarUrl(SAMPLE_STAY_EVENT);
 
 export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
   {
@@ -200,7 +216,22 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     source: 'src/app/api/invitations/route.ts',
     variants: [
       {
-        label: 'Default',
+        label: 'With photo',
+        subject: `${SAMPLE.ownerName} has invited you to ${SAMPLE.propertyName}`,
+        element: (
+          <InvitationSentEmail
+            guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
+            propertyName={SAMPLE.propertyName}
+            inviteUrl={SAMPLE.inviteUrl}
+            message="We'd love to have you for the long weekend — the lake is perfect this time of year."
+            expiresAt={SAMPLE.expiresAt}
+            heroImageUrl={SAMPLE.heroImageUrl}
+          />
+        ),
+      },
+      {
+        label: 'No photo (branded)',
         subject: `${SAMPLE.ownerName} has invited you to ${SAMPLE.propertyName}`,
         element: (
           <InvitationSentEmail
@@ -243,7 +274,8 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
           <StayRequestedEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
-            dates={SAMPLE.dates}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
             rooms={SAMPLE.rooms}
             partySize={SAMPLE.partySize}
             notes="Bringing two kids and a (very well-behaved) dog if that's okay."
@@ -277,7 +309,8 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
           <RequestReceivedEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
-            dates={SAMPLE.dates}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
             rooms={SAMPLE.rooms}
           />
         ),
@@ -312,7 +345,8 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
           <StayBookedEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
-            dates={SAMPLE.dates}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
             rooms={SAMPLE.rooms}
             partySize={SAMPLE.partySize}
             notes="Bringing two kids and a (very well-behaved) dog if that's okay."
@@ -340,13 +374,15 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     source: 'src/app/api/bookings/[id]/route.ts',
     variants: [
       {
-        label: 'Default',
+        label: 'With photo',
         subject: `Your stay at ${SAMPLE.propertyName} is confirmed`,
         element: (
           <BookingApprovedEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
-            dates={SAMPLE.dates}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
+            partySize={SAMPLE.partySize}
             rooms={SAMPLE.rooms}
             address={SAMPLE.address}
             directions={SAMPLE.directions}
@@ -356,6 +392,33 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
             houseRules={SAMPLE.houseRules}
             coguestNote="Others staying during your dates: The Garcia family and others."
             profileUrl={SAMPLE.inviteUrl}
+            heroImageUrl={SAMPLE.heroImageUrl}
+            googleCalendarUrl={SAMPLE_GOOGLE_CAL_URL}
+            outlookCalendarUrl={SAMPLE_OUTLOOK_CAL_URL}
+          />
+        ),
+      },
+      {
+        label: 'No photo (branded)',
+        subject: `Your stay at ${SAMPLE.propertyName} is confirmed`,
+        element: (
+          <BookingApprovedEmail
+            guestName={SAMPLE.guestName}
+            propertyName={SAMPLE.propertyName}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
+            partySize={SAMPLE.partySize}
+            rooms={SAMPLE.rooms}
+            address={SAMPLE.address}
+            directions={SAMPLE.directions}
+            wifiName={SAMPLE.wifiName}
+            wifiPassword={SAMPLE.wifiPassword}
+            checkIn={SAMPLE.checkIn}
+            houseRules={SAMPLE.houseRules}
+            coguestNote="Others staying during your dates: The Garcia family and others."
+            profileUrl={SAMPLE.inviteUrl}
+            googleCalendarUrl={SAMPLE_GOOGLE_CAL_URL}
+            outlookCalendarUrl={SAMPLE_OUTLOOK_CAL_URL}
           />
         ),
       },
@@ -467,12 +530,16 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
           <TripReminderEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
-            dates={SAMPLE.dates}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
             daysUntil={7}
             address={SAMPLE.address}
             wifiName={SAMPLE.wifiName}
             wifiPassword={SAMPLE.wifiPassword}
             profileUrl={SAMPLE.inviteUrl}
+            heroImageUrl={SAMPLE.heroImageUrl}
+            googleCalendarUrl={SAMPLE_GOOGLE_CAL_URL}
+            outlookCalendarUrl={SAMPLE_OUTLOOK_CAL_URL}
           />
         ),
       },
@@ -483,13 +550,36 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
           <TripReminderEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
-            dates={SAMPLE.dates}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
             daysUntil={1}
             checkIn={SAMPLE.checkIn}
             address={SAMPLE.address}
             wifiName={SAMPLE.wifiName}
             wifiPassword={SAMPLE.wifiPassword}
             profileUrl={SAMPLE.inviteUrl}
+            heroImageUrl={SAMPLE.heroImageUrl}
+            googleCalendarUrl={SAMPLE_GOOGLE_CAL_URL}
+            outlookCalendarUrl={SAMPLE_OUTLOOK_CAL_URL}
+          />
+        ),
+      },
+      {
+        label: 'No photo (branded)',
+        subject: `One week until your stay at ${SAMPLE.propertyName}`,
+        element: (
+          <TripReminderEmail
+            guestName={SAMPLE.guestName}
+            propertyName={SAMPLE.propertyName}
+            checkInDate={SAMPLE.checkInDate}
+            checkOutDate={SAMPLE.checkOutDate}
+            daysUntil={7}
+            address={SAMPLE.address}
+            wifiName={SAMPLE.wifiName}
+            wifiPassword={SAMPLE.wifiPassword}
+            profileUrl={SAMPLE.inviteUrl}
+            googleCalendarUrl={SAMPLE_GOOGLE_CAL_URL}
+            outlookCalendarUrl={SAMPLE_OUTLOOK_CAL_URL}
           />
         ),
       },
@@ -516,7 +606,24 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     source: 'src/app/api/cron/reminders/route.ts',
     variants: [
       {
-        label: 'Default',
+        label: 'With photo',
+        subject: `Today's the day — welcome to ${SAMPLE.propertyName}`,
+        element: (
+          <ArrivalWelcomeEmail
+            guestName={SAMPLE.guestName}
+            propertyName={SAMPLE.propertyName}
+            checkIn={SAMPLE.checkIn}
+            address={SAMPLE.address}
+            directions={SAMPLE.directions}
+            wifiName={SAMPLE.wifiName}
+            wifiPassword={SAMPLE.wifiPassword}
+            profileUrl={SAMPLE.inviteUrl}
+            heroImageUrl={SAMPLE.heroImageUrl}
+          />
+        ),
+      },
+      {
+        label: 'No photo (branded)',
         subject: `Today's the day — welcome to ${SAMPLE.propertyName}`,
         element: (
           <ArrivalWelcomeEmail

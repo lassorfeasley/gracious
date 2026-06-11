@@ -2,27 +2,29 @@ import { createEvent } from 'ics';
 import type { BookingWithDetails } from '@/types/database';
 import { formatDateRange } from '@/lib/dates';
 
-export function generateIcs(booking: BookingWithDetails): string {
-  const checkIn = new Date(booking.dates.check_in + 'T15:00:00');
-  const checkOut = new Date(booking.dates.check_out + 'T11:00:00');
+/** Default event times used when a property has no explicit schedule. */
+export const STAY_CHECK_IN_HOUR = 15;
+export const STAY_CHECK_OUT_HOUR = 11;
 
+/**
+ * Calendar-agnostic description of a stay event. Single source of truth for
+ * the .ics file and the Google/Outlook quick-add links so every calendar
+ * shows the same thing.
+ */
+export interface StayEvent {
+  title: string;
+  description: string;
+  location: string;
+  /** yyyy-MM-dd */
+  checkIn: string;
+  /** yyyy-MM-dd */
+  checkOut: string;
+}
+
+export function buildStayEvent(booking: BookingWithDetails): StayEvent {
   const roomNames = booking.rooms.map((r) => r.name).join(', ');
 
-  const { error, value } = createEvent({
-    start: [
-      checkIn.getFullYear(),
-      checkIn.getMonth() + 1,
-      checkIn.getDate(),
-      15,
-      0,
-    ],
-    end: [
-      checkOut.getFullYear(),
-      checkOut.getMonth() + 1,
-      checkOut.getDate(),
-      11,
-      0,
-    ],
+  return {
     title: `Stay at ${booking.property.name}`,
     description: [
       `Property: ${booking.property.name}`,
@@ -39,6 +41,34 @@ export function generateIcs(booking: BookingWithDetails): string {
       .filter(Boolean)
       .join('\n'),
     location: booking.property.address ?? booking.property.name,
+    checkIn: booking.dates.check_in,
+    checkOut: booking.dates.check_out,
+  };
+}
+
+export function generateIcs(booking: BookingWithDetails): string {
+  const event = buildStayEvent(booking);
+  const checkIn = new Date(`${event.checkIn}T15:00:00`);
+  const checkOut = new Date(`${event.checkOut}T11:00:00`);
+
+  const { error, value } = createEvent({
+    start: [
+      checkIn.getFullYear(),
+      checkIn.getMonth() + 1,
+      checkIn.getDate(),
+      STAY_CHECK_IN_HOUR,
+      0,
+    ],
+    end: [
+      checkOut.getFullYear(),
+      checkOut.getMonth() + 1,
+      checkOut.getDate(),
+      STAY_CHECK_OUT_HOUR,
+      0,
+    ],
+    title: event.title,
+    description: event.description,
+    location: event.location,
     status: 'CONFIRMED',
     busyStatus: 'BUSY',
     organizer: {

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StaySummaryList } from '@/components/stay-summary-list';
+import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 import type { GuestPreviewBookingStatus } from '@/lib/guest-preview';
 
 const statusVariant: Record<
@@ -23,6 +24,8 @@ interface GuestManageStayCardProps {
   roomNames: string[];
   partySize: number;
   bookingStatus: GuestPreviewBookingStatus;
+  /** Real booking id — enables the live add-to-calendar menu. */
+  bookingId?: string;
   previewMode?: boolean;
 }
 
@@ -33,6 +36,7 @@ export function GuestManageStayCard({
   roomNames,
   partySize,
   bookingStatus,
+  bookingId,
   previewMode = false,
 }: GuestManageStayCardProps) {
   return (
@@ -72,19 +76,26 @@ export function GuestManageStayCard({
         <Button variant="outline" className="w-full" asChild>
           <Link href="/my-trips">View all trips</Link>
         </Button>
-        {bookingStatus === 'approved' && (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() =>
-              toast.info('Preview mode — calendar download disabled')
-            }
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Add to calendar
-          </Button>
-        )}
+        {bookingStatus === 'approved' &&
+          (bookingId ? (
+            <AddToCalendarButton
+              bookingId={bookingId}
+              size="default"
+              className="w-full"
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() =>
+                toast.info('Preview mode — calendar download disabled')
+              }
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Add to calendar
+            </Button>
+          ))}
         {(bookingStatus === 'requested' || bookingStatus === 'approved') && (
           <Button
             type="button"

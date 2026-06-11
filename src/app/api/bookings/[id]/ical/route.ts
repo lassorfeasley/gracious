@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getBookingWithDetails } from '@/lib/bookings';
-import { generateIcs } from '@/lib/ical';
+import { buildStayEvent, generateIcs } from '@/lib/ical';
+import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { canManageProperty } from '@/lib/auth';
 
+/**
+ * Add-to-calendar endpoint for a booking.
+ * - default: downloads an .ics file (Apple Calendar, desktop Outlook, etc.)
+ * - ?provider=google|outlook: redirects to that calendar's pre-filled add-event page
+ */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -23,6 +29,14 @@ export async function GET(
   const isOwner = await canManageProperty(booking.property_id, user.id);
   if (!isGuest && !isOwner) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const provider = request.nextUrl.searchParams.get('provider');
+  if (provider === 'google') {
+    return NextResponse.redirect(googleCalendarUrl(buildStayEvent(booking)));
+  }
+  if (provider === 'outlook') {
+    return NextResponse.redirect(outlookCalendarUrl(buildStayEvent(booking)));
   }
 
   const ics = generateIcs(booking);

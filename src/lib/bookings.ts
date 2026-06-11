@@ -71,6 +71,65 @@ export async function getBookingWithDetails(
   } as BookingWithDetails;
 }
 
+/** Minimal stay info for showing a guest their own booking on invite pages. */
+export interface GuestStaySummary {
+  id: string;
+  status: 'requested' | 'approved';
+  checkIn: string;
+  checkOut: string;
+  roomNames: string[];
+  partySize: number;
+}
+
+/**
+ * The guest's current stay for an invitation, if any: an active (requested or
+ * approved) booking that hasn't ended yet. Used so invite pages keep showing
+ * the confirmed stay — with add-to-calendar — instead of the booking widget.
+ */
+export async function getGuestStayForInvitation(
+  invitationId: string,
+  guestUserId: string
+): Promise<GuestStaySummary | null> {
+  const admin = createAdminClient();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data } = await admin
+    .from('bookings')
+    .select(
+      `
+      id,
+      status,
+      party_size,
+      dates:booking_dates(check_in, check_out),
+      booking_rooms(room:rooms(name))
+    `
+    )
+    .eq('invitation_id', invitationId)
+    .eq('guest_user_id', guestUserId)
+    .in('status', ['requested', 'approved']);
+
+  const stays: GuestStaySummary[] = [];
+  for (const b of data ?? []) {
+    const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
+    if (!dates || dates.check_out < today) continue;
+    stays.push({
+      id: b.id,
+      status: b.status as 'requested' | 'approved',
+      checkIn: dates.check_in,
+      checkOut: dates.check_out,
+      roomNames:
+        b.booking_rooms?.map((br: { room: { name: string } | { name: string }[] }) => {
+          const room = Array.isArray(br.room) ? br.room[0] : br.room;
+          return room.name;
+        }) ?? [],
+      partySize: b.party_size,
+    });
+  }
+
+  stays.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+  return stays[0] ?? null;
+}
+
 export async function checkRoomConflicts(
   roomIds: string[],
   checkIn: string,

@@ -7,6 +7,7 @@ import {
   isInvitationActive,
 } from '@/lib/invitations';
 import { getAuthUser } from '@/lib/auth';
+import { getGuestStayForInvitation } from '@/lib/bookings';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds, BED_SIZE_LABELS } from '@/lib/validations';
@@ -56,6 +57,11 @@ export default async function GuestRoomPage({
   const isAuthenticated =
     !!authUser && authUser.email === invitation.guest_email;
   const property = invitation.property;
+
+  const existingStay =
+    isAuthenticated && authUser
+      ? await getGuestStayForInvitation(invitation.id, authUser.id)
+      : null;
 
   const isPrixFixe = invitation.type === 'prix_fixe';
   const fixedWindow = isPrixFixe ? invitation.windows[0] : undefined;
@@ -296,12 +302,13 @@ export default async function GuestRoomPage({
 
             {/* Right column — booking sidebar */}
             <aside className="lg:sticky lg:top-20 lg:self-start">
-              {active || previewMode ? (
+              {active || previewMode || existingStay ? (
                 <BookingSidebar
                   invitation={invitation}
                   propertyName={property.name}
                   room={room}
                   isAuthenticated={isAuthenticated}
+                  existingStay={existingStay}
                   previewMode={previewMode}
                   guestPreviewAs={guestPreviewAs}
                   guestPreviewBookingStatus={guestPreviewBookingStatus}

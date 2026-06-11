@@ -1,5 +1,6 @@
 import { Text } from '@react-email/components';
 import { EmailLayout } from './components/layout';
+import { EmailSection, FactsCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -27,23 +28,24 @@ export default function CheckoutInstructionsEmail({
       <Text>Hi {guestName},</Text>
       <Text>
         We hope you enjoyed your stay at <strong>{propertyName}</strong>. Here
-        are a few things to take care of before you go
-        {checkoutTime ? ` — checkout is at ${checkoutTime}` : ''}.
+        are a few things to take care of before you go.
       </Text>
+
+      <FactsCard
+        facts={[{ label: '↑ Checkout time', value: checkoutTime }]}
+      />
+
       {checkoutInstructions && (
-        <Text>
-          <strong>Checkout instructions:</strong>
-          <br />
-          {checkoutInstructions}
-        </Text>
+        <EmailSection title="Before you go">
+          <Text style={{ margin: '0' }}>{checkoutInstructions}</Text>
+        </EmailSection>
       )}
       {houseRules && (
-        <Text>
-          <strong>A reminder of the house rules:</strong>
-          <br />
-          {houseRules}
-        </Text>
+        <EmailSection title="A reminder of the house rules">
+          <Text style={{ margin: '0' }}>{houseRules}</Text>
+        </EmailSection>
       )}
+
       <Text>Safe travels — thanks for being a wonderful guest!</Text>
     </EmailLayout>
   );
