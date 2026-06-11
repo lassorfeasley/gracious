@@ -5,7 +5,7 @@ import { isSiteAdmin } from '@/lib/site-admin';
 import { isLandingPreviewEnabled } from '@/lib/dev-tools';
 import { redirect } from 'next/navigation';
 import { SiteFooter } from '@/components/site-footer';
-import { HowItWorksCarousel } from '@/components/how-it-works-carousel';
+import { HowItWorks } from '@/components/landing/how-it-works';
 import { PricingCards } from '@/components/pricing-cards';
 
 export default async function HomePage({
@@ -61,7 +61,7 @@ export default async function HomePage({
 
       <section id="how-it-works" className="border-t border-border/60 py-28">
         <div className="container mx-auto px-4">
-          <HowItWorksCarousel />
+          <HowItWorks />
         </div>
       </section>
 
