@@ -175,7 +175,18 @@ async function main() {
     { onConflict: 'id' }
   );
   if (inviteErr) throw inviteErr;
-  console.log(`  • invitation (token ${dev.inviteToken})`);
+
+  // Without invitation_rooms the guest booking widget has no selectable rooms
+  // and "Request to book" dead-ends.
+  const { error: invRoomsErr } = await supabase.from('invitation_rooms').upsert(
+    IDS.rooms.map((room_id) => ({
+      invitation_id: IDS.invitation,
+      room_id,
+    })),
+    { onConflict: 'invitation_id,room_id' }
+  );
+  if (invRoomsErr) throw invRoomsErr;
+  console.log(`  • invitation (token ${dev.inviteToken}) with ${IDS.rooms.length} rooms`);
 
   const { error: bookingErr } = await supabase.from('bookings').upsert(
     {

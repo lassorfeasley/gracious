@@ -28,7 +28,7 @@ export interface TripBooking {
     | { check_in: string; check_out: string }
     | { check_in: string; check_out: string }[]
     | null;
-  booking_rooms?: { room: { name: string } }[];
+  booking_rooms?: { room: { name: string } | null }[];
   invitation?: { token: string } | null;
 }
 
@@ -94,7 +94,9 @@ export function TripsView({ bookings }: { bookings: TripBooking[] }) {
         {bookings.map((booking) => {
           const dates = getBookingDates(booking);
           const rooms =
-            booking.booking_rooms?.map((br) => br.room.name) ?? [];
+            booking.booking_rooms
+              ?.map((br) => br.room?.name)
+              .filter((name): name is string => !!name) ?? [];
 
           return (
             <Card key={booking.id}>

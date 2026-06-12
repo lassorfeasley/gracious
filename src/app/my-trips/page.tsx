@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { requireAuth, getOwnerProperties } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { VisibilityToggle } from '@/components/guest/visibility-toggle';
 import { TripsView } from '@/components/guest/trips-view';
 import { LogoutButton } from '@/components/logout-button';
@@ -10,11 +10,13 @@ import { Home } from 'lucide-react';
 
 export default async function MyTripsPage() {
   const user = await requireAuth();
-  const supabase = await createClient();
   const properties = await getOwnerProperties(user.id);
   const isHost = properties.length > 0;
 
-  const { data: bookings } = await supabase
+  // Guests can't read rooms/properties under RLS, so their trips would render
+  // with null joins (and crash). Query as admin, scoped to the signed-in user.
+  const admin = createAdminClient();
+  const { data: bookings } = await admin
     .from('bookings')
     .select(
       `

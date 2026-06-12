@@ -33,11 +33,16 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Preserve the query string so deep links (e.g. one-click approve/decline
+  // from emails) survive the login round-trip.
+  const redirectTarget = pathname + request.nextUrl.search;
+
   // Protect dashboard routes
   if (pathname.startsWith('/dashboard') && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('redirect', pathname);
+    url.search = '';
+    url.searchParams.set('redirect', redirectTarget);
     return NextResponse.redirect(url);
   }
 
@@ -45,7 +50,8 @@ export async function updateSession(request: NextRequest) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
-      url.searchParams.set('redirect', pathname);
+      url.search = '';
+      url.searchParams.set('redirect', redirectTarget);
       return NextResponse.redirect(url);
     }
     if (!isDevAdminPreviewEnabled()) {
