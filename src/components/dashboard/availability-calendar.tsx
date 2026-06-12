@@ -93,6 +93,29 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const INNER =
   'flex h-full w-full items-center justify-center rounded-full text-sm transition-colors';
 
+/**
+ * Stay-band rendering (matches the landing-page calendar): days within a stay
+ * are drawn as a continuous full-width tint, with rounded caps on the first
+ * and last day of the run. Status picks the tint — pine for confirmed, brass
+ * for pending, muted for owner blocks.
+ */
+type DayBandState = 'confirmed' | 'pending' | 'blocked';
+
+const BAND =
+  'relative flex h-full w-full items-center justify-center text-sm transition-colors';
+
+const BAND_STATE_CLASS: Record<DayBandState, string> = {
+  confirmed: 'bg-primary/10 font-medium text-primary',
+  pending: 'bg-brass/15 font-medium text-brass',
+  blocked: 'bg-muted/70 font-medium text-muted-foreground',
+};
+
+const BAND_HOVER_CLASS: Record<DayBandState, string> = {
+  confirmed: 'hover:bg-primary/20',
+  pending: 'hover:bg-brass/25',
+  blocked: 'hover:bg-muted',
+};
+
 function DayTooltip({
   label,
   children,
@@ -218,6 +241,29 @@ function MonthGrid({
   );
   const startPad = startOfMonth(month).getDay();
 
+  /**
+   * Band state for any day — also evaluated for the day's neighbors to decide
+   * where a run starts/ends (rounded caps). Mirrors the display semantics:
+   * selectable room-mode calendars band only fully-booked days; everything
+   * else bands from the flat booking/block lists.
+   */
+  function bandStateForDay(day: Date): DayBandState | null {
+    if (selectable && roomMode && rooms && roomAvailability) {
+      const taken = takenRoomsForDay(day, rooms, roomAvailability);
+      if (rooms.length === 0 || taken.length < rooms.length) return null;
+      if (taken.some((t) => !t.pending && !t.blocked)) return 'confirmed';
+      if (taken.some((t) => t.pending)) return 'pending';
+      return 'blocked';
+    }
+    const booked = bookings.filter((b) => coversDay(day, b.checkIn, b.checkOut));
+    if (booked.some((b) => !b.pending)) return 'confirmed';
+    if (booked.length > 0) return 'pending';
+    if (blocks.some((bl) => coversDay(day, bl.start_date, bl.end_date))) {
+      return 'blocked';
+    }
+    return null;
+  }
+
   return (
     <div>
       <p className="mb-5 text-center text-base font-semibold">
@@ -290,6 +336,24 @@ function MonthGrid({
                 : undefined;
           const title = tooltip;
 
+          const bandState = bandStateForDay(day);
+          const bandStart =
+            bandState !== null && bandStateForDay(addDays(day, -1)) !== bandState;
+          const bandEnd =
+            bandState !== null && bandStateForDay(addDays(day, 1)) !== bandState;
+          const bandRounding = cn(
+            bandStart && 'rounded-l-full',
+            bandEnd && 'rounded-r-full'
+          );
+          // A confirmed band that also has a pending request gets a brass dot.
+          const mixedDot =
+            bandState === 'confirmed' && hasPending ? (
+              <span
+                className="pointer-events-none absolute bottom-1 left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-brass"
+                aria-hidden
+              />
+            ) : null;
+
           if (selectable) {
             const dateStr = format(day, 'yyyy-MM-dd');
             const selDay = isSelectable(dateStr);
@@ -305,26 +369,27 @@ function MonthGrid({
             const anyTaken = roomMode
               ? taken.length > 0
               : booked.length > 0 || isBlocked;
+            const hasFullRange = !!value?.checkIn && !!value?.checkOut;
 
             const partialDot = partial ? (
               <span
                 className={cn(
                   'pointer-events-none absolute bottom-0.5 left-1/2 size-[5px] -translate-x-1/2 rounded-full',
-                  pendingOnly ? 'bg-amber-400' : 'bg-foreground/70',
-                  endpoint && 'bg-white/80'
+                  pendingOnly ? 'bg-brass' : 'bg-foreground/70',
+                  endpoint && 'bg-primary-foreground/80'
                 )}
                 aria-hidden
               />
             ) : null;
 
-            return (
-              <div
-                key={day.toISOString()}
-                className="flex aspect-square items-center justify-center p-1.5"
-              >
-                {isPast ? (
-                  // Past days aren't actionable — render like an empty day, but
-                  // keep a faded dot (and hover) to show a stay was there.
+            if (isPast) {
+              // Past days aren't actionable — render like an empty day, but
+              // keep a faded dot (and hover) to show a stay was there.
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="flex aspect-square items-center justify-center p-1.5"
+                >
                   <DayTooltip label={anyTaken ? title : undefined}>
                     <span className={cn(INNER, 'relative text-muted-foreground/40')}>
                       {format(day, 'd')}
@@ -336,66 +401,171 @@ function MonthGrid({
                       )}
                     </span>
                   </DayTooltip>
-                ) : selDay ? (
+                </div>
+              );
+            }
+
+            if (selDay && endpoint) {
+              // Solid pine circle; once both ends are picked, a half-width
+              // tint connects the endpoint into the selected range.
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="flex aspect-square items-center justify-center py-1.5"
+                >
+                  <DayTooltip label={partial ? title : undefined}>
+                    <span className="relative flex h-full w-full items-center justify-center">
+                      {hasFullRange && (
+                        <span
+                          className={cn(
+                            'absolute inset-y-0 bg-primary/10',
+                            isStart ? 'left-1/2 right-0' : 'left-0 right-1/2'
+                          )}
+                          aria-hidden
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onSelect(dateStr)}
+                        className="relative flex aspect-square h-full items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition-colors"
+                      >
+                        {format(day, 'd')}
+                        {partialDot}
+                      </button>
+                    </span>
+                  </DayTooltip>
+                </div>
+              );
+            }
+
+            if (selDay && inRange) {
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="flex aspect-square items-center justify-center py-1.5"
+                >
                   <DayTooltip label={partial ? title : undefined}>
                     <button
                       type="button"
                       onClick={() => onSelect(dateStr)}
                       className={cn(
-                        INNER,
-                        'relative',
-                        endpoint &&
-                          'bg-blue-600 font-semibold text-white shadow-sm dark:bg-blue-500',
-                        !endpoint && inRange && 'bg-blue-500/15 text-foreground',
-                        !endpoint &&
-                          !inRange &&
-                          'text-foreground hover:bg-blue-500/10',
-                        !endpoint &&
-                          isToday &&
-                          'ring-1 ring-inset ring-foreground'
+                        BAND,
+                        'bg-primary/10 text-foreground hover:bg-primary/20'
                       )}
                     >
                       {format(day, 'd')}
                       {partialDot}
                     </button>
                   </DayTooltip>
-                ) : bookingHref ? (
-                  // Fully booked, host context — solid pill that opens the booking.
+                </div>
+              );
+            }
+
+            if (selDay) {
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="flex aspect-square items-center justify-center p-1.5"
+                >
+                  <DayTooltip label={partial ? title : undefined}>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(dateStr)}
+                      className={cn(
+                        INNER,
+                        'relative text-foreground hover:bg-primary/10',
+                        isToday && 'ring-1 ring-inset ring-foreground'
+                      )}
+                    >
+                      {format(day, 'd')}
+                      {partialDot}
+                    </button>
+                  </DayTooltip>
+                </div>
+              );
+            }
+
+            if (bookingHref) {
+              // Fully booked, host context — stay band that opens the booking.
+              const state = bandState ?? 'confirmed';
+              return (
+                <div
+                  key={day.toISOString()}
+                  className="flex aspect-square items-center justify-center py-1.5"
+                >
                   <DayTooltip label={title}>
                     <Link
                       href={bookingHref}
                       className={cn(
-                        INNER,
-                        'font-medium transition hover:opacity-80',
-                        pendingOnly
-                          ? 'bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-300'
-                          : 'bg-foreground text-background'
+                        BAND,
+                        BAND_STATE_CLASS[state],
+                        BAND_HOVER_CLASS[state],
+                        bandRounding
                       )}
                     >
                       {format(day, 'd')}
+                      {mixedDot}
                     </Link>
                   </DayTooltip>
-                ) : (
-                  // Fully booked, guest context — quiet strikethrough.
-                  <DayTooltip label={title}>
-                    <span
-                      className={cn(
-                        INNER,
-                        unavailable
-                          ? 'text-muted-foreground/50 line-through decoration-muted-foreground/40'
-                          : 'text-muted-foreground/40'
-                      )}
-                    >
-                      {format(day, 'd')}
-                    </span>
-                  </DayTooltip>
-                )}
+                </div>
+              );
+            }
+
+            // Fully booked, guest context — quiet strikethrough.
+            return (
+              <div
+                key={day.toISOString()}
+                className="flex aspect-square items-center justify-center p-1.5"
+              >
+                <DayTooltip label={title}>
+                  <span
+                    className={cn(
+                      INNER,
+                      unavailable
+                        ? 'text-muted-foreground/50 line-through decoration-muted-foreground/40'
+                        : 'text-muted-foreground/40'
+                    )}
+                  >
+                    {format(day, 'd')}
+                  </span>
+                </DayTooltip>
               </div>
             );
           }
 
-          const blockedOnly = isBlocked && booked.length === 0;
-          const isTaken = hasConfirmed || hasPending || blockedOnly;
+          // Read-only stay band (landing-page calendar format).
+          if (bandState) {
+            return (
+              <div
+                key={day.toISOString()}
+                className="flex aspect-square items-center justify-center py-1.5"
+              >
+                <DayTooltip label={title}>
+                  {bookingHref ? (
+                    <Link
+                      href={bookingHref}
+                      className={cn(
+                        BAND,
+                        BAND_STATE_CLASS[bandState],
+                        BAND_HOVER_CLASS[bandState],
+                        bandRounding
+                      )}
+                    >
+                      {format(day, 'd')}
+                      {mixedDot}
+                    </Link>
+                  ) : (
+                    <span
+                      className={cn(BAND, BAND_STATE_CLASS[bandState], bandRounding)}
+                    >
+                      {format(day, 'd')}
+                      {mixedDot}
+                    </span>
+                  )}
+                </DayTooltip>
+              </div>
+            );
+          }
 
           // Read-only invited-window highlight: when the calendar is scoped to
           // specific allowed ranges (e.g. a fixed-date invitation), mark the
@@ -409,38 +579,55 @@ function MonthGrid({
             !!value?.checkOut &&
             dateStr > value.checkIn &&
             dateStr < value.checkOut;
-          const invitedEndpoint = restrictToAllowed && !isTaken && endpoint;
-          const invitedInRange =
-            restrictToAllowed && !isTaken && inRange && !endpoint;
+          const invitedEndpoint = restrictToAllowed && endpoint;
+          const invitedInRange = restrictToAllowed && inRange && !endpoint;
           const dimmedOutOfWindow =
-            restrictToAllowed && !isAllowed(dateStr) && !isTaken && !isPast;
+            restrictToAllowed && !isAllowed(dateStr) && !isPast;
+          const hasFullRange = !!value?.checkIn && !!value?.checkOut;
+
+          if (invitedEndpoint) {
+            return (
+              <div
+                key={day.toISOString()}
+                className="flex aspect-square items-center justify-center py-1.5"
+              >
+                <span className="relative flex h-full w-full items-center justify-center">
+                  {hasFullRange && (
+                    <span
+                      className={cn(
+                        'absolute inset-y-0 bg-primary/10',
+                        isStart ? 'left-1/2 right-0' : 'left-0 right-1/2'
+                      )}
+                      aria-hidden
+                    />
+                  )}
+                  <span className="relative flex aspect-square h-full items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                    {format(day, 'd')}
+                  </span>
+                </span>
+              </div>
+            );
+          }
+
+          if (invitedInRange) {
+            return (
+              <div
+                key={day.toISOString()}
+                className="flex aspect-square items-center justify-center py-1.5"
+              >
+                <span className={cn(BAND, 'bg-primary/10 text-foreground')}>
+                  {format(day, 'd')}
+                </span>
+              </div>
+            );
+          }
 
           const dayClass = cn(
             INNER,
-            isToday &&
-              !unavailable &&
-              !invitedEndpoint &&
-              'font-semibold ring-1 ring-inset ring-foreground',
-            isPast && !unavailable && 'text-muted-foreground/50',
-            !unavailable &&
-              !isPast &&
-              !invitedEndpoint &&
-              !invitedInRange &&
-              !dimmedOutOfWindow &&
-              'text-foreground hover:bg-muted',
-            dimmedOutOfWindow && 'text-muted-foreground/40',
-            invitedInRange && 'bg-blue-500/15 text-foreground',
-            invitedEndpoint &&
-              'bg-blue-600 font-semibold text-white dark:bg-blue-500',
-            hasConfirmed && 'bg-foreground font-medium text-background',
-            hasPending &&
-              !hasConfirmed &&
-              'bg-amber-100 font-medium text-amber-900 ring-1 ring-inset ring-amber-300',
-            hasPending &&
-              hasConfirmed &&
-              'bg-foreground font-medium text-background ring-2 ring-inset ring-amber-300',
-            blockedOnly &&
-              'bg-muted font-medium text-muted-foreground ring-1 ring-inset ring-border'
+            isToday && 'font-semibold ring-1 ring-inset ring-foreground',
+            isPast && 'text-muted-foreground/50',
+            !isPast && !dimmedOutOfWindow && 'text-foreground hover:bg-muted',
+            dimmedOutOfWindow && 'text-muted-foreground/40'
           );
 
           return (
@@ -449,19 +636,7 @@ function MonthGrid({
               className="flex aspect-square items-center justify-center p-1.5"
             >
               <DayTooltip label={title}>
-                {bookingHref ? (
-                  <Link
-                    href={bookingHref}
-                    className={cn(
-                      dayClass,
-                      'transition hover:ring-2 hover:ring-foreground/40'
-                    )}
-                  >
-                    {format(day, 'd')}
-                  </Link>
-                ) : (
-                  <span className={dayClass}>{format(day, 'd')}</span>
-                )}
+                <span className={dayClass}>{format(day, 'd')}</span>
               </DayTooltip>
             </div>
           );
@@ -649,7 +824,7 @@ export function AvailabilityCalendar({
       {selectable && bookingHrefBase && bookings.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="inline-flex size-5 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
+            <span className="inline-flex size-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
               1
             </span>
             Fully booked
@@ -665,7 +840,7 @@ export function AvailabilityCalendar({
           )}
           {bookings.some((b) => b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex size-5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-medium text-amber-900 ring-1 ring-inset ring-amber-300">
+              <span className="inline-flex size-5 items-center justify-center rounded-md bg-brass/15 text-[10px] font-medium text-brass">
                 1
               </span>
               Pending request
@@ -681,7 +856,7 @@ export function AvailabilityCalendar({
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
           {restrictToAllowed && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
                 1
               </span>
               Your invited dates
@@ -689,7 +864,7 @@ export function AvailabilityCalendar({
           )}
           {bookings.some((b) => !b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-background">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
                 1
               </span>
               Confirmed stay
@@ -697,7 +872,7 @@ export function AvailabilityCalendar({
           )}
           {bookings.some((b) => b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-medium text-amber-900 ring-1 ring-inset ring-amber-300">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-brass/15 text-[10px] font-medium text-brass">
                 1
               </span>
               Pending request
@@ -705,7 +880,7 @@ export function AvailabilityCalendar({
           )}
           {blocks.length > 0 && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground ring-1 ring-inset ring-border">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-muted/70 text-[10px] font-medium text-muted-foreground">
                 1
               </span>
               Blocked
