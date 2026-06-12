@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -30,6 +31,26 @@ import { PhotoGallery } from '@/components/photo-gallery';
 
 function bedLabel(bed: string): string {
   return BED_SIZE_LABELS[bed as keyof typeof BED_SIZE_LABELS] ?? bed;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string; roomId: string }>;
+}): Promise<Metadata> {
+  const { token, roomId } = await params;
+  const invitation = await getInvitationByToken(token);
+  const room = invitation?.rooms.find((r) => r.id === roomId);
+  if (!invitation || !room) return { title: 'Invitation not found' };
+
+  const title = `${room.name} · ${invitation.property.name}`;
+  const description = `Up to ${room.max_occupancy} guests · ${summarizeBeds(room.beds)}`;
+
+  return {
+    title,
+    description,
+    openGraph: { siteName: 'Gracious', type: 'website', title, description },
+  };
 }
 
 export default async function GuestRoomPage({

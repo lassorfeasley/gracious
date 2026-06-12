@@ -6,6 +6,8 @@ import { BookingRequests } from '@/components/dashboard/booking-requests';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
 
+export const metadata = { title: 'Requests' };
+
 export default async function RequestsPage({
   params,
   searchParams,

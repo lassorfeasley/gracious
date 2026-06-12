@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { Inter, Fraunces } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { DevToolbar } from '@/components/dev/dev-toolbar';
+import { appUrl } from '@/lib/env';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -12,11 +13,25 @@ const display = Fraunces({
   variable: '--font-display-family',
 });
 
+const description = 'A warm, private way to have friends and family to stay.';
+
 export const metadata: Metadata = {
-  title: 'Gracious',
-  description:
-    'A warm, private way to have friends and family to stay.',
+  metadataBase: new URL(appUrl()),
+  title: {
+    default: 'Gracious',
+    template: '%s · Gracious',
+  },
+  description,
   robots: { index: false, follow: false },
+  openGraph: {
+    siteName: 'Gracious',
+    type: 'website',
+    title: 'Gracious',
+    description,
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 };
 
 export default function RootLayout({

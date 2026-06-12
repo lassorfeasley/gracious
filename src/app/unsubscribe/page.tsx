@@ -11,7 +11,7 @@ import {
   type PreferenceRow,
 } from '@/components/unsubscribe-preferences';
 
-export const metadata = { title: 'Email preferences · Gracious' };
+export const metadata = { title: 'Email preferences' };
 
 export default async function UnsubscribePage({
   searchParams,

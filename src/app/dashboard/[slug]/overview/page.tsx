@@ -16,6 +16,8 @@ import { Pencil, Plus, MapPin, Check } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+export const metadata = { title: 'Overview' };
+
 export default async function OverviewPage({
   params,
 }: {

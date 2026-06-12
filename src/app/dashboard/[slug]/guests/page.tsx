@@ -8,6 +8,8 @@ import { InvitationsManager } from '@/components/dashboard/invitations-manager';
 import { buildScheduleStays } from '@/lib/schedule-stays';
 import type { Invitation } from '@/types/database';
 
+export const metadata = { title: 'Guests' };
+
 export default async function GuestsPage({
   params,
 }: {

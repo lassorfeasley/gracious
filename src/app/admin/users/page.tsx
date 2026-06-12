@@ -4,6 +4,8 @@ import { UserRoleSelect } from '@/components/admin/user-role-select';
 import { formatDate } from '@/lib/dates';
 import type { User } from '@/types/database';
 
+export const metadata = { title: 'Users · Admin' };
+
 export default async function AdminUsersPage() {
   const actor = await requireSiteAdmin();
   const admin = createAdminClient();

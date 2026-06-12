@@ -26,6 +26,8 @@ function excludeBooking(
   return out;
 }
 
+export const metadata = { title: 'Booking' };
+
 export default async function ManageBookingPage({
   params,
 }: {

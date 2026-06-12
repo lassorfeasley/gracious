@@ -21,6 +21,8 @@ function bedLabel(bed: string): string {
   return BED_SIZE_LABELS[bed as keyof typeof BED_SIZE_LABELS] ?? bed;
 }
 
+export const metadata = { title: 'Room' };
+
 export default async function RoomProfilePage({
   params,
 }: {

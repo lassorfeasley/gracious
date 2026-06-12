@@ -1,5 +1,7 @@
+import { cache } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { formatPersonName, type PersonNameFields } from '@/lib/names';
 import type { InvitationWithDetails } from '@/types/database';
 
 export function guestMatchesInvitation(
@@ -10,7 +12,8 @@ export function guestMatchesInvitation(
   return authUser.email.toLowerCase() === invitation.guest_email.toLowerCase();
 }
 
-export async function getInvitationByToken(
+// cache() dedupes the lookup between generateMetadata and the page render.
+export const getInvitationByToken = cache(async function getInvitationByToken(
   token: string
 ): Promise<InvitationWithDetails | null> {
   const admin = createAdminClient();
@@ -63,6 +66,16 @@ export async function getInvitationByToken(
     ),
     windows: invitation.invitation_windows ?? [],
   } as InvitationWithDetails;
+});
+
+/** Display name of the host (property owner) on an invitation. */
+export function invitationHostName(
+  invitation: InvitationWithDetails
+): string {
+  const host = (
+    invitation.property as unknown as { owner?: PersonNameFields | null }
+  ).owner;
+  return formatPersonName(host, 'Your host') ?? 'Your host';
 }
 
 export function isInvitationActive(invitation: InvitationWithDetails): boolean {

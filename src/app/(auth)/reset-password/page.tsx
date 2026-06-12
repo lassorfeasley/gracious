@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import ResetPasswordForm from './reset-password-form';
 
-export const metadata: Metadata = { title: 'Set a new password · Gracious' };
+export const metadata: Metadata = { title: 'Set a new password' };
 
 /**
  * Reached from the recovery email link after /auth/confirm verifies the

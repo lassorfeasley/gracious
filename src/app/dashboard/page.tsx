@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SiteFooter } from '@/components/site-footer';
 
+export const metadata = { title: 'Dashboard' };
+
 export default async function DashboardPage() {
   const user = await requireOwner();
   const properties = await getOwnerProperties(user.id);

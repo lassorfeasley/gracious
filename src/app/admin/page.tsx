@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AUTOMATED_MESSAGES } from '@/lib/messaging/registry';
 
+export const metadata = { title: 'Admin' };
+
 export default async function AdminOverviewPage() {
   const admin = createAdminClient();
 

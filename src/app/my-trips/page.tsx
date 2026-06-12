@@ -8,6 +8,8 @@ import { SiteFooter } from '@/components/site-footer';
 import { Button } from '@/components/ui/button';
 import { Home } from 'lucide-react';
 
+export const metadata = { title: 'My trips' };
+
 export default async function MyTripsPage() {
   const user = await requireAuth();
   const properties = await getOwnerProperties(user.id);

@@ -22,6 +22,8 @@ import {
   INVITATION_TYPE_GUEST_DESCRIPTIONS,
 } from '@/lib/invitation-types';
 
+export const metadata = { title: 'Message · Admin' };
+
 export default async function AdminMessageDetailPage({
   params,
 }: {

@@ -12,6 +12,8 @@ const statusVariant: Record<
   cancelled: 'outline',
 };
 
+export const metadata = { title: 'Bookings · Admin' };
+
 export default async function AdminBookingsPage() {
   const admin = createAdminClient();
 

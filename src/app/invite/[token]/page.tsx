@@ -1,9 +1,11 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
   getInvitationByToken,
   guestMatchesInvitation,
+  invitationHostName,
   isInvitationActive,
 } from '@/lib/invitations';
 import { getCoGuestsForInvitation } from '@/lib/coguests';
@@ -33,6 +35,26 @@ import {
   INVITATION_TYPE_LABELS,
 } from '@/lib/invitation-types';
 import { PhotoGallery } from '@/components/photo-gallery';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const invitation = await getInvitationByToken(token);
+  if (!invitation) return { title: 'Invitation not found' };
+
+  const property = invitation.property;
+  const title = `You're invited to ${property.name}`;
+  const description = `${invitationHostName(invitation)} has invited you to stay at ${property.name}.`;
+
+  return {
+    title,
+    description,
+    openGraph: { siteName: 'Gracious', type: 'website', title, description },
+  };
+}
 
 export default async function InvitePage({
   params,

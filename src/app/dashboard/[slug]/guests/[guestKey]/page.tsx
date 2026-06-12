@@ -6,6 +6,8 @@ import { parseGuestKey } from '@/lib/guest-keys';
 import { GuestProfileView } from '@/components/dashboard/guest-profile-view';
 import type { Invitation } from '@/types/database';
 
+export const metadata = { title: 'Guest profile' };
+
 export default async function GuestProfilePage({
   params,
 }: {

@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 
+export const metadata = { title: 'Compose an invitation' };
+
 export default async function ComposePage({
   params,
 }: {

@@ -5,6 +5,8 @@ import { SettingsForm } from '@/components/dashboard/settings-form';
 import { SubscriptionCard } from '@/components/dashboard/subscription-card';
 import { getAccountUsage } from '@/lib/billing';
 
+export const metadata = { title: 'Settings' };
+
 export default async function SettingsPage({
   params,
 }: {

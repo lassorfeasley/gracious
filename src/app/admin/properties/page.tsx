@@ -2,6 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { formatDate } from '@/lib/dates';
 import { Badge } from '@/components/ui/badge';
 
+export const metadata = { title: 'Properties · Admin' };
+
 export default async function AdminPropertiesPage() {
   const admin = createAdminClient();
 
