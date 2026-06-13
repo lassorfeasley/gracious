@@ -144,6 +144,208 @@ const SHADOWS = [
   { label: 'xl', cls: 'shadow-xl' },
 ];
 
+/* ----------------------------- brand assets ------------------------------- */
+
+type BrandAsset = {
+  name: string;
+  /** Path under /public — drop the finished file here and it renders below. */
+  file: string;
+  format: string;
+  size: string;
+  surface?: 'light' | 'dark';
+  note?: string;
+};
+
+const BRAND_ASSET_GROUPS: {
+  group: string;
+  description: string;
+  assets: BrandAsset[];
+}[] = [
+  {
+    group: 'Logo & marks',
+    description:
+      'Vector masters (outlined Fraunces). Everything else is exported from these.',
+    assets: [
+      {
+        name: 'Wordmark',
+        file: 'brand/wordmark.svg',
+        format: 'SVG',
+        size: 'scalable · ~600×160',
+        surface: 'light',
+      },
+      {
+        name: 'Wordmark, reversed',
+        file: 'brand/wordmark-reversed.svg',
+        format: 'SVG',
+        size: 'scalable',
+        surface: 'dark',
+        note: 'For dark / photo backgrounds',
+      },
+      {
+        name: 'Monogram',
+        file: 'brand/logomark.svg',
+        format: 'SVG',
+        size: 'square · 512×512',
+        surface: 'light',
+      },
+      {
+        name: 'Lockup (mark + wordmark)',
+        file: 'brand/lockup.svg',
+        format: 'SVG',
+        size: 'scalable',
+        surface: 'light',
+      },
+    ],
+  },
+  {
+    group: 'Favicon & app icons',
+    description:
+      'Generated from the monogram. Final files live at the app root; stage them here first.',
+    assets: [
+      {
+        name: 'Favicon (modern)',
+        file: 'brand/icon.svg',
+        format: 'SVG',
+        size: 'scalable',
+        surface: 'light',
+        note: '→ src/app/icon.svg',
+      },
+      {
+        name: 'Favicon (legacy)',
+        file: 'brand/favicon.ico',
+        format: 'ICO',
+        size: '16 · 32 · 48',
+        surface: 'light',
+        note: '→ src/app/favicon.ico',
+      },
+      {
+        name: 'Apple touch icon',
+        file: 'brand/apple-touch-icon.png',
+        format: 'PNG',
+        size: '180×180',
+        surface: 'light',
+        note: '→ src/app/apple-icon.png · no transparency',
+      },
+      {
+        name: 'PWA icon',
+        file: 'brand/icon-192.png',
+        format: 'PNG',
+        size: '192×192',
+      },
+      {
+        name: 'PWA icon, large',
+        file: 'brand/icon-512.png',
+        format: 'PNG',
+        size: '512×512',
+      },
+      {
+        name: 'Maskable icon',
+        file: 'brand/icon-maskable-512.png',
+        format: 'PNG',
+        size: '512×512',
+        note: 'Keep art inside center 80% safe area',
+      },
+      {
+        name: 'Safari pinned tab',
+        file: 'brand/safari-pinned-tab.svg',
+        format: 'SVG, 1-color',
+        size: 'scalable',
+        surface: 'light',
+      },
+    ],
+  },
+  {
+    group: 'Social & email',
+    description:
+      'Raster assets for places that cannot render SVG (link previews, email clients).',
+    assets: [
+      {
+        name: 'Open Graph image',
+        file: 'brand/og-default.png',
+        format: 'PNG',
+        size: '1200×630',
+        surface: 'dark',
+        note: 'Static fallback for link previews',
+      },
+      {
+        name: 'Email logo',
+        file: 'brand/email-logo.png',
+        format: 'PNG @2x',
+        size: '480×120 (shows 240×60)',
+        surface: 'light',
+        note: 'Email ignores SVG',
+      },
+      {
+        name: 'Avatar / fallback',
+        file: 'brand/avatar-fallback.svg',
+        format: 'SVG',
+        size: 'square · 256×256',
+      },
+    ],
+  },
+];
+
+function AssetTile({ asset }: { asset: BrandAsset }) {
+  const [missing, setMissing] = React.useState(false);
+  const imgRef = React.useRef<HTMLImageElement>(null);
+  const dark = asset.surface === 'dark';
+
+  // An <img> that 404s before React hydrates never fires onError, so also
+  // check the load result on mount (naturalWidth is 0 for a failed image).
+  React.useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth === 0) setMissing(true);
+  }, []);
+
+  return (
+    <div className="overflow-hidden rounded-lg border">
+      <div
+        className={cn(
+          'flex min-h-[132px] items-center justify-center p-6',
+          dark ? 'bg-primary' : 'bg-muted/40'
+        )}
+      >
+        {missing ? (
+          <div
+            className={cn(
+              'flex flex-col items-center gap-2 rounded-md border border-dashed px-6 py-5 text-center',
+              dark
+                ? 'border-primary-foreground/30 text-primary-foreground/70'
+                : 'border-muted-foreground/30 text-muted-foreground'
+            )}
+          >
+            <span className="text-xs font-medium uppercase tracking-wider">
+              Placeholder
+            </span>
+            <span className="font-mono text-[10px]">{asset.size}</span>
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            ref={imgRef}
+            src={`/${asset.file}`}
+            alt={`${asset.name} preview`}
+            onError={() => setMissing(true)}
+            className="max-h-20 w-auto max-w-full object-contain"
+          />
+        )}
+      </div>
+      <div className="space-y-0.5 bg-card px-3 py-2.5">
+        <p className="text-sm font-medium">{asset.name}</p>
+        <p className="font-mono text-[10px] text-muted-foreground">
+          {asset.format} · {asset.size}
+        </p>
+        <p className="truncate font-mono text-[10px] text-muted-foreground">
+          /{asset.file}
+        </p>
+        {asset.note ? (
+          <p className="text-[11px] text-muted-foreground">{asset.note}</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /* -------------------------------- guide ----------------------------------- */
 
 export function StyleGuide() {
@@ -317,6 +519,31 @@ export function StyleGuide() {
                 ))}
               </CardContent>
             </Card>
+          </Section>
+
+          <Section
+            title="Brand Assets"
+            description="Logos, icons, and social/email artwork. Drop a finished file at the /public path shown on each tile and it replaces the placeholder here automatically."
+          >
+            <div className="space-y-8">
+              {BRAND_ASSET_GROUPS.map((g) => (
+                <div key={g.group} className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-semibold tracking-tight">
+                      {g.group}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {g.description}
+                    </p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {g.assets.map((a) => (
+                      <AssetTile key={a.file} asset={a} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </Section>
 
           <Section title="Radius & Elevation" description="Corner radii scale from the --radius token; shadows are soft and layered.">
