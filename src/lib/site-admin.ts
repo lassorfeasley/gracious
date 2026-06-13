@@ -1,6 +1,7 @@
-import type { User, UserRole } from '@/types/database';
+import type { User } from '@/types/database';
 
-/** Comma-separated emails in SITE_ADMIN_EMAILS can access /admin before role is set in DB. */
+/** Comma-separated emails in SITE_ADMIN_EMAILS can access /admin before the
+ * is_admin flag is set in the DB (bootstrap access). */
 export function getSiteAdminEmails(): string[] {
   return (process.env.SITE_ADMIN_EMAILS ?? '')
     .split(',')
@@ -12,8 +13,6 @@ export function isSiteAdminEmail(email: string): boolean {
   return getSiteAdminEmails().includes(email.toLowerCase());
 }
 
-export function isSiteAdmin(user: Pick<User, 'role' | 'email'>): boolean {
-  return user.role === 'admin' || isSiteAdminEmail(user.email);
+export function isSiteAdmin(user: Pick<User, 'is_admin' | 'email'>): boolean {
+  return user.is_admin || isSiteAdminEmail(user.email);
 }
-
-export const ASSIGNABLE_ROLES: UserRole[] = ['guest', 'owner', 'admin'];

@@ -6,7 +6,7 @@ import { isDevAdminPreviewEnabled } from '@/lib/dev-tools';
 import { isSiteAdmin } from '@/lib/site-admin';
 
 const patchSchema = z.object({
-  role: z.enum(['guest', 'owner', 'admin']),
+  is_admin: z.boolean(),
 });
 
 export async function PATCH(
@@ -32,7 +32,7 @@ export async function PATCH(
       );
     }
 
-    if (id === actor.id && parsed.data.role !== 'admin') {
+    if (id === actor.id && !parsed.data.is_admin) {
       return NextResponse.json(
         { error: 'You cannot remove your own admin access' },
         { status: 400 }
@@ -42,7 +42,7 @@ export async function PATCH(
     const admin = createAdminClient();
     const { data: user, error } = await admin
       .from('users')
-      .update({ role: parsed.data.role })
+      .update({ is_admin: parsed.data.is_admin })
       .eq('id', id)
       .select()
       .single();

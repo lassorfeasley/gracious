@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { requireOwner, getOwnerProperties } from '@/lib/auth';
+import { requireAuth, getOwnerProperties } from '@/lib/auth';
 import { CreatePropertyForm } from '@/components/dashboard/create-property-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -9,7 +9,7 @@ import { SiteFooter } from '@/components/site-footer';
 export const metadata = { title: 'Dashboard' };
 
 export default async function DashboardPage() {
-  const user = await requireOwner();
+  const user = await requireAuth();
   const properties = await getOwnerProperties(user.id);
 
   if (properties.length === 1 && properties[0]?.slug) {

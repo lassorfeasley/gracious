@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { first_name, last_name: last_name ?? null, role: 'owner' },
+      user_metadata: { first_name, last_name: last_name ?? null },
     });
 
     if (error) {
@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
       email,
       first_name,
       last_name: last_name ?? null,
-      role: 'owner',
     });
 
     if (profileError) {

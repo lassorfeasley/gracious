@@ -92,7 +92,7 @@ function SegmentTabs<T extends string>({
   );
 }
 
-const ROLE_DESTINATIONS: Record<string, string> = {
+const PERSONA_DESTINATIONS: Record<string, string> = {
   owner: '/dashboard',
   admin: '/admin',
   guest: '/my-trips',
@@ -102,8 +102,8 @@ function DevAuthControls() {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
 
-  async function signInAs(email: string, role: string) {
-    setPending(role);
+  async function signInAs(email: string, persona: string) {
+    setPending(persona);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -116,7 +116,7 @@ function DevAuthControls() {
       );
       return;
     }
-    router.push(ROLE_DESTINATIONS[role] ?? '/');
+    router.push(PERSONA_DESTINATIONS[persona] ?? '/');
     router.refresh();
   }
 
@@ -134,13 +134,13 @@ function DevAuthControls() {
       <span className="text-xs text-zinc-400">Sign in as:</span>
       {devAccounts.accounts.map((acct) => (
         <button
-          key={acct.role}
+          key={acct.persona}
           type="button"
           disabled={pending !== null}
-          onClick={() => signInAs(acct.email, acct.role)}
+          onClick={() => signInAs(acct.email, acct.persona)}
           className="rounded-md bg-black/20 px-3 py-1.5 text-xs font-medium text-white/80 transition-colors hover:text-white disabled:opacity-50"
         >
-          {pending === acct.role ? '…' : acct.label}
+          {pending === acct.persona ? '…' : acct.label}
         </button>
       ))}
       <button

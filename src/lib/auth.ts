@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isDevAdminPreviewEnabled } from '@/lib/dev-tools';
 import { isSiteAdmin } from '@/lib/site-admin';
-import type { User, UserRole } from '@/types/database';
+import type { User } from '@/types/database';
 
 export async function getAuthUser() {
   const supabase = await createClient();
@@ -25,26 +25,11 @@ export async function getCurrentUser(): Promise<User | null> {
     .single();
 
   if (data) {
-    const user = data as User;
-    const metaRole = authUser.user_metadata?.role as string | undefined;
-    if (metaRole === 'owner' && user.role !== 'owner') {
-      const admin = createAdminClient();
-      const { data: updated } = await admin
-        .from('users')
-        .update({ role: 'owner' })
-        .eq('id', authUser.id)
-        .select()
-        .single();
-      await linkOfflineBookingsToUser(authUser.id, authUser.email!);
-      return (updated as User) ?? user;
-    }
     await linkOfflineBookingsToUser(authUser.id, authUser.email!);
-    return user;
+    return data as User;
   }
 
   const admin = createAdminClient();
-  const role: UserRole =
-    authUser.user_metadata?.role === 'owner' ? 'owner' : 'guest';
   const meta = authUser.user_metadata ?? {};
   const firstName =
     (meta.first_name as string | undefined) ??
@@ -57,7 +42,6 @@ export async function getCurrentUser(): Promise<User | null> {
       email: authUser.email!,
       first_name: firstName,
       last_name: (meta.last_name as string | undefined) ?? null,
-      role,
     })
     .select()
     .single();
@@ -73,13 +57,24 @@ export async function requireAuth(): Promise<User> {
   return user;
 }
 
-export async function requireOwner(): Promise<User> {
-  const user = await requireAuth();
-  // Owners (including owners who are also site admins) can use the host
-  // dashboard. Only route pure platform admins to /admin.
-  if (user.role === 'owner') return user;
-  if (isSiteAdmin(user)) redirect('/admin');
-  redirect('/my-trips');
+/**
+ * True if the user can host: they own or co-manage at least one property.
+ * Host status is derived from data, never stored, so it can't drift out of sync
+ * (e.g. an owner who books a stay stays a host).
+ */
+export async function userManagesAnyProperty(userId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const [{ count: owned }, { count: managed }] = await Promise.all([
+    admin
+      .from('properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', userId),
+    admin
+      .from('property_managers')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId),
+  ]);
+  return (owned ?? 0) > 0 || (managed ?? 0) > 0;
 }
 
 export async function requireSiteAdmin(): Promise<User> {
@@ -116,7 +111,7 @@ export async function canManageProperty(
 export async function requirePropertyAccess(
   propertyId: string
 ): Promise<User> {
-  const user = await requireOwner();
+  const user = await requireAuth();
   const hasAccess = await canManageProperty(propertyId, user.id);
   if (!hasAccess) redirect('/dashboard');
   return user;
@@ -125,17 +120,15 @@ export async function requirePropertyAccess(
 export async function upsertUserProfile(
   userId: string,
   email: string,
-  role: UserRole = 'guest',
   names?: { firstName?: string | null; lastName?: string | null }
 ) {
   const admin = createAdminClient();
   const profile: {
     id: string;
     email: string;
-    role: UserRole;
     first_name?: string | null;
     last_name?: string | null;
-  } = { id: userId, email, role };
+  } = { id: userId, email };
 
   // Only seed a first name when we have one and the row doesn't yet exist;
   // never clobber an existing name with a blank on a returning guest.

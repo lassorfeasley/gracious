@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, userManagesAnyProperty } from '@/lib/auth';
 import { isSiteAdmin } from '@/lib/site-admin';
 import { isLandingPreviewEnabled } from '@/lib/dev-tools';
 import { redirect } from 'next/navigation';
@@ -20,7 +20,7 @@ export default async function HomePage({
 
   if (!landingPreview) {
     if (user && isSiteAdmin(user)) redirect('/admin');
-    if (user?.role === 'owner') redirect('/dashboard');
+    if (user && (await userManagesAnyProperty(user.id))) redirect('/dashboard');
     if (user) redirect('/my-trips');
   }
 

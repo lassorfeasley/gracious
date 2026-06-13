@@ -57,11 +57,11 @@ export async function updateSession(request: NextRequest) {
     if (!isDevAdminPreviewEnabled()) {
       const { data: profile } = await supabase
         .from('users')
-        .select('role, email')
+        .select('is_admin, email')
         .eq('id', user.id)
         .single();
       const allowed =
-        profile?.role === 'admin' ||
+        profile?.is_admin ||
         (profile?.email && isSiteAdminEmail(profile.email));
       if (!allowed) {
         const url = request.nextUrl.clone();
@@ -71,19 +71,13 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Redirect logged-in owners away from auth pages
+  // Redirect logged-in users away from auth pages. The home page routes them to
+  // the right place (admin / dashboard / my-trips) based on their capabilities.
   if ((pathname === '/login' || pathname === '/signup') && user) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role === 'owner') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
-      return NextResponse.redirect(url);
-    }
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    url.search = '';
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

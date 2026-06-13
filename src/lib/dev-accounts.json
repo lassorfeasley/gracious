@@ -8,21 +8,21 @@
   "inviteToken": "d0d0d0d0-0000-4000-8000-0000000000aa",
   "accounts": [
     {
-      "role": "owner",
+      "persona": "owner",
       "email": "owner@dev.local",
       "firstName": "Olivia",
       "lastName": "Owner",
-      "label": "Owner"
+      "label": "Host"
     },
     {
-      "role": "admin",
+      "persona": "admin",
       "email": "admin@dev.local",
       "firstName": "Adam",
       "lastName": "Admin",
       "label": "Admin"
     },
     {
-      "role": "guest",
+      "persona": "guest",
       "email": "guest@dev.local",
       "firstName": "Gabby",
       "lastName": "Guest",

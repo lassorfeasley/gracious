@@ -38,7 +38,6 @@ export async function buildAuthenticatedInviteUrl(
       const { error: createError } = await admin.auth.admin.createUser({
         email: normalizedEmail,
         email_confirm: true,
-        user_metadata: { role: 'guest' },
       });
       // Ignore "already registered" races; any other failure falls through.
       if (createError && !/registered|exists/i.test(createError.message)) {

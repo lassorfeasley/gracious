@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, userManagesAnyProperty } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { appUrl } from '@/lib/env';
 import {
@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'owner') {
+    // Pro is a hosting plan, so only hosts (people who own/manage a property)
+    // can subscribe.
+    if (!(await userManagesAnyProperty(user.id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -11,16 +11,21 @@ export default async function AdminOverviewPage() {
 
   const [
     { count: userCount },
-    { count: ownerCount },
-    { count: guestCount },
+    { count: adminCount },
+    { data: owners },
+    { data: managers },
     { count: propertyCount },
     { count: bookingCount },
     { count: pendingRequests },
     { count: invitationCount },
   ] = await Promise.all([
     admin.from('users').select('*', { count: 'exact', head: true }),
-    admin.from('users').select('*', { count: 'exact', head: true }).eq('role', 'owner'),
-    admin.from('users').select('*', { count: 'exact', head: true }).eq('role', 'guest'),
+    admin
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_admin', true),
+    admin.from('properties').select('owner_id'),
+    admin.from('property_managers').select('user_id'),
     admin.from('properties').select('*', { count: 'exact', head: true }),
     admin.from('bookings').select('*', { count: 'exact', head: true }),
     admin
@@ -30,10 +35,16 @@ export default async function AdminOverviewPage() {
     admin.from('invitations').select('*', { count: 'exact', head: true }),
   ]);
 
+  // Hosts are derived: distinct users who own or co-manage a property.
+  const hostCount = new Set<string>([
+    ...(owners ?? []).map((p) => p.owner_id),
+    ...(managers ?? []).map((m) => m.user_id),
+  ]).size;
+
   const stats = [
     { label: 'Users', value: userCount ?? 0, href: '/admin/users' },
-    { label: 'Property hosts', value: ownerCount ?? 0, href: '/admin/users' },
-    { label: 'Guests', value: guestCount ?? 0, href: '/admin/users' },
+    { label: 'Hosts', value: hostCount, href: '/admin/users' },
+    { label: 'Admins', value: adminCount ?? 0, href: '/admin/users' },
     { label: 'Properties', value: propertyCount ?? 0, href: '/admin/properties' },
     { label: 'Bookings', value: bookingCount ?? 0, href: '/admin/bookings' },
     {
@@ -82,12 +93,12 @@ export default async function AdminOverviewPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
           <p>
-            Grant site admin by setting a user&apos;s role to{' '}
-            <strong className="text-foreground">admin</strong> under Users, or add
-            their email to{' '}
+            Grant site admin with the{' '}
+            <strong className="text-foreground">Admin</strong> toggle under Users,
+            or add their email to{' '}
             <code className="rounded bg-muted px-1">SITE_ADMIN_EMAILS</code> in your
-            environment (comma-separated) for bootstrap access before the role is
-            assigned in the database.
+            environment (comma-separated) for bootstrap access before the flag is
+            set in the database.
           </p>
         </CardContent>
       </Card>

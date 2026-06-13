@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { requireOwner, getOwnerProperties } from '@/lib/auth';
+import { requireAuth, getOwnerProperties } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardTopNav } from '@/components/dashboard/top-nav';
 import { SiteFooter } from '@/components/site-footer';
@@ -12,10 +12,12 @@ export default async function PropertyDashboardLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const user = await requireOwner();
+  const user = await requireAuth();
   const properties = await getOwnerProperties(user.id);
   const currentProperty = properties.find((p) => p.slug === slug);
 
+  // getOwnerProperties only returns owned/co-managed properties, so a slug the
+  // user can't manage (or any non-host) lands here and is rejected.
   if (!currentProperty) notFound();
 
   const supabase = await createClient();

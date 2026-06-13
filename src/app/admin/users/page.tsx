@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireSiteAdmin } from '@/lib/auth';
-import { UserRoleSelect } from '@/components/admin/user-role-select';
+import { UserAdminToggle } from '@/components/admin/user-admin-toggle';
+import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/dates';
 import type { User } from '@/types/database';
 
@@ -10,10 +11,21 @@ export default async function AdminUsersPage() {
   const actor = await requireSiteAdmin();
   const admin = createAdminClient();
 
-  const { data: users } = await admin
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [{ data: users }, { data: owners }, { data: managers }] =
+    await Promise.all([
+      admin
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      admin.from('properties').select('owner_id'),
+      admin.from('property_managers').select('user_id'),
+    ]);
+
+  // Host is derived: anyone who owns or co-manages at least one property.
+  const hostIds = new Set<string>([
+    ...(owners ?? []).map((p) => p.owner_id),
+    ...(managers ?? []).map((m) => m.user_id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -30,7 +42,8 @@ export default async function AdminUsersPage() {
             <tr className="border-b bg-muted/40 text-left">
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Role</th>
+              <th className="px-4 py-3 font-medium">Capabilities</th>
+              <th className="px-4 py-3 font-medium">Admin</th>
               <th className="px-4 py-3 font-medium">Joined</th>
             </tr>
           </thead>
@@ -40,9 +53,17 @@ export default async function AdminUsersPage() {
                 <td className="px-4 py-3">{u.name ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                 <td className="px-4 py-3">
-                  <UserRoleSelect
+                  <div className="flex flex-wrap gap-1.5">
+                    {hostIds.has(u.id) ? (
+                      <Badge variant="secondary">Host</Badge>
+                    ) : null}
+                    <Badge variant="outline">Guest</Badge>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <UserAdminToggle
                     userId={u.id}
-                    currentRole={u.role}
+                    isAdmin={u.is_admin}
                     disabled={u.id === actor.id}
                   />
                 </td>

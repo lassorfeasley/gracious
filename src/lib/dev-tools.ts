@@ -7,9 +7,13 @@ export function isDevToolsEnabled(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
-/** In development, any signed-in user can open /admin to preview the UI. */
+/**
+ * Opt-in admin preview: in development, set DEV_ADMIN_PREVIEW=1 to let any
+ * signed-in user open /admin to style the UI. Off by default so local dev
+ * enforces the same is_admin / SITE_ADMIN_EMAILS gating as production.
+ */
 export function isDevAdminPreviewEnabled(): boolean {
-  return isDevToolsEnabled();
+  return isDevToolsEnabled() && process.env.DEV_ADMIN_PREVIEW === '1';
 }
 
 export function detectAppView(pathname: string): AppView | null {

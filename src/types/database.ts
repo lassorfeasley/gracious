@@ -1,4 +1,3 @@
-export type UserRole = 'owner' | 'guest' | 'admin';
 export type PlanId = 'free' | 'pro';
 export type InvitationType = 'standing' | 'date_offer' | 'prix_fixe';
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
@@ -11,7 +10,12 @@ export interface User {
   last_name: string | null;
   /** Generated full name (first_name + last_name). Read-only. */
   name: string | null;
-  role: UserRole;
+  /**
+   * Platform administrator (the /admin panel). This is the only non-derivable
+   * role. Host/guest are NOT stored — host status comes from owning or managing
+   * a property, and guest status is implicit for every account.
+   */
+  is_admin: boolean;
   plan: PlanId;
   hosted_stays_used: number;
   stripe_customer_id: string | null;

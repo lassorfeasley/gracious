@@ -230,7 +230,6 @@ export default function SignupPage() {
         data: {
           first_name: parsed.data.first_name,
           last_name: parsed.data.last_name ?? null,
-          role: 'owner',
         },
       },
     });
@@ -279,12 +278,12 @@ export default function SignupPage() {
     }
 
     // owner_id FKs to public.users, so ensure the profile row exists first.
+    // Creating the property below is what makes this account a host.
     await supabase.from('users').upsert({
       id: user.id,
       email: parsed.data.email,
       first_name: parsed.data.first_name,
       last_name: parsed.data.last_name ?? null,
-      role: 'owner',
     });
 
     const slug = await insertPropertyWithUniqueSlug(supabase, user.id, {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, userManagesAnyProperty } from '@/lib/auth';
 import { appUrl } from '@/lib/env';
 import { getStripe, isStripeConfigured } from '@/lib/stripe';
 
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'owner') {
+    if (!(await userManagesAnyProperty(user.id))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

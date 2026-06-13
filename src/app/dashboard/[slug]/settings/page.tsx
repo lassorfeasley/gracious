@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { requireOwner } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { SettingsForm } from '@/components/dashboard/settings-form';
 import { SubscriptionCard } from '@/components/dashboard/subscription-card';
@@ -13,7 +13,8 @@ export default async function SettingsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const user = await requireOwner();
+  const user = await requireAuth();
+  // getDashboardProperty notFounds if the user can't manage this property.
   const property = await getDashboardProperty(slug);
   const isPropertyOwner = property.owner_id === user.id;
   const supabase = await createClient();

@@ -7,7 +7,7 @@ import { notifyInvitationSent } from '@/lib/email/notifications';
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.role !== 'owner') {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

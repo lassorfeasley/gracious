@@ -64,8 +64,6 @@ async function ensureAuthUser(acct) {
   const user_metadata = {
     first_name: acct.firstName,
     last_name: acct.lastName,
-    // Trigger maps only owner/guest; admin role is applied below.
-    role: acct.role === 'admin' ? 'guest' : acct.role,
   };
 
   const { data: created, error } = await supabase.auth.admin.createUser({
@@ -91,7 +89,8 @@ async function ensureAuthUser(acct) {
     console.log(`  • created auth user ${acct.email}`);
   }
 
-  // Ensure the public.users profile row exists with the right role.
+  // Ensure the public.users profile row exists. Host status comes from owning a
+  // property (set up below for the owner persona); only admin is a stored flag.
   // (name is a generated column — never write it directly.)
   const { error: upsertErr } = await supabase.from('users').upsert(
     {
@@ -99,7 +98,7 @@ async function ensureAuthUser(acct) {
       email: acct.email,
       first_name: acct.firstName,
       last_name: acct.lastName,
-      role: acct.role,
+      is_admin: acct.persona === 'admin',
     },
     { onConflict: 'id' }
   );
@@ -114,7 +113,7 @@ async function main() {
   console.log('Accounts:');
   const ids = {};
   for (const acct of dev.accounts) {
-    ids[acct.role] = await ensureAuthUser(acct);
+    ids[acct.persona] = await ensureAuthUser(acct);
   }
 
   console.log('\nSample property + content:');
@@ -165,7 +164,7 @@ async function main() {
       id: IDS.invitation,
       token: dev.inviteToken,
       property_id: dev.property.id,
-      guest_email: dev.accounts.find((a) => a.role === 'guest').email,
+      guest_email: dev.accounts.find((a) => a.persona === 'guest').email,
       guest_first_name: 'Gabby',
       guest_last_name: 'Guest',
       type: 'standing',
