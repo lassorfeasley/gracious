@@ -1,7 +1,22 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { KeyRound, MapPin, Wifi } from 'lucide-react';
+import Image from 'next/image';
+import {
+  Archive,
+  BedDouble,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  KeyRound,
+  type LucideIcon,
+  MapPin,
+  Reply,
+  Trash2,
+  Wifi,
+} from 'lucide-react';
+import { Logomark } from '@/components/brand/wordmark';
 import { cn } from '@/lib/utils';
 
 /*
@@ -12,24 +27,71 @@ import { cn } from '@/lib/utils';
  * manual control. Hardcoded fictional data — a lookalike, never live mail.
  */
 
-const ARRIVAL_DETAILS = [
-  {
-    icon: MapPin,
-    label: 'Directions',
-    value: '14 Shoreline Lane — last house on the left',
-  },
+type Fact = { icon: LucideIcon; label: string; value: string };
+
+const ARRIVAL_DETAILS: Fact[] = [
   { icon: KeyRound, label: 'Door code', value: '4 7 2 9 ✱' },
   { icon: Wifi, label: 'Wi-Fi', value: 'LakeHouse · guest' },
 ];
+
+const INVITE_DETAILS: Fact[] = [
+  { icon: CalendarRange, label: 'Your dates', value: 'Jun 26 – 29 · 3 nights' },
+  { icon: BedDouble, label: 'Your room', value: 'The Lake Room' },
+];
+
+const CHECKOUT_DETAILS: Fact[] = [
+  { icon: Clock, label: 'Checkout time', value: '11:00 AM' },
+  { icon: KeyRound, label: 'Before you go', value: 'Leave the key on the hook' },
+];
+
+/* Shared facts card so each email's details read consistently. */
+function FactsCard({ facts }: { facts: Fact[] }) {
+  return (
+    <div className="divide-y divide-border/60 rounded-xl bg-background/70">
+      {facts.map((fact) => (
+        <div key={fact.label} className="flex items-center gap-3 px-4 py-3">
+          <fact.icon className="size-4 shrink-0 text-brass" />
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {fact.label}
+            </p>
+            <p className="truncate text-sm font-medium">{fact.value}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* A filled, button-like call to action inside an email body. */
+function EmailCta({
+  icon: Icon,
+  children,
+}: {
+  icon?: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground">
+      {Icon && <Icon className="size-4" />}
+      {children}
+    </div>
+  );
+}
 
 interface Email {
   id: string;
   crumb: string;
   time: string;
   subject: string;
-  body: string;
+  body?: string;
+  /** Optional property/room photo shown as an inset card, like the real email. */
+  image?: string;
+  /** Aspect/height utility for the image card (tuned per photo so it isn't crushed). */
+  imageClass?: string;
+  /** object-position override so the subject stays in frame. */
+  imagePosition?: string;
   block: React.ReactNode;
-  note: string;
 }
 
 const EMAILS: Email[] = [
@@ -38,60 +100,40 @@ const EMAILS: Email[] = [
     crumb: 'Invitation',
     time: '3 weeks before',
     subject: 'Margaret has invited you to The Lake House',
-    body: "You're invited to stay. Take a look at the house and pick the dates that suit you.",
+    image: '/houses/email-exterior.png',
+    imageClass: 'aspect-[16/9]',
     block: (
-      <div className="flex flex-col items-center rounded-xl bg-primary px-6 py-5 text-center">
-        <span className="h-0.5 w-8 bg-brass" />
-        <span className="mt-2.5 font-display text-lg text-primary-foreground">
-          The Lake House
-        </span>
-        <span className="mt-3 rounded-md bg-primary-foreground/10 px-3 py-1 text-xs font-medium text-primary-foreground">
-          View house &amp; request stay
-        </span>
+      <div className="space-y-3">
+        <FactsCard facts={INVITE_DETAILS} />
+        <EmailCta>View house &amp; request stay</EmailCta>
       </div>
     ),
-    note: '“The water is warmest in late June — come for a long weekend.”',
   },
   {
     id: 'arrival',
     crumb: 'Get ready',
     time: 'The morning of',
     subject: 'Get ready for your visit — see you Friday',
-    body: "Hi Theo, everything you need is right here. We can't wait to have you.",
+    image: '/houses/email-bedroom.png',
+    imageClass: 'aspect-[16/9]',
+    imagePosition: 'object-[center_60%]',
     block: (
-      <div className="divide-y divide-border/60 rounded-xl bg-background/70">
-        {ARRIVAL_DETAILS.map((detail) => (
-          <div key={detail.label} className="flex items-center gap-3 px-4 py-3">
-            <detail.icon className="size-4 shrink-0 text-brass" />
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {detail.label}
-              </p>
-              <p className="truncate text-sm font-medium">{detail.value}</p>
-            </div>
-          </div>
-        ))}
+      <div className="space-y-3">
+        <EmailCta icon={MapPin}>Get directions</EmailCta>
+        <FactsCard facts={ARRIVAL_DETAILS} />
       </div>
     ),
-    note: '“The kettle’s on the stove and the spare key is under the blue planter.”',
   },
   {
     id: 'after',
     crumb: 'Afterward',
     time: 'Checkout morning',
-    subject: 'We hope you had a great time',
-    body: 'Safe travels, Theo. Just leave the key on the hook — and come back soon.',
-    block: (
-      <div className="flex flex-col items-center rounded-xl bg-background/70 px-6 py-5 text-center">
-        <span className="text-sm text-muted-foreground">
-          Your room will be here whenever you are.
-        </span>
-        <span className="mt-3 rounded-md bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-          Plan another visit
-        </span>
-      </div>
-    ),
-    note: '“It was so lovely having you. The door is always open.” — Margaret',
+    subject: 'Time to head out',
+    image: '/houses/email-departure.png',
+    imageClass: 'aspect-[16/9]',
+    imagePosition: 'object-[center_55%]',
+    body: 'We hope you had a wonderful stay. A few things to take care of before you go.',
+    block: <FactsCard facts={CHECKOUT_DETAILS} />,
   },
 ];
 
@@ -111,38 +153,67 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
+/* Dummy mail-client chrome so each card reads as a little window. */
+function WindowChrome() {
+  return (
+    <div
+      className="flex items-center justify-between border-b border-border/60 px-5 py-3.5"
+      aria-hidden
+    >
+      <div className="flex items-center gap-2">
+        <span className="size-3 rounded-full bg-muted-foreground/30" />
+        <span className="size-3 rounded-full bg-muted-foreground/30" />
+        <span className="size-3 rounded-full bg-muted-foreground/30" />
+      </div>
+      <div className="flex items-center gap-3.5 text-muted-foreground/50">
+        <Archive className="size-4" />
+        <Trash2 className="size-4" />
+        <Reply className="size-4" />
+      </div>
+    </div>
+  );
+}
+
 function EmailCard({ email }: { email: Email }) {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xl">
+      <WindowChrome />
       <div className="border-b border-border/60 px-5 py-4">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary font-display text-sm text-primary-foreground">
-            G
-          </span>
+        <div className="flex items-start gap-3">
+          <Logomark className="size-9 shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="truncate text-sm font-medium">Gracious</p>
-              <p className="shrink-0 text-[11px] text-muted-foreground">
-                {email.time}
-              </p>
-            </div>
-            <p className="truncate text-xs text-muted-foreground">
-              to Theo &middot; on behalf of Margaret
+            <p className="truncate font-display text-lg font-bold tracking-tight">
+              Gracious
+            </p>
+            <p className="mt-1 font-display text-lg leading-snug tracking-tight">
+              {email.subject}
             </p>
           </div>
         </div>
-        <p className="mt-3 font-display text-lg leading-snug tracking-tight">
-          {email.subject}
-        </p>
       </div>
       <div className="flex flex-1 flex-col px-5 py-4">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          {email.body}
-        </p>
-        <div className="mt-4">{email.block}</div>
-        <p className="mt-auto pt-4 text-sm italic leading-relaxed text-muted-foreground">
-          {email.note}
-        </p>
+        {email.image && (
+          <div
+            className={cn(
+              'relative mb-4 w-full shrink-0 overflow-hidden rounded-xl border border-border/60',
+              email.imageClass ?? 'aspect-[16/9]'
+            )}
+          >
+            <Image
+              src={email.image}
+              alt=""
+              fill
+              sizes="440px"
+              className={cn('object-cover', email.imagePosition)}
+            />
+          </div>
+        )}
+        {email.body && (
+          <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+            {email.body}
+          </p>
+        )}
+        <div>{email.block}</div>
       </div>
     </div>
   );
@@ -236,7 +307,7 @@ export function GuestExperience({ className }: { className?: string }) {
         <div className="mt-12 lg:mt-0">
           <div
             ref={rootRef}
-            className="relative mx-auto h-[400px] w-full max-w-sm"
+            className="relative mx-auto h-[600px] w-full max-w-[30rem]"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
           >
@@ -281,43 +352,47 @@ export function GuestExperience({ className }: { className?: string }) {
             })}
           </div>
 
-          {/* Chronology breadcrumb / manual control */}
-          <div className="mt-8 flex items-center justify-center">
-            {EMAILS.map((email, i) => {
-              const active = i === front;
-              return (
-                <div key={email.id} className="flex items-center">
+          {/* Chronology control: chevrons + segmented toggle pill */}
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleCrumb((front - 1 + N) % N)}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Previous email"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-card p-1 shadow-sm">
+              {EMAILS.map((email, i) => {
+                const active = i === front;
+                return (
                   <button
+                    key={email.id}
                     type="button"
                     onClick={() => handleCrumb(i)}
-                    className="group flex items-center gap-2 rounded-full px-1 py-1"
+                    className={cn(
+                      'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
                     aria-current={active ? 'step' : undefined}
                   >
-                    <span
-                      className={cn(
-                        'size-2 rounded-full transition-colors',
-                        active
-                          ? 'bg-brass'
-                          : 'bg-border group-hover:bg-muted-foreground/50'
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        'text-xs transition-colors',
-                        active
-                          ? 'font-medium text-foreground'
-                          : 'text-muted-foreground group-hover:text-foreground'
-                      )}
-                    >
-                      {email.crumb}
-                    </span>
+                    {email.crumb}
                   </button>
-                  {i < N - 1 && (
-                    <span className="mx-2 h-px w-6 bg-border" aria-hidden />
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleCrumb((front + 1) % N)}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Next email"
+            >
+              <ChevronRight className="size-4" />
+            </button>
           </div>
         </div>
       </div>

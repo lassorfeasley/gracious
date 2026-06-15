@@ -60,7 +60,7 @@ export function HowItWorks({ className }: { className?: string }) {
         </p>
       </div>
 
-      <div className="mt-16 lg:grid lg:grid-cols-2 lg:gap-20">
+      <div className="mt-8 lg:mt-6 lg:grid lg:grid-cols-2 lg:gap-20">
         <div>
           {BEATS.map((beat, index) => (
             <div
@@ -70,7 +70,7 @@ export function HowItWorks({ className }: { className?: string }) {
               }}
               data-beat={index}
               className={cn(
-                'py-12 transition-opacity duration-500 lg:flex lg:min-h-[70vh] lg:flex-col lg:justify-center lg:py-0',
+                'py-12 transition-opacity duration-500 lg:flex lg:min-h-[60vh] lg:flex-col lg:justify-center lg:py-0',
                 index !== activeIndex && 'lg:opacity-30'
               )}
             >
@@ -90,10 +90,10 @@ export function HowItWorks({ className }: { className?: string }) {
         </div>
 
         <div className="hidden lg:block">
-          {/* Sticky geometry mirrors the beats' min-h-[70vh] (15vh offset on
+          {/* Sticky geometry mirrors the beats' min-h-[60vh] (20vh offset on
               either side) so the artifact's center lines up with the active
               beat's center at the start, middle, and end of the travel. */}
-          <div className="sticky top-[15vh] flex h-[70vh] items-center">
+          <div className="sticky top-[20vh] flex h-[60vh] items-center">
             <div className="grid w-full max-w-md items-center">
               {BEATS.map((beat, index) => (
                 <div
