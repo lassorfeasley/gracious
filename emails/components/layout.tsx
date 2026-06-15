@@ -29,6 +29,12 @@ interface EmailLayoutProps {
   hero?: React.ReactNode;
   /** When provided, an unsubscribe link is shown in the footer (opt-out emails). */
   unsubscribeUrl?: string;
+  /**
+   * Optional fine-print aside (e.g. <HostInviteFooter />) shown beneath the
+   * footer line. Reserved for relationship emails — leave unset on
+   * high-urgency functional emails so they stay clean.
+   */
+  footerAside?: React.ReactNode;
 }
 
 export function EmailLayout({
@@ -37,6 +43,7 @@ export function EmailLayout({
   children,
   hero,
   unsubscribeUrl,
+  footerAside,
 }: EmailLayoutProps) {
   return (
     <Html>
@@ -66,6 +73,7 @@ export function EmailLayout({
               </>
             )}
           </Text>
+          {footerAside}
         </Container>
       </Body>
     </Html>

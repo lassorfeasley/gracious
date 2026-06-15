@@ -25,6 +25,43 @@ export async function buildAuthenticatedInviteUrl(
   const next = `/invite/${token}`;
   const normalizedEmail = email.toLowerCase();
 
+  return buildTokenHashLink(admin, normalizedEmail, next, plain);
+}
+
+/**
+ * Builds a one-click sign-in link that drops a guest onto the host dashboard
+ * already authenticated as their existing account, so the home they add there
+ * attaches to that account (no duplicate). Used by the discreet "become a host"
+ * footer on relationship emails.
+ *
+ * Falls back to the public signup wizard (/signup) if a sign-in link can't be
+ * minted — the wizard still lets them open a home, just without auto-pairing.
+ */
+export async function buildHostOnboardingUrl(
+  admin: AdminClient,
+  email: string
+): Promise<string> {
+  const base = appUrl();
+  return buildTokenHashLink(
+    admin,
+    email.toLowerCase(),
+    '/dashboard',
+    `${base}/signup`
+  );
+}
+
+/**
+ * Mints a cross-device-safe token_hash magic link that verifies via
+ * /auth/confirm and redirects to `next`, creating a passwordless account first
+ * if the email is new. Returns `fallback` if anything goes wrong.
+ */
+async function buildTokenHashLink(
+  admin: AdminClient,
+  normalizedEmail: string,
+  next: string,
+  fallback: string
+): Promise<string> {
+  const base = appUrl();
   try {
     // generateLink({ type: 'magiclink' }) requires the user to already exist,
     // so create a passwordless guest account first if there isn't one.
@@ -41,7 +78,7 @@ export async function buildAuthenticatedInviteUrl(
       });
       // Ignore "already registered" races; any other failure falls through.
       if (createError && !/registered|exists/i.test(createError.message)) {
-        return plain;
+        return fallback;
       }
     }
 
@@ -52,7 +89,7 @@ export async function buildAuthenticatedInviteUrl(
     });
 
     const tokenHash = data?.properties?.hashed_token;
-    if (error || !tokenHash) return plain;
+    if (error || !tokenHash) return fallback;
 
     const url = new URL(`${base}/auth/confirm`);
     url.searchParams.set('token_hash', tokenHash);
@@ -60,6 +97,6 @@ export async function buildAuthenticatedInviteUrl(
     url.searchParams.set('next', next);
     return url.toString();
   } catch {
-    return plain;
+    return fallback;
   }
 }

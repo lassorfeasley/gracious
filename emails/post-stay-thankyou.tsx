@@ -1,5 +1,6 @@
 import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
+import { HostInviteFooter } from './components/footer';
 
 interface Props {
   guestName: string;
@@ -7,6 +8,10 @@ interface Props {
   hostName?: string;
   profileUrl?: string;
   unsubscribeUrl?: string;
+  /** True when the recipient already hosts; hides the "become a host" aside. */
+  recipientIsHost?: boolean;
+  /** Authenticated deep link for the "become a host" aside. */
+  hostOnboardingUrl?: string;
 }
 
 export default function PostStayThankYouEmail({
@@ -15,12 +20,20 @@ export default function PostStayThankYouEmail({
   hostName,
   profileUrl,
   unsubscribeUrl,
+  recipientIsHost = false,
+  hostOnboardingUrl,
 }: Props) {
   return (
     <EmailLayout
       preview={`Thanks for staying at ${propertyName}`}
       heading="Thanks for staying with us"
       unsubscribeUrl={unsubscribeUrl}
+      footerAside={
+        <HostInviteFooter
+          recipientIsHost={recipientIsHost}
+          href={hostOnboardingUrl}
+        />
+      }
     >
       <Text>Hi {guestName},</Text>
       <Text>

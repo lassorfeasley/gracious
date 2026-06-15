@@ -264,6 +264,16 @@ export default function SignupPage() {
       }
     } else if (error) {
       setLoading(false);
+      // A guest invited earlier already has a (passwordless) account, so signup
+      // collides. Send them to sign in — owning a home there pairs to that same
+      // account rather than creating a duplicate.
+      if (/registered|already|exists/i.test(error.message)) {
+        toast.error(
+          'You already have a Gracious account with this email. Sign in, then add your home from your dashboard.'
+        );
+        router.push('/login?redirect=/dashboard');
+        return;
+      }
       toast.error(error.message);
       return;
     }

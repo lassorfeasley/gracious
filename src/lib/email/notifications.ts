@@ -3,13 +3,52 @@ import { buildStayEvent, generateIcs } from '@/lib/ical';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { inviteUrl } from '@/lib/invitations';
-import { buildAuthenticatedInviteUrl } from '@/lib/auth-links';
+import {
+  buildAuthenticatedInviteUrl,
+  buildHostOnboardingUrl,
+} from '@/lib/auth-links';
+import { userManagesAnyProperty } from '@/lib/auth';
 import { getBookingWithDetails } from '@/lib/bookings';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { wantsEmail } from '@/lib/notification-prefs';
 import { unsubscribePageUrl, listUnsubscribeHeaders } from '@/lib/unsubscribe';
 import { formatPersonName } from '@/lib/names';
 import type { BookingWithDetails, NotificationPrefs } from '@/types/database';
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/**
+ * Props for the discreet "become a host" footer on guest relationship emails.
+ * Suppresses the aside for anyone who already hosts; otherwise mints an
+ * authenticated onboarding link so the home they open attaches to this same
+ * account. Best-effort — never blocks the email if lookups fail.
+ */
+async function hostInviteFooterProps(
+  admin: AdminClient,
+  email: string | null | undefined
+): Promise<{ recipientIsHost: boolean; hostOnboardingUrl?: string }> {
+  if (!email) return { recipientIsHost: true };
+  try {
+    const normalized = email.toLowerCase();
+    const { data: user } = await admin
+      .from('users')
+      .select('id')
+      .eq('email', normalized)
+      .maybeSingle();
+
+    if (user?.id && (await userManagesAnyProperty(user.id))) {
+      return { recipientIsHost: true };
+    }
+
+    return {
+      recipientIsHost: false,
+      hostOnboardingUrl: await buildHostOnboardingUrl(admin, normalized),
+    };
+  } catch {
+    // On any failure, err toward not showing the aside.
+    return { recipientIsHost: true };
+  }
+}
 
 async function getUserPrefs(
   userId: string
@@ -74,6 +113,8 @@ export async function notifyInvitationSent(invitationId: string) {
     inv.token
   );
 
+  const hostFooter = await hostInviteFooterProps(admin, inv.guest_email);
+
   const creatorRaw = inv.creator;
   const creator = (Array.isArray(creatorRaw) ? creatorRaw[0] : creatorRaw) as {
     first_name: string | null;
@@ -101,6 +142,8 @@ export async function notifyInvitationSent(invitationId: string) {
         ? formatDate(inv.expires_at)
         : undefined,
       heroImageUrl: inv.property.hero_image_url ?? undefined,
+      recipientIsHost: hostFooter.recipientIsHost,
+      hostOnboardingUrl: hostFooter.hostOnboardingUrl,
     }),
     fromName: hostName,
     // Guests can reply straight to their host.
@@ -299,6 +342,9 @@ export async function notifyBookingApproved(bookingId: string) {
     coguestNote = `Others staying during your dates: ${names}${coguests.hasHidden ? ' and others' : ''}.`;
   }
 
+  const admin = createAdminClient();
+  const hostFooter = await hostInviteFooterProps(admin, booking.guest.email);
+
   await sendEmail({
     to: booking.guest.email,
     subject: `Your stay at ${booking.property.name} is confirmed`,
@@ -323,6 +369,8 @@ export async function notifyBookingApproved(bookingId: string) {
       heroImageUrl: booking.property.hero_image_url ?? undefined,
       googleCalendarUrl: googleCalendarUrl(stayEvent),
       outlookCalendarUrl: outlookCalendarUrl(stayEvent),
+      recipientIsHost: hostFooter.recipientIsHost,
+      hostOnboardingUrl: hostFooter.hostOnboardingUrl,
     }),
     attachments: [
       {
@@ -539,6 +587,9 @@ export async function notifyPostStay(booking: BookingWithDetails) {
   const delivery = await guestReminderDelivery(booking.guest.id);
   if (!delivery.ok) return;
 
+  const admin = createAdminClient();
+  const hostFooter = await hostInviteFooterProps(admin, booking.guest.email);
+
   await sendEmail({
     to: booking.guest.email,
     subject: `Thanks for staying at ${booking.property.name}`,
@@ -549,6 +600,8 @@ export async function notifyPostStay(booking: BookingWithDetails) {
         ? inviteUrl(booking.invitation.token)
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
+      recipientIsHost: hostFooter.recipientIsHost,
+      hostOnboardingUrl: hostFooter.hostOnboardingUrl,
     }),
     headers: delivery.headers,
   });

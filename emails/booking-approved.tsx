@@ -3,6 +3,7 @@ import { EmailLayout, buttonStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { EmailCalendarLinks } from './components/calendar-links';
 import { EmailSection, FactsCard, StayDatesCard } from './components/cards';
+import { HostInviteFooter } from './components/footer';
 
 interface Props {
   guestName: string;
@@ -29,6 +30,10 @@ interface Props {
   /** Pre-filled add-to-calendar links. */
   googleCalendarUrl?: string;
   outlookCalendarUrl?: string;
+  /** True when the recipient already hosts; hides the "become a host" aside. */
+  recipientIsHost?: boolean;
+  /** Authenticated deep link for the "become a host" aside. */
+  hostOnboardingUrl?: string;
 }
 
 export default function BookingApprovedEmail(props: Props) {
@@ -40,6 +45,12 @@ export default function BookingApprovedEmail(props: Props) {
         <EmailHero
           propertyName={props.propertyName}
           imageUrl={props.heroImageUrl}
+        />
+      }
+      footerAside={
+        <HostInviteFooter
+          recipientIsHost={props.recipientIsHost ?? false}
+          href={props.hostOnboardingUrl}
         />
       }
     >

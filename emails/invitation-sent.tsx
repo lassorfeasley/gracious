@@ -2,6 +2,7 @@ import { Button, Link, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle, fallbackLinkStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { QuoteCard } from './components/cards';
+import { HostInviteFooter } from './components/footer';
 
 interface Props {
   guestName: string;
@@ -13,6 +14,10 @@ interface Props {
   expiresAt?: string;
   /** Featured property photo, shown as a banner above the heading. */
   heroImageUrl?: string;
+  /** True when the recipient already hosts; hides the "become a host" aside. */
+  recipientIsHost?: boolean;
+  /** Authenticated deep link for the "become a host" aside. */
+  hostOnboardingUrl?: string;
 }
 
 export default function InvitationSentEmail({
@@ -23,6 +28,8 @@ export default function InvitationSentEmail({
   message,
   expiresAt,
   heroImageUrl,
+  recipientIsHost = false,
+  hostOnboardingUrl,
 }: Props) {
   const headline = hostName
     ? `${hostName} has invited you to ${propertyName}`
@@ -32,6 +39,12 @@ export default function InvitationSentEmail({
       preview={headline}
       heading={headline}
       hero={<EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />}
+      footerAside={
+        <HostInviteFooter
+          recipientIsHost={recipientIsHost}
+          href={hostOnboardingUrl}
+        />
+      }
     >
       <Text>Hi {guestName},</Text>
       <Text>
