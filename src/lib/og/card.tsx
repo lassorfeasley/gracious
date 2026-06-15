@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 /**
  * Shared building blocks for Open Graph images (next/og ImageResponse).
- * Static TTF instances of the brand fonts live alongside this file because
- * satori cannot consume the variable/woff2 fonts the app itself uses.
+ * Static Hanken Grotesk weights live alongside this file because satori cannot
+ * consume the woff2 the app itself uses (it reads ttf/otf/woff).
  */
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -14,13 +14,13 @@ const CREAM = '#faf8f4'; // --background
 
 export async function loadOgFonts() {
   const dir = join(process.cwd(), 'src', 'lib', 'og');
-  const [fraunces, inter] = await Promise.all([
-    readFile(join(dir, 'fraunces-semibold.ttf')),
-    readFile(join(dir, 'inter-medium.ttf')),
+  const [bold, medium] = await Promise.all([
+    readFile(join(dir, 'hanken-grotesk-700.woff')),
+    readFile(join(dir, 'hanken-grotesk-500.woff')),
   ]);
   return [
-    { name: 'Fraunces', data: fraunces, weight: 600 as const, style: 'normal' as const },
-    { name: 'Inter', data: inter, weight: 500 as const, style: 'normal' as const },
+    { name: 'Hanken Grotesk', data: bold, weight: 700 as const, style: 'normal' as const },
+    { name: 'Hanken Grotesk', data: medium, weight: 500 as const, style: 'normal' as const },
   ];
 }
 
@@ -41,9 +41,10 @@ export function BrandCard({ tagline }: { tagline?: string }) {
     >
       <div
         style={{
-          fontFamily: 'Fraunces',
+          fontFamily: 'Hanken Grotesk',
+          fontWeight: 700,
           fontSize: 132,
-          letterSpacing: '-0.02em',
+          letterSpacing: '-0.03em',
         }}
       >
         Gracious
@@ -51,7 +52,8 @@ export function BrandCard({ tagline }: { tagline?: string }) {
       {tagline && (
         <div
           style={{
-            fontFamily: 'Inter',
+            fontFamily: 'Hanken Grotesk',
+            fontWeight: 500,
             fontSize: 32,
             marginTop: 28,
             color: 'rgba(250, 248, 244, 0.78)',
@@ -120,7 +122,8 @@ export function PhotoCard({
           position: 'absolute',
           top: 48,
           right: 64,
-          fontFamily: 'Fraunces',
+          fontFamily: 'Hanken Grotesk',
+          fontWeight: 700,
           fontSize: 34,
           color: 'rgba(250, 248, 244, 0.92)',
         }}
@@ -140,7 +143,8 @@ export function PhotoCard({
         {eyebrow && (
           <div
             style={{
-              fontFamily: 'Inter',
+              fontFamily: 'Hanken Grotesk',
+              fontWeight: 500,
               fontSize: 26,
               textTransform: 'uppercase',
               letterSpacing: '0.14em',
@@ -152,10 +156,11 @@ export function PhotoCard({
         )}
         <div
           style={{
-            fontFamily: 'Fraunces',
+            fontFamily: 'Hanken Grotesk',
+            fontWeight: 700,
             fontSize: 78,
             lineHeight: 1.08,
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.02em',
             marginTop: eyebrow ? 18 : 0,
           }}
         >
@@ -164,7 +169,8 @@ export function PhotoCard({
         {subtitle && (
           <div
             style={{
-              fontFamily: 'Inter',
+              fontFamily: 'Hanken Grotesk',
+              fontWeight: 500,
               fontSize: 30,
               marginTop: 16,
               color: 'rgba(250, 248, 244, 0.82)',

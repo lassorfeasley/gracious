@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Star, Trash2 } from 'lucide-react';
+import { Star, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -59,7 +58,9 @@ export function PhotoManager({
   const router = useRouter();
   const [images, setImages] = useState(() => sortPhotos(initialImages));
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setImages(sortPhotos(initialImages));
@@ -83,8 +84,7 @@ export function PhotoManager({
     if (error) throw error;
   }
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+  async function uploadFiles(files: File[]) {
     if (files.length === 0) return;
 
     setUploading(true);
@@ -129,8 +129,26 @@ export function PhotoManager({
       toast.error(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
-      e.target.value = '';
     }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    void uploadFiles(Array.from(e.target.files ?? []));
+    e.target.value = '';
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setDragging(false);
+    if (uploading) return;
+    const files = Array.from(e.dataTransfer.files).filter((f) =>
+      f.type.startsWith('image/')
+    );
+    if (files.length === 0) {
+      toast.error('Please drop image files only');
+      return;
+    }
+    void uploadFiles(files);
   }
 
   async function handleSetFeatured(photo: PhotoRecord) {
@@ -199,21 +217,55 @@ export function PhotoManager({
     <div className="space-y-3">
       <div>
         <Label>Photos</Label>
-        <Input
+        <input
+          ref={inputRef}
           type="file"
           accept="image/*"
           multiple
-          onChange={handleUpload}
+          onChange={handleInputChange}
           disabled={uploading}
-          className="mt-1"
+          className="hidden"
         />
-        <p className="mt-1 text-xs text-muted-foreground">
-          {uploading
-            ? 'Uploading…'
-            : images.length > 0
-              ? 'Upload more photos or set a featured image below.'
-              : 'Upload photos. The first photo becomes the featured image.'}
-        </p>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!uploading) setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          disabled={uploading}
+          className={cn(
+            'mt-1 flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors',
+            dragging
+              ? 'border-primary bg-primary/5'
+              : 'border-input hover:border-muted-foreground/40 hover:bg-muted/40',
+            uploading && 'pointer-events-none opacity-70'
+          )}
+        >
+          {uploading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          ) : (
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <UploadCloud className="h-5 w-5" />
+            </span>
+          )}
+          <span className="text-sm font-medium text-foreground">
+            {uploading
+              ? 'Uploading…'
+              : dragging
+                ? 'Drop to upload'
+                : 'Drag photos here, or click to browse'}
+          </span>
+          {!uploading && (
+            <span className="text-xs text-muted-foreground">
+              {images.length > 0
+                ? 'Add more — set a featured image below.'
+                : 'PNG or JPG. The first photo becomes the featured image.'}
+            </span>
+          )}
+        </button>
       </div>
 
       {images.length > 0 && (

@@ -1,17 +1,16 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import Script from 'next/script';
-import { Inter, Fraunces } from 'next/font/google';
+import { Hanken_Grotesk } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { DevToolbar } from '@/components/dev/dev-toolbar';
 import { appUrl } from '@/lib/env';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
-const display = Fraunces({
+const hanken = Hanken_Grotesk({
   subsets: ['latin'],
-  axes: ['opsz'],
-  variable: '--font-display-family',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
 });
 
 const description = 'A warm, private way to have friends and family to stay.';
@@ -41,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${display.variable}`}>
+    <html lang="en" className={hanken.variable}>
       <head>
         {process.env.VERCEL_ENV === 'production' && (
           <Script id="ms-clarity" strategy="afterInteractive">

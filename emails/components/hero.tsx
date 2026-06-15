@@ -76,7 +76,10 @@ const heroAccent = {
 
 const heroFallbackName = {
   fontSize: '22px',
-  fontFamily: 'Georgia, "Times New Roman", serif',
+  fontWeight: 700,
+  letterSpacing: '-0.02em',
+  fontFamily:
+    '"Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   color: '#f7f4ed',
   margin: 0,
   overflowWrap: 'anywhere' as const,

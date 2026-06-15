@@ -101,24 +101,37 @@ export const roomSchema = z.object({
   amenities: z.array(amenitySchema),
 });
 
-export const invitationSchema = z.object({
-  guest_email: z.string().email('Enter a valid email'),
-  guest_first_name: z.string().optional(),
-  guest_last_name: z.string().optional(),
-  type: z.enum(['standing', 'date_offer', 'prix_fixe']),
-  requires_approval: z.boolean(),
-  message: z.string().optional(),
-  expires_at: z.string().optional(),
-  room_ids: z.array(z.string()).min(1, 'Select at least one room'),
-  windows: z
-    .array(
-      z.object({
-        start_date: z.string(),
-        end_date: z.string(),
-      })
-    )
-    .optional(),
-});
+export const invitationSchema = z
+  .object({
+    guest_email: z.string().email('Enter a valid email'),
+    guest_first_name: z.string().optional(),
+    guest_last_name: z.string().optional(),
+    type: z.enum(['standing', 'date_offer', 'prix_fixe']),
+    requires_approval: z.boolean(),
+    message: z.string().optional(),
+    expires_at: z.string().optional(),
+    room_ids: z.array(z.string()).min(1, 'Select at least one room'),
+    windows: z
+      .array(
+        z.object({
+          start_date: z.string(),
+          end_date: z.string(),
+        })
+      )
+      .optional(),
+    // When the host has already confirmed the stay with the guest, skip the
+    // invitation/acceptance flow and book the (fixed-date) stay directly.
+    pre_approved: z.boolean().optional(),
+    party_size: z.number().min(1, 'At least 1 guest').optional(),
+  })
+  .refine((d) => !d.pre_approved || d.type === 'prix_fixe', {
+    message: 'Only fixed-date invitations can be booked directly',
+    path: ['pre_approved'],
+  })
+  .refine((d) => !d.pre_approved || (d.party_size ?? 0) >= 1, {
+    message: 'Add the number of guests',
+    path: ['party_size'],
+  });
 
 export const bookingRequestSchema = z.object({
   invitation_token: z.string().uuid(),

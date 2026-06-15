@@ -52,7 +52,7 @@ export function HowItWorks({ className }: { className?: string }) {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-brass">
           How it works
         </p>
-        <h2 className="mt-4 font-display text-3xl font-medium tracking-tight sm:text-4xl">
+        <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           From spare room to standing invitation
         </h2>
         <p className="mx-auto mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
@@ -77,7 +77,7 @@ export function HowItWorks({ className }: { className?: string }) {
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-brass">
                 Step {index + 1}
               </p>
-              <h3 className="mt-3 font-display text-2xl font-medium tracking-tight sm:text-3xl">
+              <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
                 {beat.title}
               </h3>
               <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
@@ -118,7 +118,7 @@ export function HowItWorks({ className }: { className?: string }) {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-brass">
           And you
         </p>
-        <h3 className="mt-4 font-display text-3xl font-medium tracking-tight sm:text-4xl">
+        <h3 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
           You focus on gracious hosting.
         </h3>
         <p className="mt-5 text-lg leading-relaxed text-muted-foreground">

@@ -1,3 +1,6 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addDays,
   differenceInDays,
@@ -8,7 +11,9 @@ import {
   parseISO,
   startOfDay,
 } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /*
@@ -68,15 +73,15 @@ interface StayTimelineProps {
 }
 
 const STAY_CLASS: Record<TimelineStayVariant, string> = {
-  confirmed: 'bg-primary/10 text-primary',
-  pending: 'border border-dashed border-brass/50 bg-brass/10 text-brass',
-  blocked: 'bg-muted/70 text-muted-foreground',
+  confirmed: 'bg-primary text-primary-foreground',
+  pending: 'border border-dashed border-brass-foreground/60 bg-brass text-brass-foreground',
+  blocked: 'bg-muted text-muted-foreground',
 };
 
 const STAY_HOVER_CLASS: Record<TimelineStayVariant, string> = {
-  confirmed: 'hover:bg-primary/20',
-  pending: 'hover:bg-brass/20',
-  blocked: 'hover:bg-muted',
+  confirmed: 'hover:bg-primary/90',
+  pending: 'hover:bg-brass/90',
+  blocked: 'hover:bg-muted/80',
 };
 
 const DOT_CLASS: Record<TimelineStayVariant, string> = {
@@ -142,7 +147,7 @@ function StayBand({
   const inner = (
     <>
       <span
-        className={cn('size-1.5 shrink-0 rounded-full', DOT_CLASS[stay.variant])}
+        className="size-1.5 shrink-0 rounded-full bg-current opacity-80"
         aria-hidden
       />
       {stay.label ? <span className="truncate">{stay.label}</span> : null}
@@ -199,15 +204,57 @@ export function StayTimeline({
     for (const stay of row.stays) presentVariants.add(stay.variant);
   }
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 1);
+    setCanScrollRight(Math.ceil(scrollLeft) < scrollWidth - clientWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [updateScrollState, windowDays, rows.length]);
+
+  const scrollByPage = useCallback(
+    (direction: -1 | 1) => {
+      const el = scrollRef.current;
+      if (!el) return;
+      // Page by the visible track width (keeping one column of overlap for
+      // context), snapped to whole day columns.
+      const visible = Math.max(el.clientWidth - labelWidth, dayWidth);
+      const cols = Math.max(1, Math.floor(visible / dayWidth) - 1);
+      el.scrollBy({ left: direction * cols * dayWidth, behavior: 'smooth' });
+    },
+    [dayWidth, labelWidth]
+  );
+
+  const showControls = canScrollLeft || canScrollRight;
+
   return (
     <div className={className}>
-      <div className="overflow-x-auto pb-1">
+      <div
+        ref={scrollRef}
+        className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <div style={{ minWidth: labelWidth + trackWidth }}>
           {/* Date header */}
           <div className="flex items-end">
             <div
               className={cn(
-                'sticky left-0 z-20 flex shrink-0 items-end pb-2',
+                'sticky left-0 z-20 flex shrink-0 items-end self-stretch border-r border-border/60 pb-2',
                 surfaceClassName
               )}
               style={{ width: labelWidth }}
@@ -266,12 +313,12 @@ export function StayTimeline({
               {emptyLabel}
             </div>
           ) : (
-            <div className="space-y-1 border-t border-border/60 pt-1">
+            <div className="border-t border-border/60">
               {rows.map((row) => (
                 <div key={row.id} className="flex items-stretch">
                   <div
                     className={cn(
-                      'sticky left-0 z-10 flex shrink-0 items-center pr-3',
+                      'sticky left-0 z-10 flex shrink-0 items-center border-r border-border/60 pr-3',
                       surfaceClassName
                     )}
                     style={{ width: labelWidth }}
@@ -321,6 +368,33 @@ export function StayTimeline({
           )}
         </div>
       </div>
+
+      {showControls && (
+        <div className="mt-2 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8 rounded-full"
+            disabled={!canScrollLeft}
+            onClick={() => scrollByPage(-1)}
+            aria-label="Scroll back"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8 rounded-full"
+            disabled={!canScrollRight}
+            onClick={() => scrollByPage(1)}
+            aria-label="Scroll forward"
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
 
       {showLegend && presentVariants.size > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/60 pt-4 text-xs text-muted-foreground">

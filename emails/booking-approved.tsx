@@ -21,6 +21,8 @@ interface Props {
   checkIn?: string;
   houseRules?: string;
   coguestNote?: string;
+  /** Optional personal note from the host. */
+  hostNote?: string;
   profileUrl?: string;
   /** Featured property photo, shown as a banner above the heading. */
   heroImageUrl?: string;
@@ -45,6 +47,14 @@ export default function BookingApprovedEmail(props: Props) {
       <Text>
         Your stay at <strong>{props.propertyName}</strong> has been approved.
       </Text>
+
+      {props.hostNote && (
+        <EmailSection title="A note from your host">
+          <Text style={{ margin: '0', whiteSpace: 'pre-wrap' }}>
+            {props.hostNote}
+          </Text>
+        </EmailSection>
+      )}
 
       <StayDatesCard
         checkInDate={props.checkInDate}

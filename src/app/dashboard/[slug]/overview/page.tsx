@@ -131,10 +131,10 @@ export default async function OverviewPage({
           <PropertyEditDialog
             property={property}
             images={propertyImages ?? []}
-            fields={['image', 'name']}
-            title="Edit house"
+            fields={['image']}
+            title="Edit photos"
             trigger={
-              <Button variant="secondary" size="icon" aria-label="Edit house">
+              <Button variant="secondary" size="icon" aria-label="Edit photos">
                 <Pencil className="h-4 w-4" />
               </Button>
             }
@@ -162,7 +162,11 @@ export default async function OverviewPage({
       <SectionNav sections={navSections} />
 
       <HostPageShell propertyId={property.id} rooms={rooms ?? []} className="mt-6">
-        <HostCalendarSection slug={slug} sectionId="calendar" title="Calendar" />
+        <HostCalendarSection
+          slug={slug}
+          sectionId="calendar"
+          title="What days am I hosting?"
+        />
 
       {/* Rooms */}
       <section id="rooms" className="scroll-mt-28 py-10">

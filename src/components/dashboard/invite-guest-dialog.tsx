@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { ArrowLeft, Check, CalendarIcon, Plus, X } from 'lucide-react';
+import { ArrowLeft, Check, CalendarIcon, Plus, Minus, X } from 'lucide-react';
 import { invitationSchema, type InvitationInput } from '@/lib/validations';
 import { formatDate, formatDateRange } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
@@ -107,11 +107,17 @@ export function InviteGuestDialog({
       requires_approval: true,
       message: '',
       room_ids: defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
+      pre_approved: false,
+      party_size: 1,
     },
   });
 
   const invType = form.watch('type');
   const values = form.watch();
+  const preApproved = invType === 'prix_fixe' && values.pre_approved === true;
+  const selectedMaxOcc = rooms
+    .filter((r) => values.room_ids?.includes(r.id))
+    .reduce((sum, r) => sum + r.max_occupancy, 0);
 
   const steps = useMemo((): StepKey[] => {
     const base: StepKey[] = ['guest', 'type'];
@@ -140,6 +146,8 @@ export function InviteGuestDialog({
       message: '',
       room_ids:
         defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
+      pre_approved: false,
+      party_size: 1,
     });
     setWindows([]);
     setDateSelection({ checkIn: null, checkOut: null });
@@ -259,10 +267,15 @@ export function InviteGuestDialog({
       return;
     }
 
+    const bookDirectly = formValues.type === 'prix_fixe' && preApproved;
+
     setLoading(true);
     const payload = {
       property_id: propertyId,
       ...formValues,
+      requires_approval: bookDirectly ? false : formValues.requires_approval,
+      pre_approved: bookDirectly,
+      party_size: bookDirectly ? formValues.party_size : undefined,
       windows: formValues.type !== 'standing' ? validWindows : undefined,
     };
 
@@ -276,13 +289,25 @@ export function InviteGuestDialog({
     const data = await res.json();
 
     if (!res.ok) {
+      if (data.error === 'limit_reached') {
+        toast.error(
+          "You've reached your hosted-stay limit. Upgrade your plan to book more stays."
+        );
+        return;
+      }
       toast.error(
-        typeof data.error === 'string' ? data.error : 'Failed to create invitation'
+        typeof data.error === 'string'
+          ? data.error
+          : bookDirectly
+            ? 'Failed to book the stay'
+            : 'Failed to create invitation'
       );
       return;
     }
 
-    if (data.emailSent === false) {
+    if (data.preApproved) {
+      toast.success('Stay booked — your guest has been notified.');
+    } else if (data.emailSent === false) {
       toast.warning(
         'Invitation created, but the email could not be sent. Use “Copy link” on the Guests page to share it manually.'
       );
@@ -340,7 +365,15 @@ export function InviteGuestDialog({
         onBack={current > 0 ? () => setStep(current - 1) : undefined}
         onNext={handleNext}
         nextLabel={
-          isLast ? (loading ? 'Sending…' : 'Send invitation') : 'Next'
+          isLast
+            ? preApproved
+              ? loading
+                ? 'Booking…'
+                : 'Book stay'
+              : loading
+                ? 'Sending…'
+                : 'Send invitation'
+            : 'Next'
         }
         loading={loading}
       >
@@ -525,30 +558,110 @@ export function InviteGuestDialog({
 
           {stepKey === 'details' && (
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="requires_approval"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start justify-between gap-4 rounded-xl border p-4">
-                    <div className="space-y-1">
-                      <FormLabel className="text-base">
-                        Require host approval
-                      </FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        {field.value
-                          ? 'Guests submit a request; you approve or decline.'
-                          : 'Bookings are confirmed immediately.'}
-                      </p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              {invType === 'prix_fixe' && (
+                <FormField
+                  control={form.control}
+                  name="pre_approved"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start justify-between gap-4 rounded-xl border p-4">
+                      <div className="space-y-1">
+                        <FormLabel className="text-base">
+                          Guest already confirmed
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Skip the invitation and book this stay now. The guest
+                          gets a confirmation email and the usual trip reminders
+                          — no acceptance needed.
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value ?? false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {preApproved && (
+                <FormField
+                  control={form.control}
+                  name="party_size"
+                  render={({ field }) => {
+                    const count = field.value ?? 1;
+                    const max = selectedMaxOcc || undefined;
+                    return (
+                      <FormItem className="flex flex-row items-center justify-between gap-4 rounded-xl border p-4">
+                        <div className="space-y-1">
+                          <FormLabel className="text-base">Guests</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            How many people are staying
+                            {max ? ` (up to ${max})` : ''}.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={count <= 1}
+                            onClick={() => field.onChange(Math.max(1, count - 1))}
+                            aria-label="Fewer guests"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-6 text-center font-medium tabular-nums">
+                            {count}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={max ? count >= max : false}
+                            onClick={() =>
+                              field.onChange(max ? Math.min(max, count + 1) : count + 1)
+                            }
+                            aria-label="More guests"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </FormItem>
+                    );
+                  }}
+                />
+              )}
+
+              {!preApproved && (
+                <FormField
+                  control={form.control}
+                  name="requires_approval"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start justify-between gap-4 rounded-xl border p-4">
+                      <div className="space-y-1">
+                        <FormLabel className="text-base">
+                          Require host approval
+                        </FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          {field.value
+                            ? 'Guests submit a request; you approve or decline.'
+                            : 'Bookings are confirmed immediately.'}
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="message"
@@ -562,10 +675,16 @@ export function InviteGuestDialog({
                         {...field}
                       />
                     </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      {preApproved
+                        ? 'Included in the confirmation email we send your guest.'
+                        : 'Included in the invitation email.'}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              {!preApproved && (
               <FormField
                 control={form.control}
                 name="expires_at"
@@ -630,6 +749,7 @@ export function InviteGuestDialog({
                   );
                 }}
               />
+              )}
             </div>
           )}
 
@@ -650,15 +770,27 @@ export function InviteGuestDialog({
               </div>
               <div className="rounded-xl border p-4">
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Invitation
+                  {preApproved ? 'Booking' : 'Invitation'}
                 </dt>
-                <dd className="mt-1 font-medium">{INVITATION_TYPE_LABELS[invType]}</dd>
+                <dd className="mt-1 font-medium">
+                  {preApproved ? 'Fixed date' : INVITATION_TYPE_LABELS[invType]}
+                </dd>
                 <dd className="mt-1 text-muted-foreground">
-                  {values.requires_approval
-                    ? 'Requires your approval'
-                    : 'Auto-confirms'}
+                  {preApproved
+                    ? 'Booked directly — guest notified, no acceptance needed'
+                    : values.requires_approval
+                      ? 'Requires your approval'
+                      : 'Auto-confirms'}
                 </dd>
               </div>
+              {preApproved && (
+                <div className="rounded-xl border p-4">
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Guests
+                  </dt>
+                  <dd className="mt-1 font-medium">{values.party_size ?? 1}</dd>
+                </div>
+              )}
               {validWindows.length > 0 && (
                 <div className="rounded-xl border p-4">
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

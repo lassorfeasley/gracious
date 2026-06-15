@@ -9,7 +9,7 @@ export function PricingCards({ className }: { className?: string }) {
       <div className="rounded-3xl border border-border/60 bg-card p-8 sm:p-10">
         <div className="flex flex-col items-center gap-8 text-center lg:flex-row lg:items-stretch lg:gap-10 lg:text-left">
           <div className="flex-1 lg:flex lg:flex-col lg:justify-center">
-            <h3 className="font-display text-2xl font-medium tracking-tight">
+            <h3 className="font-display text-2xl font-semibold tracking-tight">
               Your first two stays are on the house
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -28,7 +28,7 @@ export function PricingCards({ className }: { className?: string }) {
 
           <div className="flex-1 lg:flex lg:flex-col lg:justify-center">
             <div className="flex items-baseline justify-center gap-1.5 lg:justify-start">
-              <span className="font-display text-5xl font-medium tracking-tight">
+              <span className="font-display text-5xl font-bold tracking-tight">
                 $39
               </span>
               <span className="text-base text-muted-foreground">/ month</span>

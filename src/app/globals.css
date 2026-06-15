@@ -65,8 +65,14 @@
   --font-sans:
     var(--font-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
     Roboto, sans-serif;
+  /*
+    Single typeface: Hanken Grotesk everywhere. The `display` token is kept so
+    existing `font-display` heading utilities keep resolving — it now points at
+    the same Hanken stack, with hierarchy carried by weight + letter-spacing.
+  */
   --font-display:
-    var(--font-display-family), Georgia, 'Times New Roman', serif;
+    var(--font-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
 
   /* Soft, warm elevation — ink on paper, never cold gray */
   --shadow-xs: 0 1px 2px 0 hsl(30 30% 10% / 0.05);
@@ -215,12 +221,18 @@
     @apply bg-background text-foreground;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
+  /*
+    With a single grotesk, heading presence comes from weight + tight tracking
+    rather than serif-vs-sans contrast. Components may bump the weight further
+    (e.g. font-bold) for display sizes.
+  */
   h1,
   h2,
   h3,
   h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }
 

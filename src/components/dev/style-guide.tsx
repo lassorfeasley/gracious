@@ -118,11 +118,11 @@ function Swatch({ name, fg }: { name: string; fg: string }) {
 }
 
 const TYPE_SCALE = [
-  { label: 'Display', cls: 'font-display text-5xl font-medium tracking-tight' },
-  { label: 'Heading 1', cls: 'font-display text-4xl font-medium tracking-tight' },
-  { label: 'Heading 2', cls: 'font-display text-3xl font-medium tracking-tight' },
-  { label: 'Heading 3', cls: 'font-display text-2xl font-medium tracking-tight' },
-  { label: 'Heading 4', cls: 'font-display text-xl font-medium tracking-tight' },
+  { label: 'Display', cls: 'font-display text-5xl font-bold tracking-tight' },
+  { label: 'Heading 1', cls: 'font-display text-4xl font-bold tracking-tight' },
+  { label: 'Heading 2', cls: 'font-display text-3xl font-semibold tracking-tight' },
+  { label: 'Heading 3', cls: 'font-display text-2xl font-semibold tracking-tight' },
+  { label: 'Heading 4', cls: 'font-display text-xl font-semibold tracking-tight' },
   { label: 'Eyebrow', cls: 'text-xs font-medium uppercase tracking-[0.2em] text-brass' },
   { label: 'Lead', cls: 'text-lg text-muted-foreground' },
   { label: 'Body', cls: 'text-base' },
@@ -164,7 +164,7 @@ const BRAND_ASSET_GROUPS: {
   {
     group: 'Logo & marks',
     description:
-      'Vector masters (outlined Fraunces). Everything else is exported from these.',
+      'Vector masters of the wordmark. Everything else is exported from these.',
     assets: [
       {
         name: 'Wordmark',
@@ -502,7 +502,7 @@ export function StyleGuide() {
 
           <Section
             title="Typography"
-            description="Headings use Fraunces, a serif with personality — the serif is the brand and does the luxury work. Body and UI use Inter, a quiet sans. Prefer narrower measures and generous whitespace."
+            description="One typeface throughout: Hanken Grotesk. Hierarchy comes from weight and tight letter-spacing — bold, tight headings against a regular-weight body. Prefer narrower measures and generous whitespace."
           >
             <Card>
               <CardContent className="space-y-4 pt-6">

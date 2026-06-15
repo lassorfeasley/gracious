@@ -224,7 +224,7 @@ export function GuestExperience({ className }: { className?: string }) {
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-brass">
             For your guests
           </p>
-          <h2 className="mt-4 font-display text-3xl font-medium tracking-tight sm:text-4xl">
+          <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
             Every guest arrives knowing exactly what to do.
           </h2>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">

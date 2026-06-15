@@ -73,10 +73,14 @@ export function EmailLayout({
 }
 
 /* Brand palette — paper, ink, pine, brass (see src/app/globals.css). */
+// Hanken Grotesk won't load in most mail clients, so lead with it and fall
+// back to a system sans stack.
+const fontStack =
+  '"Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
 const main = {
   backgroundColor: '#f7f4ed',
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  fontFamily: fontStack,
   // Breathing room so the card never touches pane edges on narrow clients.
   padding: '0 12px',
 };
@@ -109,8 +113,9 @@ const logo = {
 
 const h1 = {
   fontSize: '24px',
-  fontWeight: '600' as const,
-  fontFamily: 'Georgia, "Times New Roman", serif',
+  fontWeight: '700' as const,
+  fontFamily: fontStack,
+  letterSpacing: '-0.02em',
   color: '#221e19',
   margin: '0 0 16px',
   overflowWrap: 'anywhere' as const,

@@ -32,6 +32,29 @@ export function SettingsForm({
   );
   const [managerEmail, setManagerEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState(propertyName);
+  const [savingName, setSavingName] = useState(false);
+
+  async function savePropertyName() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error('Home name cannot be empty');
+      return;
+    }
+    setSavingName(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('properties')
+      .update({ name: trimmed })
+      .eq('id', propertyId);
+    setSavingName(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Home name updated');
+    router.refresh();
+  }
 
   async function savePrefs() {
     setLoading(true);
@@ -85,6 +108,27 @@ export function SettingsForm({
 
   return (
     <>
+      <section className="py-8">
+        <h2 className="text-lg font-medium">Home name</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          This is how your home appears across Gracious — to you and your
+          guests.
+        </p>
+        <div className="mt-6 flex gap-2">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Home name"
+          />
+          <Button
+            onClick={savePropertyName}
+            disabled={savingName || name.trim() === propertyName}
+          >
+            {savingName ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </section>
+
       <section className="py-8">
         <h2 className="text-lg font-medium">Email preferences</h2>
         <p className="mt-1 text-sm text-muted-foreground">

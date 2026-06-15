@@ -316,6 +316,7 @@ export async function notifyBookingApproved(bookingId: string) {
       checkIn: booking.property.check_in_instructions ?? undefined,
       houseRules: booking.property.house_rules ?? undefined,
       coguestNote,
+      hostNote: booking.invitation?.message ?? undefined,
       profileUrl: booking.invitation
         ? inviteUrl(booking.invitation.token)
         : undefined,

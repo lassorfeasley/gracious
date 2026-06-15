@@ -46,7 +46,7 @@ export default async function HomePage({
           <p className="text-sm font-medium tracking-wide text-brass">
             For guest homes and guest rooms
           </p>
-          <h1 className="mt-6 font-display text-4xl font-medium tracking-tight sm:text-5xl xl:text-6xl">
+          <h1 className="mt-6 font-display text-4xl font-bold tracking-tight sm:text-5xl xl:text-6xl">
             Every room, every guest, on one calendar.
           </h1>
           <p className="mx-auto mt-8 max-w-lg text-lg leading-relaxed text-muted-foreground">
