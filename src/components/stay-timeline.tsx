@@ -217,8 +217,8 @@ export function StayTimeline({
               </span>
             </div>
             <div
-              className="grid text-center"
-              style={{ width: trackWidth, gridTemplateColumns: gridCols }}
+              className="grid min-w-0 flex-1 text-center"
+              style={{ gridTemplateColumns: gridCols }}
             >
               {days.map((day, i) => {
                 const weekend = isWeekend(day);
@@ -280,7 +280,7 @@ export function StayTimeline({
                       {row.label}
                     </span>
                   </div>
-                  <div className="relative" style={{ width: trackWidth }}>
+                  <div className="relative min-w-0 flex-1">
                     {/* Background guides: column borders, weekend + today tint */}
                     <div
                       className="absolute inset-0 grid"

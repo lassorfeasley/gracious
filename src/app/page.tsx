@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { SiteFooter } from '@/components/site-footer';
 import { Wordmark } from '@/components/brand/wordmark';
 import { HowItWorks } from '@/components/landing/how-it-works';
+import { GuestExperience } from '@/components/landing/guest-experience';
 import { StayShowcase } from '@/components/landing/stay-showcase';
 import { PricingCards } from '@/components/pricing-cards';
 
@@ -61,6 +62,15 @@ export default async function HomePage({
         </div>
         <StayShowcase className="mx-auto mt-16 max-w-4xl sm:mt-20" />
       </main>
+
+      <section
+        id="guest-experience"
+        className="overflow-hidden border-t border-border/60 py-28"
+      >
+        <div className="container mx-auto px-4">
+          <GuestExperience />
+        </div>
+      </section>
 
       <section id="how-it-works" className="border-t border-border/60 py-28">
         <div className="container mx-auto px-4">

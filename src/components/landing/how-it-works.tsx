@@ -2,12 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  CalendarArtifact,
-  CorrespondenceArtifact,
-  HouseReadyArtifact,
-  InvitationArtifact,
-} from './artifacts';
+import { HouseReadyArtifact, InvitationArtifact } from './artifacts';
 
 interface Beat {
   title: string;
@@ -25,16 +20,6 @@ const BEATS: Beat[] = [
     title: 'Extend the invitation',
     body: 'Invitations go to the people you would trust with a key — never a public page. Guests see the house, pick their dates, and confirm their stay.',
     artifact: <InvitationArtifact />,
-  },
-  {
-    title: 'We handle the correspondence',
-    body: 'The right note at the right moment — a warm welcome, directions and door codes before arrival, a gentle word at checkout. Every guest feels expected.',
-    artifact: <CorrespondenceArtifact />,
-  },
-  {
-    title: 'Always know who is arriving Friday',
-    body: 'Every confirmed stay lives on one calendar — who is coming, which room, and how long. Conflicts are caught before they ever reach your door.',
-    artifact: <CalendarArtifact />,
   },
 ];
 
@@ -70,6 +55,9 @@ export function HowItWorks({ className }: { className?: string }) {
         <h2 className="mt-4 font-display text-3xl font-medium tracking-tight sm:text-4xl">
           From spare room to standing invitation
         </h2>
+        <p className="mx-auto mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
+          Setting up takes an evening. We carry everything after.
+        </p>
       </div>
 
       <div className="mt-16 lg:grid lg:grid-cols-2 lg:gap-20">
