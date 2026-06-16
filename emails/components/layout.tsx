@@ -63,7 +63,7 @@ export function EmailLayout({
           <Section style={content}>{children}</Section>
           <Hr style={hr} />
           <Text style={footer}>
-            Gracious — the art of having people to stay.
+            Gracious
             {unsubscribeUrl && (
               <>
                 <br />
