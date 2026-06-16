@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
 import { mapPropertyBookingsToCalendar } from '@/lib/calendar-bookings';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
@@ -22,10 +23,18 @@ export default async function RequestsPage({
 
   // Apply one-click email actions before fetching, so the page reflects the
   // result of the action instead of the stale pending state.
-  const quickActionResult =
-    sp.booking && sp.action
-      ? await handleQuickAction(property.id, sp.booking, sp.action)
-      : null;
+  let quickActionResult: { ok: boolean; message: string } | null = null;
+  if (sp.booking && sp.action) {
+    const user = await getCurrentUser();
+    if (user) {
+      quickActionResult = await handleQuickAction(
+        property.id,
+        user.id,
+        sp.booking,
+        sp.action
+      );
+    }
+  }
 
   const supabase = await createClient();
   const { data: bookings } = await supabase
@@ -110,68 +119,31 @@ export default async function RequestsPage({
 
 async function handleQuickAction(
   propertyId: string,
+  actorUserId: string,
   bookingId: string,
   action: string
 ): Promise<{ ok: boolean; message: string } | null> {
   if (action !== 'approve' && action !== 'decline') return null;
-  const { createAdminClient } = await import('@/lib/supabase/admin');
-  const { notifyBookingApproved, notifyBookingDeclined } = await import(
-    '@/lib/email/notifications'
+  const { approveBooking, declineBooking } = await import(
+    '@/lib/booking-actions'
   );
-  const admin = createAdminClient();
-  const status = action === 'approve' ? 'approved' : 'declined';
 
-  // Only act on pending requests for this property, so a refresh (or a
-  // tampered booking id) can't re-trigger updates and duplicate emails.
-  const { data: pending } = await admin
-    .from('bookings')
-    .select('id')
-    .eq('id', bookingId)
-    .eq('property_id', propertyId)
-    .eq('status', 'requested')
-    .maybeSingle();
+  // Scope by propertyId so a tampered booking id from an email link can't act
+  // on a stay this host doesn't manage. The shared action also enforces the
+  // pending-only guard, so a refresh of an already-handled request is a no-op.
+  const result =
+    action === 'approve'
+      ? await approveBooking(bookingId, actorUserId, { propertyId })
+      : await declineBooking(bookingId, actorUserId, { propertyId });
 
-  if (!pending) {
-    return {
-      ok: false,
-      message:
-        'This request has already been handled — see its current status below.',
-    };
-  }
-
-  const {
-    assertCanHostStay,
-    getPropertyOwnerId,
-    incrementHostedStays,
-    StayLimitReachedError,
-  } = await import('@/lib/billing');
-
-  const ownerId = await getPropertyOwnerId(propertyId);
-  if (action === 'approve') {
-    try {
-      await assertCanHostStay(ownerId);
-    } catch (err) {
-      if (err instanceof StayLimitReachedError) {
-        return {
-          ok: false,
-          message:
-            'You’ve reached your plan’s hosted-stay limit — upgrade to approve more stays.',
-        };
-      }
-      throw err;
+  if (!result.ok) {
+    if (result.reason === 'limit_reached') {
+      return {
+        ok: false,
+        message:
+          'You’ve reached your plan’s hosted-stay limit — upgrade to approve more stays.',
+      };
     }
-  }
-
-  const { data: updated } = await admin
-    .from('bookings')
-    .update({ status })
-    .eq('id', bookingId)
-    .eq('property_id', propertyId)
-    .eq('status', 'requested')
-    .select('id')
-    .maybeSingle();
-
-  if (!updated) {
     return {
       ok: false,
       message:
@@ -179,12 +151,6 @@ async function handleQuickAction(
     };
   }
 
-  if (action === 'approve') {
-    await incrementHostedStays(ownerId);
-    notifyBookingApproved(bookingId).catch(console.error);
-  } else {
-    notifyBookingDeclined(bookingId).catch(console.error);
-  }
   return {
     ok: true,
     message:

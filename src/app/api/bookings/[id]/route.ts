@@ -3,19 +3,35 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser, canManageProperty } from '@/lib/auth';
 import { getBookingWithDetails, checkRoomConflicts } from '@/lib/bookings';
 import { bookingUpdateSchema } from '@/lib/validations';
+import { notifyBookingApproved } from '@/lib/email/notifications';
 import {
-  notifyBookingApproved,
-  notifyBookingDeclined,
-  notifyBookingCancelled,
-} from '@/lib/email/notifications';
-import {
-  assertCanHostStay,
-  getPropertyOwnerId,
-  incrementHostedStays,
-  StayLimitReachedError,
-  toLimitReachedPayload,
-} from '@/lib/billing';
+  approveBooking,
+  declineBooking,
+  cancelBooking,
+  type BookingActionResult,
+} from '@/lib/booking-actions';
+import { toLimitReachedPayload } from '@/lib/billing';
 import type { Room } from '@/types/database';
+
+function actionFailureResponse(
+  result: Extract<BookingActionResult, { ok: false }>
+): NextResponse {
+  switch (result.reason) {
+    case 'not_found':
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    case 'forbidden':
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    case 'limit_reached':
+      return NextResponse.json(toLimitReachedPayload(result.limit), {
+        status: 402,
+      });
+    case 'not_pending':
+      return NextResponse.json(
+        { error: 'This booking can no longer be updated' },
+        { status: 409 }
+      );
+  }
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -34,47 +50,34 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const booking = await getBookingWithDetails(id);
-    if (!booking) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    if (action === 'approve' || action === 'decline' || action === 'cancel') {
+      let result: BookingActionResult;
+      if (action === 'approve') {
+        result = await approveBooking(id, user.id);
+      } else if (action === 'decline') {
+        result = await declineBooking(id, user.id, {
+          declineMessage: decline_message,
+        });
+      } else {
+        result = await cancelBooking(id, user.id);
+      }
+
+      if (!result.ok) {
+        return actionFailureResponse(result);
+      }
+
+      const updated = await getBookingWithDetails(id);
+      return NextResponse.json({ booking: updated });
     }
 
-    const isOwner = await canManageProperty(booking.property_id, user.id);
-    const isGuest = booking.guest_user_id === user.id;
-
-    const admin = createAdminClient();
-
-    if (action === 'approve') {
-      if (!isOwner) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-      const ownerId = await getPropertyOwnerId(booking.property_id);
-      try {
-        await assertCanHostStay(ownerId);
-      } catch (err) {
-        if (err instanceof StayLimitReachedError) {
-          return NextResponse.json(toLimitReachedPayload(err), { status: 402 });
-        }
-        throw err;
+    if (action === 'update') {
+      const booking = await getBookingWithDetails(id);
+      if (!booking) {
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       }
-
-      await admin.from('bookings').update({ status: 'approved' }).eq('id', id);
-      await incrementHostedStays(ownerId);
-      notifyBookingApproved(id).catch(console.error);
-    } else if (action === 'decline') {
-      if (!isOwner) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      await admin
-        .from('bookings')
-        .update({ status: 'declined', decline_message: decline_message ?? null })
-        .eq('id', id);
-      notifyBookingDeclined(id, decline_message).catch(console.error);
-    } else if (action === 'cancel') {
-      if (!isOwner && !isGuest) {
+      if (!(await canManageProperty(booking.property_id, user.id))) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
-      await admin.from('bookings').update({ status: 'cancelled' }).eq('id', id);
-      notifyBookingCancelled(id, isGuest ? 'guest' : 'owner').catch(console.error);
-    } else if (action === 'update') {
-      if (!isOwner) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
       const parsed = bookingUpdateSchema.safeParse(body);
       if (!parsed.success) {
@@ -92,6 +95,7 @@ export async function PATCH(
         );
       }
 
+      const admin = createAdminClient();
       const { data: rooms } = await admin
         .from('rooms')
         .select('*')
@@ -150,12 +154,12 @@ export async function PATCH(
       if (booking.status === 'approved' && booking.notify_guest && booking.guest.email) {
         notifyBookingApproved(id).catch(console.error);
       }
-    } else {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+
+      const updated = await getBookingWithDetails(id);
+      return NextResponse.json({ booking: updated });
     }
 
-    const updated = await getBookingWithDetails(id);
-    return NextResponse.json({ booking: updated });
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
