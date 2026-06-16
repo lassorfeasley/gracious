@@ -116,6 +116,38 @@ const BAND_HOVER_CLASS: Record<DayBandState, string> = {
   blocked: 'hover:bg-muted',
 };
 
+/**
+ * A single calendar cell. The aspect-ratio square and the flex centering live on
+ * SEPARATE elements on purpose: WebKit/Safari mis-resolves the cross-axis size
+ * when one element is both an `aspect-ratio` box AND a flex container, which made
+ * day cells render as oblong ovals with uneven vertical spacing. Keeping the
+ * square as a plain block (so it's never stretched by the grid) and centering its
+ * contents in an absolutely-positioned inner layer keeps every cell a true
+ * square in all browsers.
+ */
+function DayCell({
+  children,
+  inset = 'p-1.5',
+}: {
+  children: React.ReactNode;
+  /** Inner padding. Circle days use all-sides padding; stay bands use vertical
+   * only so the tint can run edge-to-edge between days. */
+  inset?: string;
+}) {
+  return (
+    <div className="relative aspect-square">
+      <div
+        className={cn(
+          'absolute inset-0 flex items-center justify-center',
+          inset
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function DayTooltip({
   label,
   children,
@@ -386,10 +418,7 @@ function MonthGrid({
               // Past days aren't actionable — render like an empty day, but
               // keep a faded dot (and hover) to show a stay was there.
               return (
-                <div
-                  key={day.toISOString()}
-                  className="flex aspect-square items-center justify-center p-1.5"
-                >
+                <DayCell key={day.toISOString()}>
                   <DayTooltip label={anyTaken ? title : undefined}>
                     <span className={cn(INNER, 'relative text-muted-foreground/40')}>
                       {format(day, 'd')}
@@ -401,7 +430,7 @@ function MonthGrid({
                       )}
                     </span>
                   </DayTooltip>
-                </div>
+                </DayCell>
               );
             }
 
@@ -409,10 +438,7 @@ function MonthGrid({
               // Solid pine circle; once both ends are picked, a half-width
               // tint connects the endpoint into the selected range.
               return (
-                <div
-                  key={day.toISOString()}
-                  className="flex aspect-square items-center justify-center py-1.5"
-                >
+                <DayCell key={day.toISOString()} inset="py-1.5">
                   <DayTooltip label={partial ? title : undefined}>
                     <span className="relative flex h-full w-full items-center justify-center">
                       {hasFullRange && (
@@ -434,16 +460,13 @@ function MonthGrid({
                       </button>
                     </span>
                   </DayTooltip>
-                </div>
+                </DayCell>
               );
             }
 
             if (selDay && inRange) {
               return (
-                <div
-                  key={day.toISOString()}
-                  className="flex aspect-square items-center justify-center py-1.5"
-                >
+                <DayCell key={day.toISOString()} inset="py-1.5">
                   <DayTooltip label={partial ? title : undefined}>
                     <button
                       type="button"
@@ -457,16 +480,13 @@ function MonthGrid({
                       {partialDot}
                     </button>
                   </DayTooltip>
-                </div>
+                </DayCell>
               );
             }
 
             if (selDay) {
               return (
-                <div
-                  key={day.toISOString()}
-                  className="flex aspect-square items-center justify-center p-1.5"
-                >
+                <DayCell key={day.toISOString()}>
                   <DayTooltip label={partial ? title : undefined}>
                     <button
                       type="button"
@@ -481,7 +501,7 @@ function MonthGrid({
                       {partialDot}
                     </button>
                   </DayTooltip>
-                </div>
+                </DayCell>
               );
             }
 
@@ -489,10 +509,7 @@ function MonthGrid({
               // Fully booked, host context — stay band that opens the booking.
               const state = bandState ?? 'confirmed';
               return (
-                <div
-                  key={day.toISOString()}
-                  className="flex aspect-square items-center justify-center py-1.5"
-                >
+                <DayCell key={day.toISOString()} inset="py-1.5">
                   <DayTooltip label={title}>
                     <Link
                       href={bookingHref}
@@ -507,16 +524,13 @@ function MonthGrid({
                       {mixedDot}
                     </Link>
                   </DayTooltip>
-                </div>
+                </DayCell>
               );
             }
 
             // Fully booked, guest context — quiet strikethrough.
             return (
-              <div
-                key={day.toISOString()}
-                className="flex aspect-square items-center justify-center p-1.5"
-              >
+              <DayCell key={day.toISOString()}>
                 <DayTooltip label={title}>
                   <span
                     className={cn(
@@ -529,17 +543,14 @@ function MonthGrid({
                     {format(day, 'd')}
                   </span>
                 </DayTooltip>
-              </div>
+              </DayCell>
             );
           }
 
           // Read-only stay band (landing-page calendar format).
           if (bandState) {
             return (
-              <div
-                key={day.toISOString()}
-                className="flex aspect-square items-center justify-center py-1.5"
-              >
+              <DayCell key={day.toISOString()} inset="py-1.5">
                 <DayTooltip label={title}>
                   {bookingHref ? (
                     <Link
@@ -563,7 +574,7 @@ function MonthGrid({
                     </span>
                   )}
                 </DayTooltip>
-              </div>
+              </DayCell>
             );
           }
 
@@ -587,10 +598,7 @@ function MonthGrid({
 
           if (invitedEndpoint) {
             return (
-              <div
-                key={day.toISOString()}
-                className="flex aspect-square items-center justify-center py-1.5"
-              >
+              <DayCell key={day.toISOString()} inset="py-1.5">
                 <span className="relative flex h-full w-full items-center justify-center">
                   {hasFullRange && (
                     <span
@@ -605,20 +613,17 @@ function MonthGrid({
                     {format(day, 'd')}
                   </span>
                 </span>
-              </div>
+              </DayCell>
             );
           }
 
           if (invitedInRange) {
             return (
-              <div
-                key={day.toISOString()}
-                className="flex aspect-square items-center justify-center py-1.5"
-              >
+              <DayCell key={day.toISOString()} inset="py-1.5">
                 <span className={cn(BAND, 'bg-primary/10 text-foreground')}>
                   {format(day, 'd')}
                 </span>
-              </div>
+              </DayCell>
             );
           }
 
@@ -631,14 +636,11 @@ function MonthGrid({
           );
 
           return (
-            <div
-              key={day.toISOString()}
-              className="flex aspect-square items-center justify-center p-1.5"
-            >
+            <DayCell key={day.toISOString()}>
               <DayTooltip label={title}>
                 <span className={dayClass}>{format(day, 'd')}</span>
               </DayTooltip>
-            </div>
+            </DayCell>
           );
         })}
       </div>

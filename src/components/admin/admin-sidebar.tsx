@@ -8,6 +8,7 @@ import {
   Home,
   CalendarDays,
   Mail,
+  Inbox,
   LogOut,
   Luggage,
   ArrowLeft,
@@ -32,6 +33,7 @@ const LINKS = [
   { href: '/admin/properties', label: 'Properties', icon: Home },
   { href: '/admin/bookings', label: 'Bookings', icon: CalendarDays },
   { href: '/admin/messaging', label: 'Messaging', icon: Mail },
+  { href: '/admin/email-queue', label: 'Email queue', icon: Inbox },
 ];
 
 export function AdminSidebar({

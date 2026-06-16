@@ -291,6 +291,20 @@ export function DevToolbar() {
                 Mailpit
                 <ExternalLink className="h-3 w-3" />
               </a>
+              <Link
+                href="/admin/email-queue"
+                aria-current={
+                  pathname === '/admin/email-queue' ? 'page' : undefined
+                }
+                className={cn(
+                  'inline-flex rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  pathname === '/admin/email-queue'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'bg-black/20 text-white/80 hover:text-white'
+                )}
+              >
+                Email queue
+              </Link>
             </div>
           </div>
 
