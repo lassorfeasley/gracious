@@ -81,7 +81,7 @@ export function HouseReadyArtifact() {
 
 export function InvitationArtifact() {
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden pb-6">
       <ArtifactCard>
         <div className="border-b border-border/60 px-5 py-3">
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -117,7 +117,7 @@ export function InvitationArtifact() {
           </div>
         </div>
       </ArtifactCard>
-      <div className="absolute -bottom-4 -right-3 flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3.5 py-2 text-xs font-medium shadow-md sm:-right-6">
+      <div className="absolute bottom-0 right-0 flex max-w-[calc(100%-1rem)] items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-2 text-[11px] font-medium shadow-md sm:-bottom-4 sm:-right-6 sm:max-w-none sm:px-3.5 sm:text-xs">
         <Check className="size-3.5 text-success" />
         Theo confirmed &middot; June 12&ndash;15
       </div>

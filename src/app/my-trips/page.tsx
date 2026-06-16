@@ -38,24 +38,24 @@ export default async function MyTripsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <Link href="/my-trips" aria-label="Gracious home">
+        <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-4">
+          <Link href="/my-trips" className="min-w-0 shrink" aria-label="Gracious home">
             <Wordmark className="h-5 text-primary" />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {showAdminLink && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="icon" className="sm:w-auto sm:px-3" asChild>
                 <Link href="/admin">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Admin
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:ml-2 sm:inline">Admin</span>
                 </Link>
               </Button>
             )}
             {isHost && (
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="icon" className="sm:w-auto sm:px-3" asChild>
                 <Link href="/dashboard">
-                  <Home className="mr-2 h-4 w-4" />
-                  Switch to hosting
+                  <Home className="h-4 w-4" />
+                  <span className="hidden sm:ml-2 sm:inline">Switch to hosting</span>
                 </Link>
               </Button>
             )}

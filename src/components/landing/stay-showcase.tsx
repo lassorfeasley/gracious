@@ -211,7 +211,7 @@ export function StayShowcase({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-2xl border border-border/60 bg-card p-4 shadow-xl sm:p-6',
+        'min-w-0 rounded-2xl border border-border/60 bg-card p-4 shadow-xl sm:p-6',
         className
       )}
       onMouseEnter={() => setHovered(true)}

@@ -798,7 +798,9 @@ export function AvailabilityCalendar({
         <div
           className={cn(
             'grid gap-y-10',
-            monthsToShow > 1 ? 'gap-x-16 px-10 sm:grid-cols-2' : 'px-2'
+            monthsToShow > 1
+              ? 'gap-x-8 px-4 lg:grid-cols-2 lg:gap-x-16 lg:px-10'
+              : 'px-2'
           )}
         >
           {months.map((m) => (

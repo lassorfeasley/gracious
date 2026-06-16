@@ -307,7 +307,7 @@ export function GuestExperience({ className }: { className?: string }) {
         <div className="mt-12 lg:mt-0">
           <div
             ref={rootRef}
-            className="relative mx-auto h-[600px] w-full max-w-[30rem]"
+            className="relative mx-auto h-[min(600px,80vw)] w-full max-w-[30rem] overflow-hidden sm:h-[600px]"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
           >
@@ -322,7 +322,7 @@ export function GuestExperience({ className }: { className?: string }) {
               let zIndex = N - depth;
 
               if (isExitingCard) {
-                transform = 'translateX(78vw) rotate(7deg)';
+                transform = 'translateX(115%) rotate(7deg)';
                 opacity = 0;
                 zIndex = N + 1;
               } else {
@@ -353,7 +353,7 @@ export function GuestExperience({ className }: { className?: string }) {
           </div>
 
           {/* Chronology control: chevrons + segmented toggle pill */}
-          <div className="mt-8 flex items-center justify-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => handleCrumb((front - 1 + N) % N)}
@@ -372,7 +372,7 @@ export function GuestExperience({ className }: { className?: string }) {
                     type="button"
                     onClick={() => handleCrumb(i)}
                     className={cn(
-                      'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors',
+                      'rounded-full px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:px-3.5 sm:text-xs',
                       active
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'

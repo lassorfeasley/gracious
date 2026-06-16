@@ -25,17 +25,17 @@ export default async function HomePage({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
       <header className="border-b border-border/60">
-        <div className="container mx-auto flex h-20 items-center justify-between px-6">
-          <Link href="/" aria-label="Gracious home">
-            <Wordmark className="h-6 text-primary sm:h-7" />
+        <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:h-20 sm:px-6">
+          <Link href="/" className="min-w-0 shrink" aria-label="Gracious home">
+            <Wordmark className="h-5 text-primary sm:h-7" />
           </Link>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="lg" className="text-base" asChild>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
-            <Button size="lg" className="text-base" asChild>
+            <Button size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
               <Link href="/signup">Get started</Link>
             </Button>
           </div>

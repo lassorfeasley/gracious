@@ -138,9 +138,9 @@ export default async function InvitePage({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-24">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6">
         {/* Invitation headline */}
-        <h1 className="mb-8 max-w-4xl text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="mb-8 max-w-4xl break-words text-3xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
           {hostName} has sent you {inviteArticle} {inviteTypeWord} invitation to
           stay at{' '}
           <span className="text-muted-foreground">{property.name}</span>.
@@ -153,9 +153,9 @@ export default async function InvitePage({
             latitude={property.latitude}
             longitude={property.longitude}
           >
-            <button className="group mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <button className="group mb-3 flex w-full max-w-full min-w-0 items-center gap-1.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground">
               <MapPin className="h-4 w-4 shrink-0" />
-              <span className="truncate">{property.address}</span>
+              <span className="min-w-0 truncate">{property.address}</span>
               <span className="shrink-0 font-medium text-foreground underline underline-offset-4">
                 Get directions
               </span>
@@ -203,18 +203,20 @@ export default async function InvitePage({
           <div className="mt-8 grid gap-x-12 gap-y-12 lg:grid-cols-[1fr_360px]">
             <div className="min-w-0">
               {/* Invitation type */}
-              <div className="flex items-center gap-4 rounded-2xl border p-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <TypeIcon className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium">{typeLabel}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {typeDescription}
-                  </p>
+              <div className="flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex min-w-0 items-start gap-4 sm:items-center">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+                    <TypeIcon className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium">{typeLabel}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {typeDescription}
+                    </p>
+                  </div>
                 </div>
                 {invitation.expires_at && (
-                  <Badge variant="outline" className="ml-auto shrink-0">
+                  <Badge variant="outline" className="w-fit shrink-0 sm:ml-auto">
                     Expires {formatDate(invitation.expires_at)}
                   </Badge>
                 )}

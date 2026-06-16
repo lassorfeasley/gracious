@@ -53,7 +53,7 @@ export function SectionNav({
         className ?? 'top-14 mt-6'
       )}
     >
-      <nav className="flex gap-6 overflow-x-auto">
+      <nav className="flex gap-4 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6">
         {sections.map((s) => (
           <a
             key={s.id}

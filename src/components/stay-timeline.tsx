@@ -244,7 +244,7 @@ export function StayTimeline({
   const showControls = canScrollLeft || canScrollRight;
 
   return (
-    <div className={className}>
+    <div className={cn('min-w-0', className)}>
       <div
         ref={scrollRef}
         className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -267,20 +267,11 @@ export function StayTimeline({
               className="grid min-w-0 flex-1 text-center"
               style={{ gridTemplateColumns: gridCols }}
             >
-              {days.map((day, i) => {
+              {days.map((day) => {
                 const weekend = isWeekend(day);
-                const showMonth = i === 0 || day.getDate() === 1;
                 const isToday = isSameDay(day, today);
                 return (
                   <div key={day.toISOString()} className="flex flex-col items-center pb-2">
-                    <span
-                      className={cn(
-                        'text-[9px] font-semibold uppercase tracking-wide',
-                        showMonth ? 'text-foreground/70' : 'text-transparent'
-                      )}
-                    >
-                      {format(day, 'MMM')}
-                    </span>
                     <span
                       className={cn(
                         'text-[10px] font-semibold uppercase',
