@@ -1,4 +1,7 @@
-import { Check } from 'lucide-react';
+'use client';
+
+import { Check, Minus, Plus, Send, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /*
@@ -79,49 +82,186 @@ export function HouseReadyArtifact() {
 /* Beat 2 — Extend the invitation                                      */
 /* ------------------------------------------------------------------ */
 
+/* June 2026: the 1st falls on a Monday in a Sunday-first grid. */
+const INVITE_DAYS_IN_MONTH = 30;
+const INVITE_FIRST_WEEKDAY_OFFSET = 1;
+
+type InviteHighlight = 'guests' | 'dates' | 'send' | null;
+
+interface InviteFrame {
+  guests: number;
+  start: number | null;
+  end: number | null;
+  active: InviteHighlight;
+  sent?: boolean;
+  /** How long this frame stays on screen, in ms. */
+  hold: number;
+}
+
+/*
+ * A scripted "hypothetical guest" filling out an invitation: first nudging
+ * the guest count up, then dragging out a date range, then sending. The loop
+ * resets to an empty form so the whole gesture replays.
+ */
+const INVITE_FRAMES: InviteFrame[] = [
+  { guests: 2, start: null, end: null, active: null, hold: 1000 },
+  { guests: 2, start: null, end: null, active: 'guests', hold: 450 },
+  { guests: 3, start: null, end: null, active: 'guests', hold: 420 },
+  { guests: 4, start: null, end: null, active: 'guests', hold: 750 },
+  { guests: 4, start: 12, end: 12, active: 'dates', hold: 420 },
+  { guests: 4, start: 12, end: 13, active: 'dates', hold: 220 },
+  { guests: 4, start: 12, end: 14, active: 'dates', hold: 220 },
+  { guests: 4, start: 12, end: 15, active: 'dates', hold: 950 },
+  { guests: 4, start: 12, end: 15, active: 'send', hold: 650 },
+  { guests: 4, start: 12, end: 15, active: 'send', sent: true, hold: 1600 },
+];
+
+/* A settled, mid-gesture frame shown when motion is reduced. */
+const INVITE_STATIC_FRAME = 7;
+
+function useInviteAnimation(): InviteFrame {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      setIndex(INVITE_STATIC_FRAME);
+      return;
+    }
+    const id = setTimeout(() => {
+      setIndex((i) => (i + 1) % INVITE_FRAMES.length);
+    }, INVITE_FRAMES[index].hold);
+    return () => clearTimeout(id);
+  }, [index]);
+
+  return INVITE_FRAMES[index];
+}
+
+function inviteDayClasses(
+  day: number,
+  start: number | null,
+  end: number | null
+): string {
+  if (start == null) return 'text-muted-foreground';
+  const lo = Math.min(start, end ?? start);
+  const hi = Math.max(start, end ?? start);
+  if (day < lo || day > hi) return 'text-muted-foreground';
+  if (lo === hi)
+    return 'rounded-md bg-primary font-medium text-primary-foreground';
+  if (day === lo)
+    return 'rounded-l-md bg-primary font-medium text-primary-foreground';
+  if (day === hi)
+    return 'rounded-r-md bg-primary font-medium text-primary-foreground';
+  return 'bg-primary/15 text-primary';
+}
+
 export function InvitationArtifact() {
+  const frame = useInviteAnimation();
+  const hasRange = frame.start != null && frame.end != null;
+
   return (
-    <div className="relative overflow-hidden pb-6">
-      <ArtifactCard>
-        <div className="border-b border-border/60 px-5 py-3">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            From Gracious &middot; just now
-          </p>
-          <p className="mt-1 truncate text-sm font-medium">
-            Margaret has invited you to The Lake House
-          </p>
+    <ArtifactCard>
+      {/* Guests selector */}
+      <div className="flex items-center justify-between border-b border-border/60 px-5 py-3.5">
+        <div className="flex items-center gap-2">
+          <Users className="size-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Guests</span>
         </div>
-        <div className="p-5">
-          <div className="flex aspect-[1.618/1] flex-col items-center justify-center rounded-lg bg-primary px-6 text-center">
-            <span className="h-0.5 w-8 bg-brass" />
-            <span className="mt-3 font-display text-xl text-primary-foreground">
-              The Lake House
-            </span>
-          </div>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Hi Theo, <strong className="text-foreground">Margaret</strong> has
-            invited you to stay at{' '}
-            <strong className="text-foreground">The Lake House</strong>.
-          </p>
-          <div className="mt-3 rounded-xl bg-background/80 px-4 py-3">
-            <p className="text-sm italic leading-relaxed text-muted-foreground">
-              &ldquo;The water is warmest in late June. Come for a long
-              weekend &mdash; and bring the dog.&rdquo;
-            </p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              &mdash; Margaret
-            </p>
-          </div>
-          <div className="mt-4 rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground">
-            View house &amp; request stay
-          </div>
+        <div className="flex items-center gap-3" aria-hidden>
+          <span className="flex size-6 items-center justify-center rounded-full border border-border/60 text-muted-foreground">
+            <Minus className="size-3" />
+          </span>
+          <span
+            className={cn(
+              'w-4 text-center text-sm font-semibold tabular-nums transition-all duration-300',
+              frame.active === 'guests' && 'scale-125 text-primary'
+            )}
+          >
+            {frame.guests}
+          </span>
+          <span
+            className={cn(
+              'flex size-6 items-center justify-center rounded-full border text-muted-foreground transition-all duration-300',
+              frame.active === 'guests'
+                ? 'scale-110 border-primary bg-primary/10 text-primary'
+                : 'border-border/60'
+            )}
+          >
+            <Plus className="size-3" />
+          </span>
         </div>
-      </ArtifactCard>
-      <div className="absolute bottom-0 right-0 flex max-w-[calc(100%-1rem)] items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-2 text-[11px] font-medium shadow-md sm:-bottom-4 sm:-right-6 sm:max-w-none sm:px-3.5 sm:text-xs">
-        <Check className="size-3.5 text-success" />
-        Theo confirmed &middot; June 12&ndash;15
       </div>
-    </div>
+
+      {/* Calendar */}
+      <div className="px-5 py-4">
+        <div className="flex items-baseline justify-between">
+          <p className="font-display text-lg tracking-tight">June</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            2026
+          </p>
+        </div>
+        <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-xs">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <span
+              key={`${d}-${i}`}
+              className="pb-1 text-[10px] font-medium uppercase text-muted-foreground/70"
+            >
+              {d}
+            </span>
+          ))}
+          {Array.from({ length: INVITE_FIRST_WEEKDAY_OFFSET }, (_, i) => (
+            <span key={`pad-${i}`} />
+          ))}
+          {Array.from({ length: INVITE_DAYS_IN_MONTH }, (_, i) => i + 1).map(
+            (day) => (
+              <span
+                key={day}
+                className={cn(
+                  'py-1.5 transition-colors duration-300',
+                  inviteDayClasses(day, frame.start, frame.end)
+                )}
+              >
+                {day}
+              </span>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* Selection summary + CTA */}
+      <div className="border-t border-border/60 px-5 py-4">
+        <p
+          className={cn(
+            'mb-3 text-center text-xs transition-opacity duration-300',
+            hasRange ? 'text-muted-foreground opacity-100' : 'opacity-0'
+          )}
+        >
+          June {frame.start}&ndash;{frame.end} &middot; {frame.guests} guests
+        </p>
+        <div
+          className={cn(
+            'flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-all duration-300',
+            frame.active === 'send' &&
+              !frame.sent &&
+              'ring-2 ring-brass ring-offset-2 ring-offset-card'
+          )}
+        >
+          {frame.sent ? (
+            <>
+              Invitation sent
+              <Check className="size-4" />
+            </>
+          ) : (
+            <>
+              Send invite
+              <Send className="size-4" />
+            </>
+          )}
+        </div>
+      </div>
+    </ArtifactCard>
   );
 }
 

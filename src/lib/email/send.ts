@@ -1,15 +1,39 @@
 import { Resend } from 'resend';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { render } from '@react-email/components';
 import { appUrl } from '@/lib/env';
 
 let resend: Resend | null = null;
+let smtp: Transporter | null = null;
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   if (!key) return null;
   if (!resend) resend = new Resend(key);
   return resend;
+}
+
+/**
+ * SMTP transport, used when `SMTP_HOST` is set. In local development this
+ * points at Mailpit (default `localhost:1025`) so every outgoing email is
+ * captured in the Mailpit inbox (http://localhost:8025) instead of hitting
+ * Resend or a real recipient. Takes precedence over Resend when configured.
+ */
+function getSmtp(): Transporter | null {
+  const host = process.env.SMTP_HOST;
+  if (!host) return null;
+  if (!smtp) {
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    smtp = nodemailer.createTransport({
+      host,
+      port: Number(process.env.SMTP_PORT ?? 1025),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: user && pass ? { user, pass } : undefined,
+    });
+  }
+  return smtp;
 }
 
 /** The configured sender for every outgoing email. */
@@ -29,6 +53,74 @@ export function fromAddressAs(name?: string | null): string {
   return `"${display} via Gracious" <${email}>`;
 }
 
+/** A fully-rendered email ready to hand to a transport. */
+export type DeliverableEmail = {
+  to: string[];
+  from: string;
+  subject: string;
+  html: string;
+  attachments?: { filename: string; content: Buffer | string }[];
+  headers?: Record<string, string>;
+  replyTo?: string;
+};
+
+/**
+ * Hands an already-rendered email to the active transport (SMTP/Mailpit →
+ * Resend → console). Shared by the synchronous `sendEmail` path and the outbox
+ * drainer, so both behave identically. Throws on provider errors so the caller
+ * (or the outbox retry loop) can react.
+ */
+export async function deliverRendered(
+  msg: DeliverableEmail
+): Promise<{ id: string | null }> {
+  const smtpClient = getSmtp();
+  if (smtpClient) {
+    const info = await smtpClient.sendMail({
+      from: msg.from,
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+      attachments: msg.attachments,
+      headers: msg.headers,
+      replyTo: msg.replyTo,
+    });
+    return { id: info.messageId };
+  }
+
+  const client = getResend();
+  if (!client) {
+    console.log('[email:dev]', {
+      to: msg.to,
+      subject: msg.subject,
+      replyTo: msg.replyTo,
+      headers: msg.headers,
+      html: msg.html.slice(0, 200),
+    });
+    return { id: 'dev' };
+  }
+
+  const { data, error } = await client.emails.send({
+    from: msg.from,
+    to: msg.to,
+    subject: msg.subject,
+    html: msg.html,
+    attachments: msg.attachments,
+    headers: msg.headers,
+    replyTo: msg.replyTo,
+  });
+
+  if (error) throw new Error(error.message);
+  return { id: data?.id ?? null };
+}
+
+/**
+ * Renders a React Email template and sends it immediately (synchronously).
+ *
+ * Use this only for latency-sensitive mail that must not wait on a queue —
+ * auth/magic-link emails and the on-demand guest sign-in link. Everything else
+ * (booking/invitation/reminder notifications) should go through `enqueueEmail`
+ * in `@/lib/email/outbox` so a transient provider failure can be retried.
+ */
 export async function sendEmail({
   to,
   subject,
@@ -48,26 +140,16 @@ export async function sendEmail({
   /** Personalizes the sender display name: "{fromName} via Gracious". */
   fromName?: string | null;
 }) {
-  const client = getResend();
   const html = await render(react);
-
-  if (!client) {
-    console.log('[email:dev]', { to, subject, replyTo, headers, html: html.slice(0, 200) });
-    return { id: 'dev' };
-  }
-
-  const { data, error } = await client.emails.send({
-    from: fromAddressAs(fromName),
+  return deliverRendered({
     to: Array.isArray(to) ? to : [to],
+    from: fromAddressAs(fromName),
     subject,
     html,
     attachments,
     headers,
     replyTo,
   });
-
-  if (error) throw new Error(error.message);
-  return data;
 }
 
 export async function logNotification({

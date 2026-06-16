@@ -1,4 +1,5 @@
-import { sendEmail, logNotification, appUrl } from '@/lib/email/send';
+import { logNotification, appUrl } from '@/lib/email/send';
+import { enqueueEmail } from '@/lib/email/outbox';
 import { buildStayEvent, generateIcs } from '@/lib/ical';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { formatDateRange, formatDate } from '@/lib/dates';
@@ -127,7 +128,7 @@ export async function notifyInvitationSent(invitationId: string) {
     creator ? { ...creator, email: null } : null
   );
 
-  await sendEmail({
+  await enqueueEmail({
     to: inv.guest_email,
     subject: hostName
       ? `${hostName} has invited you to ${inv.property.name}`
@@ -199,7 +200,7 @@ export async function notifyStayRequested(bookingId: string) {
     booking.guest.name ?? booking.guest.email ?? 'A guest';
 
   for (const recipient of recipients.values()) {
-    await sendEmail({
+    await enqueueEmail({
       to: recipient.email,
       subject: `Stay request from ${guestLabel}`,
       react: StayRequestedEmail({
@@ -271,7 +272,7 @@ export async function notifyStayBooked(bookingId: string) {
   const guestLabel = booking.guest.name ?? booking.guest.email ?? 'A guest';
 
   for (const recipient of recipients.values()) {
-    await sendEmail({
+    await enqueueEmail({
       to: recipient.email,
       subject: `${guestLabel} booked a stay at ${booking.property.name}`,
       react: StayBookedEmail({
@@ -302,7 +303,7 @@ export async function notifyRequestReceived(bookingId: string) {
   const booking = await getBookingWithDetails(bookingId);
   if (!booking || !booking.notify_guest || !booking.guest.email) return;
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject: `Your request for ${booking.property.name} is in`,
     react: RequestReceivedEmail({
@@ -345,7 +346,7 @@ export async function notifyBookingApproved(bookingId: string) {
   const admin = createAdminClient();
   const hostFooter = await hostInviteFooterProps(admin, booking.guest.email);
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject: `Your stay at ${booking.property.name} is confirmed`,
     react: BookingApprovedEmail({
@@ -394,7 +395,7 @@ export async function notifyBookingDeclined(
   const booking = await getBookingWithDetails(bookingId);
   if (!booking || !booking.guest.email || !booking.invitation) return;
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject: `Stay request declined — ${booking.property.name}`,
     react: BookingDeclinedEmail({
@@ -443,7 +444,7 @@ export async function notifyBookingCancelled(
     };
     // Host copy is an opt-out activity notification.
     if (wantsEmail(owner.notification_prefs, 'booking_cancelled')) {
-      await sendEmail({
+      await enqueueEmail({
         to: owner.email,
         subject: `${guestName} cancelled their stay`,
         react: BookingCancelledEmail({
@@ -459,7 +460,7 @@ export async function notifyBookingCancelled(
     }
   } else if (booking.notify_guest && booking.guest.email) {
     // Guest copy is mandatory — they must know their stay was cancelled.
-    await sendEmail({
+    await enqueueEmail({
       to: booking.guest.email,
       subject: `Your stay at ${booking.property.name} was cancelled`,
       react: BookingCancelledEmail({
@@ -487,7 +488,7 @@ export async function notifyTripReminder(
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
   const stayEvent = buildStayEvent(booking);
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject:
       daysUntil <= 1
@@ -527,7 +528,7 @@ export async function notifyArrivalWelcome(booking: BookingWithDetails) {
   const delivery = await guestReminderDelivery(booking.guest.id);
   if (!delivery.ok) return;
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject: `Today's the day — welcome to ${booking.property.name}`,
     react: ArrivalWelcomeEmail({
@@ -560,7 +561,7 @@ export async function notifyCheckoutInstructions(booking: BookingWithDetails) {
   const delivery = await guestReminderDelivery(booking.guest.id);
   if (!delivery.ok) return;
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject: `Checkout details for ${booking.property.name}`,
     react: CheckoutInstructionsEmail({
@@ -590,7 +591,7 @@ export async function notifyPostStay(booking: BookingWithDetails) {
   const admin = createAdminClient();
   const hostFooter = await hostInviteFooterProps(admin, booking.guest.email);
 
-  await sendEmail({
+  await enqueueEmail({
     to: booking.guest.email,
     subject: `Thanks for staying at ${booking.property.name}`,
     react: PostStayThankYouEmail({
@@ -619,7 +620,7 @@ export async function notifyInvitationsExpiring(
   ownerName: string,
   invitations: { guestName: string; propertyName: string; expiresAt: string }[]
 ) {
-  await sendEmail({
+  await enqueueEmail({
     to: ownerEmail,
     subject: 'Invitations expiring in 48 hours',
     react: InvitationExpiringEmail({

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "NODE_OPTIONS=--max-http-header-size=65536 next start",
     "lint": "eslint",
+    "mailpit": "mailpit",
     "db:seed:dev": "node --env-file=.env.local scripts/seed-dev.mjs"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "mapbox-gl": "^3.24.0",
     "next": "16.2.7",
     "next-themes": "^0.4.6",
+    "nodemailer": "^9.0.0",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
@@ -58,6 +60,7 @@
     "@eslint/eslintrc": "^3.3.5",
     "@tailwindcss/postcss": "^4.3.0",
     "@types/node": "^22",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",

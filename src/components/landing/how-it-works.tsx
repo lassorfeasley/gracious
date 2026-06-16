@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { HouseReadyArtifact, InvitationArtifact } from './artifacts';
+import {
+  CorrespondenceArtifact,
+  HouseReadyArtifact,
+  InvitationArtifact,
+} from './artifacts';
 
 interface Beat {
   title: string;
@@ -20,6 +24,11 @@ const BEATS: Beat[] = [
     title: 'Extend the invitation',
     body: 'Invitations go to the people you would trust with a key — never a public page. Guests see the house, pick their dates, and confirm their stay.',
     artifact: <InvitationArtifact />,
+  },
+  {
+    title: 'We handle the correspondence',
+    body: 'The right note at the right moment — a warm welcome, directions and door codes before arrival, a gentle word at checkout. Every guest feels expected.',
+    artifact: <CorrespondenceArtifact />,
   },
 ];
 

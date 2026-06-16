@@ -11,6 +11,7 @@ import {
   notifyInvitationsExpiring,
 } from '@/lib/email/notifications';
 import { wasNotificationSent } from '@/lib/email/send';
+import { drainEmailOutbox } from '@/lib/email/outbox';
 import { formatDate } from '@/lib/dates';
 import { wantsEmail } from '@/lib/notification-prefs';
 import type { NotificationPrefs } from '@/types/database';
@@ -150,10 +151,21 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Flush the email outbox synchronously within this guaranteed daily run, so
+  // the queue is drained even if a per-request after() drain was skipped. Bound
+  // the rounds to stay well clear of the function timeout.
+  let outboxSent = 0;
+  for (let round = 0; round < 20; round++) {
+    const drained = await drainEmailOutbox();
+    outboxSent += drained.sent;
+    if (drained.claimed === 0) break;
+  }
+
   return NextResponse.json({
     ok: true,
     processed: approvedBookings?.length ?? 0,
     lifecycleSends,
     expiring: expiringCount,
+    outboxSent,
   });
 }

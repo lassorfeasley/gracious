@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronRight, X } from 'lucide-react';
+import { ChevronRight, ExternalLink, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,9 @@ import {
   setStoredInviteToken,
   setStoredPropertySlug,
 } from '@/lib/dev-context-storage';
+
+const MAILPIT_URL =
+  process.env.NEXT_PUBLIC_MAILPIT_URL ?? 'http://localhost:8025';
 
 const APP_VIEWS: { id: AppView; label: string }[] = [
   { id: 'landing', label: 'Landing' },
@@ -266,18 +269,29 @@ export function DevToolbar() {
               getHref={(id) => viewHrefs[id]}
               ariaLabel="Application view"
             />
-            <Link
-              href="/styleguide"
-              aria-current={pathname === '/styleguide' ? 'page' : undefined}
-              className={cn(
-                'inline-flex rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                pathname === '/styleguide'
-                  ? 'bg-white text-zinc-900 shadow-sm'
-                  : 'bg-black/20 text-white/80 hover:text-white'
-              )}
-            >
-              Design
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/styleguide"
+                aria-current={pathname === '/styleguide' ? 'page' : undefined}
+                className={cn(
+                  'inline-flex rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  pathname === '/styleguide'
+                    ? 'bg-white text-zinc-900 shadow-sm'
+                    : 'bg-black/20 text-white/80 hover:text-white'
+                )}
+              >
+                Design
+              </Link>
+              <a
+                href={MAILPIT_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-md bg-black/20 px-3 py-1.5 text-xs font-medium text-white/80 transition-colors hover:text-white"
+              >
+                Mailpit
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
           </div>
 
           <DevAuthControls />
