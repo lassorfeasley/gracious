@@ -6,37 +6,29 @@ import {
   notifyBookingDeclined,
   notifyBookingCancelled,
 } from '@/lib/email/notifications';
-import {
-  assertCanHostStay,
-  getPropertyOwnerId,
-  incrementHostedStays,
-  StayLimitReachedError,
-} from '@/lib/billing';
 
 /**
  * Single source of truth for the approve / decline / cancel transitions on a
  * stay. Both callers — the `PATCH /api/bookings/[id]` API route and the
  * one-click email links handled in the requests page — go through here so the
- * authorization, idempotency, billing, and notification behavior can't drift
- * apart between the two entry points.
+ * authorization, idempotency, and notification behavior can't drift apart
+ * between the two entry points.
  *
  * Every transition is guarded by a conditional status update (e.g. only move a
  * booking out of `requested` if it is *still* `requested`). That guard is what
  * makes a double approve — two browser tabs, an email link plus a dashboard
  * click, a refresh of an already-handled request — a no-op instead of a
- * double-counted hosted stay and a duplicate guest email.
+ * duplicate guest email.
  */
 
 export type BookingActionFailureReason =
   | 'not_found'
   | 'forbidden'
-  | 'not_pending'
-  | 'limit_reached';
+  | 'not_pending';
 
 export type BookingActionResult =
   | { ok: true; status: 'approved' | 'declined' | 'cancelled' }
-  | { ok: false; reason: 'not_found' | 'forbidden' | 'not_pending' }
-  | { ok: false; reason: 'limit_reached'; limit: StayLimitReachedError };
+  | { ok: false; reason: BookingActionFailureReason };
 
 interface ActionOptions {
   /**
@@ -63,16 +55,6 @@ export async function approveBooking(
     return { ok: false, reason: 'not_pending' };
   }
 
-  const ownerId = await getPropertyOwnerId(booking.property_id);
-  try {
-    await assertCanHostStay(ownerId);
-  } catch (err) {
-    if (err instanceof StayLimitReachedError) {
-      return { ok: false, reason: 'limit_reached', limit: err };
-    }
-    throw err;
-  }
-
   const admin = createAdminClient();
   const { data: updated } = await admin
     .from('bookings')
@@ -83,10 +65,9 @@ export async function approveBooking(
     .maybeSingle();
 
   // Lost the race: another approve/decline already moved this booking. Don't
-  // increment the hosted-stay count or re-send the confirmation.
+  // re-send the confirmation.
   if (!updated) return { ok: false, reason: 'not_pending' };
 
-  await incrementHostedStays(ownerId);
   notifyBookingApproved(bookingId).catch(console.error);
   return { ok: true, status: 'approved' };
 }

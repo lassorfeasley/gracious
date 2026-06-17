@@ -137,13 +137,6 @@ async function handleQuickAction(
       : await declineBooking(bookingId, actorUserId, { propertyId });
 
   if (!result.ok) {
-    if (result.reason === 'limit_reached') {
-      return {
-        ok: false,
-        message:
-          'You’ve reached your plan’s hosted-stay limit — upgrade to approve more stays.',
-      };
-    }
     return {
       ok: false,
       message:

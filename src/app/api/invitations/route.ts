@@ -9,10 +9,9 @@ import {
 } from '@/lib/email/notifications';
 import { checkRoomConflicts } from '@/lib/bookings';
 import {
-  assertCanHostStay,
+  assertCanSendInvitation,
   getPropertyOwnerId,
-  incrementHostedStays,
-  StayLimitReachedError,
+  InvitationLimitReachedError,
   toLimitReachedPayload,
 } from '@/lib/billing';
 import type { Room } from '@/types/database';
@@ -53,6 +52,17 @@ export async function POST(request: NextRequest) {
         { error: 'A fixed stay date is required to book directly' },
         { status: 400 }
       );
+    }
+
+    const ownerId = await getPropertyOwnerId(property_id);
+
+    try {
+      await assertCanSendInvitation(ownerId);
+    } catch (err) {
+      if (err instanceof InvitationLimitReachedError) {
+        return NextResponse.json(toLimitReachedPayload(err), { status: 402 });
+      }
+      throw err;
     }
 
     const { data: invitation, error } = await admin
@@ -173,18 +183,6 @@ async function bookPreApprovedStay(args: PreApprovedStayArgs) {
     );
   }
 
-  const ownerId = await getPropertyOwnerId(propertyId);
-
-  try {
-    await assertCanHostStay(ownerId);
-  } catch (err) {
-    if (err instanceof StayLimitReachedError) {
-      await rollback();
-      return NextResponse.json(toLimitReachedPayload(err), { status: 402 });
-    }
-    throw err;
-  }
-
   const { data: rooms } = await admin
     .from('rooms')
     .select('*')
@@ -258,8 +256,6 @@ async function bookPreApprovedStay(args: PreApprovedStayArgs) {
   await admin.from('booking_rooms').insert(
     roomIds.map((room_id) => ({ booking_id: booking.id, room_id }))
   );
-
-  await incrementHostedStays(ownerId);
 
   notifyBookingApproved(booking.id).catch(console.error);
   notifyStayBooked(booking.id).catch(console.error);

@@ -28,7 +28,7 @@ export interface PricingPlan {
 
 // Single source of truth for plans. When Stripe is integrated, map each plan
 // to its Stripe Price ID here (e.g. add `stripePriceId` fields below).
-export const FREE_INCLUDED_STAYS = 2;
+export const FREE_INCLUDED_INVITATIONS = 2;
 
 export const PRICING_PLANS: PricingPlan[] = [
   {
@@ -39,10 +39,10 @@ export const PRICING_PLANS: PricingPlan[] = [
     tagline: 'No card — set up and feel it work',
     features: [
       'Add homes & rooms, build everything',
-      'Your first 2 hosted stays, on us',
+      'Your first 2 invitations, on us',
       'Guests always free, forever',
     ],
-    note: 'After 2 stays, upgrade to keep hosting',
+    note: 'After 2 invitations, upgrade to keep hosting',
     cta: {
       label: 'Get started free',
       href: '/signup',

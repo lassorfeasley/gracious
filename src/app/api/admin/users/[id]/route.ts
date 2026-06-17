@@ -5,9 +5,16 @@ import { getCurrentUser } from '@/lib/auth';
 import { isDevAdminPreviewEnabled } from '@/lib/dev-tools';
 import { isSiteAdmin } from '@/lib/site-admin';
 
-const patchSchema = z.object({
-  is_admin: z.boolean(),
-});
+const patchSchema = z
+  .object({
+    is_admin: z.boolean().optional(),
+    bonus_invitations: z.number().int().min(0).optional(),
+  })
+  .refine(
+    (data) =>
+      data.is_admin !== undefined || data.bonus_invitations !== undefined,
+    { message: 'At least one field is required' }
+  );
 
 export async function PATCH(
   request: NextRequest,
@@ -32,17 +39,28 @@ export async function PATCH(
       );
     }
 
-    if (id === actor.id && !parsed.data.is_admin) {
+    if (id === actor.id && parsed.data.is_admin === false) {
       return NextResponse.json(
         { error: 'You cannot remove your own admin access' },
         { status: 400 }
       );
     }
 
+    const updates: {
+      is_admin?: boolean;
+      bonus_invitations?: number;
+    } = {};
+    if (parsed.data.is_admin !== undefined) {
+      updates.is_admin = parsed.data.is_admin;
+    }
+    if (parsed.data.bonus_invitations !== undefined) {
+      updates.bonus_invitations = parsed.data.bonus_invitations;
+    }
+
     const admin = createAdminClient();
     const { data: user, error } = await admin
       .from('users')
-      .update({ is_admin: parsed.data.is_admin })
+      .update(updates)
       .eq('id', id)
       .select()
       .single();

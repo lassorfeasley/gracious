@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { startCheckout } from '@/lib/billing-client';
-import { FREE_INCLUDED_STAYS } from '@/lib/pricing';
+import { FREE_INCLUDED_INVITATIONS } from '@/lib/pricing';
 
 interface UpgradeDialogProps {
   open: boolean;
@@ -24,8 +24,8 @@ interface UpgradeDialogProps {
 export function UpgradeDialog({
   open,
   onOpenChange,
-  used = FREE_INCLUDED_STAYS,
-  limit = FREE_INCLUDED_STAYS,
+  used = FREE_INCLUDED_INVITATIONS,
+  limit = FREE_INCLUDED_INVITATIONS,
   returnPath,
 }: UpgradeDialogProps) {
   const [interval, setInterval] = useState<'annual' | 'monthly'>('annual');
@@ -41,9 +41,9 @@ export function UpgradeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>You&apos;ve hosted your {limit} free stays</DialogTitle>
+          <DialogTitle>You&apos;ve used your {limit} free invitations</DialogTitle>
           <DialogDescription>
-            You&apos;ve used {used} of {limit} free hosted stays on your account.
+            You&apos;ve used {used} of {limit} free invitations on your account.
             Upgrade to Pro for unlimited stays, homes, and co-managers.
           </DialogDescription>
         </DialogHeader>

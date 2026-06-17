@@ -5,7 +5,14 @@ import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
 import { BookingProvider } from '@/components/guest/booking-context';
 import { HostPageSidebar } from '@/components/dashboard/host-page-sidebar';
+import { InvitationUsageBanner } from '@/components/dashboard/invitation-usage-banner';
 import { cn } from '@/lib/utils';
+
+export interface InvitationUsageSummary {
+  remaining: number;
+  limit: number;
+  settingsPath: string;
+}
 
 export function HostPageLayout({
   propertyId,
@@ -17,6 +24,7 @@ export function HostPageLayout({
   className,
   preselectedRoomIds,
   leading,
+  invitationUsage,
   children,
 }: {
   propertyId: string;
@@ -29,6 +37,7 @@ export function HostPageLayout({
   preselectedRoomIds?: string[];
   /** Optional content rendered atop the left column, above the divided sections. */
   leading?: ReactNode;
+  invitationUsage?: InvitationUsageSummary;
   children: ReactNode;
 }) {
   const bookableRooms = rooms.map((r) => ({
@@ -66,6 +75,15 @@ export function HostPageLayout({
             rooms={rooms}
             roomAvailability={roomAvailability}
             preselectedRoomIds={preselectedRoomIds ?? defaultSelectedRoomIds}
+            headerSlot={
+              invitationUsage ? (
+                <InvitationUsageBanner
+                  remaining={invitationUsage.remaining}
+                  limit={invitationUsage.limit}
+                  settingsPath={invitationUsage.settingsPath}
+                />
+              ) : undefined
+            }
           />
         </aside>
       </div>

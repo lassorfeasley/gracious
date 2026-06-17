@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
+import { getAccountUsage } from '@/lib/billing';
 import { formatDateRange } from '@/lib/dates';
 import { RoomCard } from '@/components/room-card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,18 @@ export default async function OverviewPage({
 }) {
   const { slug } = await params;
   const property = await getDashboardProperty(slug);
+  const user = await getCurrentUser();
+  const isPropertyOwner = user?.id === property.owner_id;
+  const usage =
+    isPropertyOwner ? await getAccountUsage(property.owner_id) : null;
+  const invitationUsage =
+    usage?.plan === 'free'
+      ? {
+          remaining: usage.remaining,
+          limit: usage.limit,
+          settingsPath: `/dashboard/${slug}/settings`,
+        }
+      : undefined;
 
   const supabase = await createClient();
   const today = new Date().toISOString().split('T')[0];
@@ -161,7 +175,12 @@ export default async function OverviewPage({
 
       <SectionNav sections={navSections} />
 
-      <HostPageShell propertyId={property.id} rooms={rooms ?? []} className="mt-6">
+      <HostPageShell
+        propertyId={property.id}
+        rooms={rooms ?? []}
+        className="mt-6"
+        invitationUsage={invitationUsage}
+      >
         <HostCalendarSection
           slug={slug}
           sectionId="calendar"

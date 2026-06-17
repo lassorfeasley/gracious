@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { Pencil } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { getDashboardProperty } from '@/lib/dashboard-property';
+import { getAccountUsage } from '@/lib/billing';
 import { AvailabilityBlocks } from '@/components/dashboard/availability-blocks';
 import { HostPageShell } from '@/components/dashboard/host-page-shell';
 import { DashboardContainer } from '@/components/dashboard/dashboard-container';
@@ -31,6 +33,18 @@ export default async function RoomProfilePage({
 }) {
   const { slug, roomId } = await params;
   const property = await getDashboardProperty(slug);
+  const user = await getCurrentUser();
+  const isPropertyOwner = user?.id === property.owner_id;
+  const usage =
+    isPropertyOwner ? await getAccountUsage(property.owner_id) : null;
+  const invitationUsage =
+    usage?.plan === 'free'
+      ? {
+          remaining: usage.remaining,
+          limit: usage.limit,
+          settingsPath: `/dashboard/${slug}/settings`,
+        }
+      : undefined;
 
   const supabase = await createClient();
   const { data: rooms } = await supabase
@@ -106,6 +120,7 @@ export default async function RoomProfilePage({
         lockRoomSelection
         preselectedRoomIds={[room.id]}
         className="mt-3"
+        invitationUsage={invitationUsage}
         leading={
           <>
             <RoomHero room={room} />

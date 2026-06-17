@@ -19,7 +19,6 @@ import {
   notifyStayRequested,
 } from '@/lib/email/notifications';
 import { upsertUserProfile } from '@/lib/auth';
-import { getPropertyOwnerId, incrementHostedStays } from '@/lib/billing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,11 +133,6 @@ export async function POST(request: NextRequest) {
       .update({ status: 'accepted' })
       .eq('id', invitation.id)
       .eq('status', 'pending');
-
-    if (initialStatus === 'approved') {
-      const ownerId = await getPropertyOwnerId(invitation.property_id);
-      await incrementHostedStays(ownerId);
-    }
 
     if (needsApproval) {
       notifyStayRequested(booking.id).catch(console.error);

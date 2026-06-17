@@ -18,6 +18,7 @@ export interface User {
   is_admin: boolean;
   plan: PlanId;
   hosted_stays_used: number;
+  bonus_invitations: number;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   visible_to_coguests: boolean;

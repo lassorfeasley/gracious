@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { FREE_INCLUDED_STAYS, type PlanId } from '@/lib/pricing';
+import { FREE_INCLUDED_INVITATIONS, type PlanId } from '@/lib/pricing';
 
 export interface AccountUsage {
   plan: PlanId;
@@ -7,24 +7,25 @@ export interface AccountUsage {
   limit: number;
   remaining: number;
   atLimit: boolean;
+  bonusInvitations: number;
 }
 
-export class StayLimitReachedError extends Error {
+export class InvitationLimitReachedError extends Error {
   readonly code = 'limit_reached' as const;
   readonly plan: PlanId;
   readonly used: number;
   readonly limit: number;
 
   constructor(usage: AccountUsage) {
-    super('Hosted stay limit reached');
-    this.name = 'StayLimitReachedError';
+    super('Invitation limit reached');
+    this.name = 'InvitationLimitReachedError';
     this.plan = usage.plan;
     this.used = usage.used;
     this.limit = usage.limit;
   }
 }
 
-export function toLimitReachedPayload(error: StayLimitReachedError) {
+export function toLimitReachedPayload(error: InvitationLimitReachedError) {
   return {
     error: error.code,
     plan: error.plan,
@@ -33,11 +34,41 @@ export function toLimitReachedPayload(error: StayLimitReachedError) {
   };
 }
 
+async function countInvitationUsage(
+  admin: ReturnType<typeof createAdminClient>,
+  ownerId: string
+): Promise<number> {
+  const { data: properties } = await admin
+    .from('properties')
+    .select('id')
+    .eq('owner_id', ownerId);
+
+  const propertyIds = properties?.map((p) => p.id) ?? [];
+  if (propertyIds.length === 0) return 0;
+
+  const [{ count: pendingCount }, { count: activeBookingCount }] =
+    await Promise.all([
+      admin
+        .from('invitations')
+        .select('*', { count: 'exact', head: true })
+        .in('property_id', propertyIds)
+        .eq('status', 'pending'),
+      admin
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .in('property_id', propertyIds)
+        .not('invitation_id', 'is', null)
+        .in('status', ['requested', 'approved']),
+    ]);
+
+  return (pendingCount ?? 0) + (activeBookingCount ?? 0);
+}
+
 export async function getAccountUsage(ownerId: string): Promise<AccountUsage> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('users')
-    .select('plan, hosted_stays_used')
+    .select('plan, bonus_invitations')
     .eq('id', ownerId)
     .single();
 
@@ -46,8 +77,9 @@ export async function getAccountUsage(ownerId: string): Promise<AccountUsage> {
   }
 
   const plan = (data.plan as PlanId) ?? 'free';
-  const used = data.hosted_stays_used ?? 0;
-  const limit = FREE_INCLUDED_STAYS;
+  const bonusInvitations = data.bonus_invitations ?? 0;
+  const used = await countInvitationUsage(admin, ownerId);
+  const limit = FREE_INCLUDED_INVITATIONS + bonusInvitations;
   const remaining = Math.max(0, limit - used);
 
   return {
@@ -56,37 +88,18 @@ export async function getAccountUsage(ownerId: string): Promise<AccountUsage> {
     limit,
     remaining,
     atLimit: plan === 'free' && used >= limit,
+    bonusInvitations,
   };
 }
 
-export async function assertCanHostStay(ownerId: string): Promise<AccountUsage> {
+export async function assertCanSendInvitation(
+  ownerId: string
+): Promise<AccountUsage> {
   const usage = await getAccountUsage(ownerId);
   if (usage.atLimit) {
-    throw new StayLimitReachedError(usage);
+    throw new InvitationLimitReachedError(usage);
   }
   return usage;
-}
-
-export async function incrementHostedStays(ownerId: string): Promise<void> {
-  const admin = createAdminClient();
-  const { data: current } = await admin
-    .from('users')
-    .select('hosted_stays_used')
-    .eq('id', ownerId)
-    .single();
-
-  if (!current) {
-    throw new Error('Owner account not found');
-  }
-
-  const { error } = await admin
-    .from('users')
-    .update({ hosted_stays_used: (current.hosted_stays_used ?? 0) + 1 })
-    .eq('id', ownerId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
 }
 
 export async function getPropertyOwnerId(propertyId: string): Promise<string> {

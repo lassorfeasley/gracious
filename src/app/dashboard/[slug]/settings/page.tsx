@@ -50,8 +50,8 @@ export default async function SettingsPage({
         {isPropertyOwner && usage && (
           <SubscriptionCard
             currentPlan={usage.plan}
-            hostedStaysUsed={usage.used}
-            hostedStaysLimit={usage.limit}
+            invitationsUsed={usage.used}
+            invitationsLimit={usage.limit}
             returnPath={`/dashboard/${slug}/settings`}
           />
         )}

@@ -10,7 +10,6 @@ import {
   cancelBooking,
   type BookingActionResult,
 } from '@/lib/booking-actions';
-import { toLimitReachedPayload } from '@/lib/billing';
 import type { Room } from '@/types/database';
 
 function actionFailureResponse(
@@ -21,10 +20,6 @@ function actionFailureResponse(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     case 'forbidden':
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    case 'limit_reached':
-      return NextResponse.json(toLimitReachedPayload(result.limit), {
-        status: 402,
-      });
     case 'not_pending':
       return NextResponse.json(
         { error: 'This booking can no longer be updated' },

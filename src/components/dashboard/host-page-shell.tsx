@@ -1,5 +1,5 @@
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
-import { HostPageLayout } from '@/components/dashboard/host-page-layout';
+import { HostPageLayout, type InvitationUsageSummary } from '@/components/dashboard/host-page-layout';
 import { AddRoomSidebar } from '@/components/dashboard/add-room-sidebar';
 import { BookingProvider } from '@/components/guest/booking-context';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ export async function HostPageShell({
   preselectedRoomIds,
   className,
   leading,
+  invitationUsage,
   children,
 }: {
   propertyId: string;
@@ -24,6 +25,7 @@ export async function HostPageShell({
   className?: string;
   /** Optional content rendered atop the left column, above the divided sections. */
   leading?: React.ReactNode;
+  invitationUsage?: InvitationUsageSummary;
   children: React.ReactNode;
 }) {
   // No rooms yet (e.g. a freshly created home): the booking sidebar can't be
@@ -65,6 +67,7 @@ export async function HostPageShell({
       preselectedRoomIds={preselectedRoomIds}
       className={className}
       leading={leading}
+      invitationUsage={invitationUsage}
     >
       {children}
     </HostPageLayout>

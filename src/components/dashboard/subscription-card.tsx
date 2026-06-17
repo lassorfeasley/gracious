@@ -10,15 +10,15 @@ import { PRICING_PLANS, type PlanId } from '@/lib/pricing';
 
 interface SubscriptionCardProps {
   currentPlan: PlanId;
-  hostedStaysUsed: number;
-  hostedStaysLimit: number;
+  invitationsUsed: number;
+  invitationsLimit: number;
   returnPath?: string;
 }
 
 export function SubscriptionCard({
   currentPlan,
-  hostedStaysUsed,
-  hostedStaysLimit,
+  invitationsUsed,
+  invitationsLimit,
   returnPath,
 }: SubscriptionCardProps) {
   const [interval, setInterval] = useState<'annual' | 'monthly'>('annual');
@@ -61,11 +61,11 @@ export function SubscriptionCard({
           <>
             <p className="text-sm text-muted-foreground">
               You’re on the <strong>Free</strong> plan — your first{' '}
-              {hostedStaysLimit} hosted stays are on us. Upgrade to Pro for
+              {invitationsLimit} invitations are on us. Upgrade to Pro for
               unlimited stays, homes, and co-managers.
             </p>
             <p className="text-sm font-medium">
-              {hostedStaysUsed} of {hostedStaysLimit} free stays used
+              {invitationsUsed} of {invitationsLimit} free invitations used
             </p>
 
             <div className="rounded-xl border p-5">
