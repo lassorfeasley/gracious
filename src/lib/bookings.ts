@@ -202,6 +202,19 @@ export function validateBookingAgainstInvitation(
     }
   }
 
+  // Entire-home invitations can only be booked as the whole place.
+  if (invitation.whole_home) {
+    const bookingAllRooms =
+      roomIds.length === offeredRoomIds.length &&
+      offeredRoomIds.every((id) => roomIds.includes(id));
+    if (!bookingAllRooms) {
+      return {
+        valid: false,
+        error: 'This home is offered as a whole — your booking must include every room',
+      };
+    }
+  }
+
   const selectedRooms = invitation.rooms.filter((r) => roomIds.includes(r.id));
   const maxOcc = selectedRooms.reduce((sum, r) => sum + r.max_occupancy, 0);
   if (partySize > maxOcc) {

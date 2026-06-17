@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -48,6 +48,7 @@ import {
   INVITATION_TYPE_LABELS,
   INVITATION_TYPE_OPTIONS,
 } from '@/lib/invitation-types';
+import { guestProfileHref } from '@/lib/guest-keys';
 
 interface InviteGuestDialogProps {
   propertyId: string;
@@ -79,6 +80,8 @@ export function InviteGuestDialog({
   trigger,
 }: InviteGuestDialogProps) {
   const router = useRouter();
+  const params = useParams();
+  const propertySlug = typeof params.slug === 'string' ? params.slug : undefined;
   const parentBooking = useOptionalBooking();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'invite' | 'manual'>('invite');
@@ -105,6 +108,7 @@ export function InviteGuestDialog({
       guest_last_name: '',
       type: 'standing',
       requires_approval: true,
+      whole_home: false,
       message: '',
       room_ids: defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
       pre_approved: false,
@@ -118,6 +122,31 @@ export function InviteGuestDialog({
   const selectedMaxOcc = rooms
     .filter((r) => values.room_ids?.includes(r.id))
     .reduce((sum, r) => sum + r.max_occupancy, 0);
+
+  // "Already booked" is the pre-approved direct-booking path surfaced as a
+  // first-class choice. Under the hood it's a fixed-date stay booked on the
+  // guest's behalf — no acceptance step.
+  const KIND_OPTIONS = [
+    ...INVITATION_TYPE_OPTIONS,
+    {
+      value: 'confirmed',
+      label: 'Already booked',
+      description:
+        'You confirmed this stay outside Gracious — book it now and we’ll notify the guest. No acceptance needed.',
+    },
+  ];
+  const selectedKind = preApproved ? 'confirmed' : invType;
+
+  function selectKind(value: string) {
+    if (value === 'confirmed') {
+      form.setValue('type', 'prix_fixe');
+      form.setValue('pre_approved', true);
+      form.setValue('requires_approval', false);
+    } else {
+      form.setValue('type', value as InvitationInput['type']);
+      form.setValue('pre_approved', false);
+    }
+  }
 
   const steps = useMemo((): StepKey[] => {
     const base: StepKey[] = ['guest', 'type'];
@@ -143,6 +172,7 @@ export function InviteGuestDialog({
       guest_last_name: '',
       type: 'standing',
       requires_approval: true,
+      whole_home: false,
       message: '',
       room_ids:
         defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
@@ -225,6 +255,17 @@ export function InviteGuestDialog({
       );
     } else {
       form.setValue('room_ids', [...value, roomId], { shouldValidate: true });
+    }
+  }
+
+  function setWholeHome(on: boolean) {
+    form.setValue('whole_home', on);
+    if (on) {
+      form.setValue(
+        'room_ids',
+        rooms.map((r) => r.id),
+        { shouldValidate: true }
+      );
     }
   }
 
@@ -316,6 +357,9 @@ export function InviteGuestDialog({
     }
     setOpen(false);
     resetForm();
+    if (propertySlug) {
+      router.push(guestProfileHref(propertySlug, formValues.guest_email));
+    }
     router.refresh();
   }
 
@@ -361,7 +405,13 @@ export function InviteGuestDialog({
         title="Book a guest"
         stepIndex={current}
         stepCount={steps.length}
-        stepTitle={STEP_TITLES[stepKey]}
+        stepTitle={
+          preApproved && stepKey === 'dates'
+            ? 'When is the stay?'
+            : preApproved && stepKey === 'rooms'
+              ? 'Which rooms are booked?'
+              : STEP_TITLES[stepKey]
+        }
         onBack={current > 0 ? () => setStep(current - 1) : undefined}
         onNext={handleNext}
         nextLabel={
@@ -436,13 +486,13 @@ export function InviteGuestDialog({
 
           {stepKey === 'type' && (
             <div className="space-y-3">
-              {INVITATION_TYPE_OPTIONS.map((opt) => {
-                const selected = invType === opt.value;
+              {KIND_OPTIONS.map((opt) => {
+                const selected = selectedKind === opt.value;
                 return (
                   <button
                     type="button"
                     key={opt.value}
-                    onClick={() => form.setValue('type', opt.value)}
+                    onClick={() => selectKind(opt.value)}
                     className={cn(
                       'flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition-colors',
                       selected
@@ -535,19 +585,37 @@ export function InviteGuestDialog({
 
           {stepKey === 'rooms' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
-                {rooms.map((room) => {
-                  const selected = values.room_ids.includes(room.id);
-                  return (
-                    <SelectableRoomCard
-                      key={room.id}
-                      room={room}
-                      selected={selected}
-                      onToggle={() => toggleRoom(room.id)}
-                    />
-                  );
-                })}
-              </div>
+              {rooms.length > 1 && (
+                <div className="flex items-center justify-between gap-4 border-b pb-5">
+                  <div>
+                    <p className="font-medium">Entire home only</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Guests book the whole place — they can&apos;t pick
+                      individual rooms.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={values.whole_home ?? false}
+                    onCheckedChange={setWholeHome}
+                    className="shrink-0"
+                  />
+                </div>
+              )}
+              {!values.whole_home && (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                  {rooms.map((room) => {
+                    const selected = values.room_ids.includes(room.id);
+                    return (
+                      <SelectableRoomCard
+                        key={room.id}
+                        room={room}
+                        selected={selected}
+                        onToggle={() => toggleRoom(room.id)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
               {form.formState.errors.room_ids && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.room_ids.message}
@@ -558,33 +626,6 @@ export function InviteGuestDialog({
 
           {stepKey === 'details' && (
             <div className="space-y-4">
-              {invType === 'prix_fixe' && (
-                <FormField
-                  control={form.control}
-                  name="pre_approved"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start justify-between gap-4 rounded-xl border p-4">
-                      <div className="space-y-1">
-                        <FormLabel className="text-base">
-                          Guest already confirmed
-                        </FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          Skip the invitation and book this stay now. The guest
-                          gets a confirmation email and the usual trip reminders
-                          — no acceptance needed.
-                        </p>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value ?? false}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              )}
-
               {preApproved && (
                 <FormField
                   control={form.control}
@@ -773,7 +814,7 @@ export function InviteGuestDialog({
                   {preApproved ? 'Booking' : 'Invitation'}
                 </dt>
                 <dd className="mt-1 font-medium">
-                  {preApproved ? 'Fixed date' : INVITATION_TYPE_LABELS[invType]}
+                  {preApproved ? 'Already booked' : INVITATION_TYPE_LABELS[invType]}
                 </dd>
                 <dd className="mt-1 text-muted-foreground">
                   {preApproved
@@ -809,7 +850,9 @@ export function InviteGuestDialog({
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Rooms
                 </dt>
-                <dd className="mt-1 font-medium">{roomLabels || '—'}</dd>
+                <dd className="mt-1 font-medium">
+                  {values.whole_home ? 'Entire home' : roomLabels || '—'}
+                </dd>
               </div>
               {values.message?.trim() && (
                 <div className="rounded-xl border p-4">

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Check } from 'lucide-react';
+import { Check, ImageIcon } from 'lucide-react';
 import { summarizeBeds } from '@/lib/validations';
 import { cn } from '@/lib/utils';
 
@@ -33,28 +33,21 @@ export function RoomCard({
   return (
     <div className={cn('block', className)}>
       {room.image_url ? (
-        <>
-          <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
-            <Image
-              src={room.image_url}
-              alt={room.name}
-              fill
-              className="object-cover transition duration-300 group-hover:scale-105"
-            />
-          </div>
-          <p className={cn('mt-4 font-medium', titleClass)}>{room.name}</p>
-          <p className={cn('text-muted-foreground', metaClass)}>
-            {summarizeBeds(room.beds)} · Up to {room.max_occupancy} guests
-          </p>
-        </>
-      ) : (
-        <div className="relative flex aspect-4/3 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-5 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900">
-          <p className={cn('font-medium text-white', titleClass)}>{room.name}</p>
-          <p className={cn('text-white/70', metaClass)}>
-            {summarizeBeds(room.beds)} · Up to {room.max_occupancy} guests
-          </p>
+        <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
+          <Image
+            src={room.image_url}
+            alt={room.name}
+            fill
+            className="object-cover transition duration-300 group-hover:scale-105"
+          />
         </div>
+      ) : (
+        <div className="aspect-4/3 w-full overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900" />
       )}
+      <p className={cn('mt-4 font-medium', titleClass)}>{room.name}</p>
+      <p className={cn('text-muted-foreground', metaClass)}>
+        {summarizeBeds(room.beds)} · Up to {room.max_occupancy} guests
+      </p>
       {showDescription && room.description && (
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {room.description}
@@ -79,15 +72,20 @@ export function SelectableRoomCard({
     <button
       type="button"
       onClick={onToggle}
+      aria-pressed={selected}
       className={cn(
-        'group relative block w-full rounded-2xl text-left transition-shadow',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        selected && 'ring-2 ring-foreground ring-offset-2 ring-offset-background'
+        'group block w-full rounded-xl text-left',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
       )}
     >
-      <div className="relative">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-xl ring-1 transition',
+          selected ? 'ring-2 ring-foreground' : 'ring-border'
+        )}
+      >
         {room.image_url ? (
-          <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl">
+          <div className="relative aspect-4/3 w-full">
             <Image
               src={room.image_url}
               alt={room.name}
@@ -96,27 +94,20 @@ export function SelectableRoomCard({
             />
           </div>
         ) : (
-          <div className="relative flex aspect-4/3 w-full flex-col justify-end overflow-hidden rounded-2xl bg-linear-to-br from-slate-700 via-slate-800 to-slate-950 p-5 transition duration-300 group-hover:from-slate-600 group-hover:via-slate-700 group-hover:to-slate-900">
-            <p className="text-base font-medium text-white">{room.name}</p>
-            <p className="text-sm text-white/70">
-              {summarizeBeds(room.beds)} · Up to {room.max_occupancy} guests
-            </p>
+          <div className="flex aspect-4/3 w-full items-center justify-center bg-muted">
+            <ImageIcon className="h-7 w-7 text-muted-foreground/40" aria-hidden />
           </div>
         )}
         {selected && (
-          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
-            <Check className="h-4 w-4" aria-hidden />
+          <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
+            <Check className="h-3.5 w-3.5" aria-hidden />
           </span>
         )}
       </div>
-      {room.image_url && (
-        <>
-          <p className="mt-3 text-base font-medium">{room.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {summarizeBeds(room.beds)} · Up to {room.max_occupancy} guests
-          </p>
-        </>
-      )}
+      <p className="mt-2.5 text-sm font-medium">{room.name}</p>
+      <p className="text-sm text-muted-foreground">
+        {summarizeBeds(room.beds)} · Up to {room.max_occupancy} guests
+      </p>
     </button>
   );
 }

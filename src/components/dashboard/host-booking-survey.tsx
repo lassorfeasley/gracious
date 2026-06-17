@@ -195,6 +195,10 @@ export function HostBookingSurvey({
   onNotesChange,
   requiresApproval,
   onRequiresApprovalChange,
+  wholeHome,
+  onWholeHomeChange,
+  preApproved,
+  onPreApprovedChange,
   notifyGuest,
   onNotifyGuestChange,
   loading,
@@ -224,6 +228,10 @@ export function HostBookingSurvey({
   onNotesChange: (v: string) => void;
   requiresApproval: boolean;
   onRequiresApprovalChange: (v: boolean) => void;
+  wholeHome: boolean;
+  onWholeHomeChange: (v: boolean) => void;
+  preApproved: boolean;
+  onPreApprovedChange: (v: boolean) => void;
   notifyGuest: boolean;
   onNotifyGuestChange: (v: boolean) => void;
   loading: boolean;
@@ -261,15 +269,28 @@ export function HostBookingSurvey({
     }
   }, [open, lockRoomSelection, selectAllRooms]);
 
-  const roomsLabel =
-    selectedRoomIds.length === bookableRooms.length
+  const wholeHomeAvailable = actionType === 'invite' && bookableRooms.length > 1;
+  const wholeHomeOn = wholeHomeAvailable && wholeHome;
+
+  function handleWholeHomeChange(on: boolean) {
+    onWholeHomeChange(on);
+    if (on) selectAllRooms();
+  }
+
+  const roomsLabel = wholeHomeOn
+    ? 'Entire home'
+    : selectedRoomIds.length === bookableRooms.length
       ? 'Entire place'
       : selectedRoomIds.length === 1
         ? bookableRooms.find((r) => r.id === selectedRoomIds[0])?.name ?? '1 room'
         : `${selectedRoomIds.length} rooms`;
 
   const submitLabel =
-    actionType === 'manual' ? 'Add to calendar' : 'Send invitation';
+    actionType === 'manual'
+      ? 'Add to calendar'
+      : preApproved
+        ? 'Book stay'
+        : 'Send invitation';
 
   function validateStep(key: StepKey): boolean {
     if (key === 'kind' && actionType === 'manual') {
@@ -356,6 +377,13 @@ export function HostBookingSurvey({
   function selectInviteType(type: HostInviteType) {
     onActionTypeChange('invite');
     onInviteTypeChange(type);
+    onPreApprovedChange(false);
+  }
+
+  function selectConfirmed() {
+    onActionTypeChange('invite');
+    onInviteTypeChange('prix_fixe');
+    onPreApprovedChange(true);
   }
 
   return (
@@ -400,7 +428,9 @@ export function HostBookingSurvey({
                   <div className="space-y-3">
                     {INVITE_TYPE_OPTIONS.map((opt) => {
                       const selected =
-                        actionType === 'invite' && inviteType === opt.value;
+                        actionType === 'invite' &&
+                        inviteType === opt.value &&
+                        !preApproved;
                       return (
                         <button
                           key={opt.value}
@@ -423,6 +453,25 @@ export function HostBookingSurvey({
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={selectConfirmed}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-4 rounded-xl border p-5 text-left transition-colors',
+                        preApproved
+                          ? 'border-foreground ring-1 ring-foreground'
+                          : 'hover:bg-muted/50'
+                      )}
+                    >
+                      <div>
+                        <p className="font-medium">Already booked</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          You confirmed this stay outside Gracious — book it now
+                          and notify the guest. No acceptance needed.
+                        </p>
+                      </div>
+                      {preApproved && <Check className="h-5 w-5 shrink-0" />}
+                    </button>
                   </div>
                 )}
 
@@ -448,7 +497,10 @@ export function HostBookingSurvey({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => onActionTypeChange('manual')}
+                        onClick={() => {
+                          onActionTypeChange('manual');
+                          onPreApprovedChange(false);
+                        }}
                         className="flex h-full w-full items-center justify-between gap-4 rounded-xl border p-5 text-left transition-colors hover:bg-muted/50"
                       >
                         <div>
@@ -484,7 +536,33 @@ export function HostBookingSurvey({
               </div>
             )}
 
-            {stepKey === 'rooms' && <RoomPillPicker />}
+            {stepKey === 'rooms' && (
+              <div className="space-y-4">
+                {wholeHomeAvailable && (
+                  <div className="flex items-center justify-between gap-4 border-b pb-5">
+                    <div>
+                      <p className="font-medium">Entire home only</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Guests book the whole place — they can&apos;t pick
+                        individual rooms.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={wholeHomeOn}
+                      onCheckedChange={handleWholeHomeChange}
+                      className="shrink-0"
+                    />
+                  </div>
+                )}
+                {wholeHomeOn ? (
+                  <p className="text-sm text-muted-foreground">
+                    All {bookableRooms.length} rooms are included.
+                  </p>
+                ) : (
+                  <RoomPillPicker />
+                )}
+              </div>
+            )}
 
             {stepKey === 'guest' && (
               <div className="space-y-4">
@@ -542,24 +620,35 @@ export function HostBookingSurvey({
                   <Label htmlFor="survey-message">Personal message (optional)</Label>
                   <Textarea
                     id="survey-message"
-                    placeholder="A note to include in the invitation email"
+                    placeholder={
+                      preApproved
+                        ? 'A note to include in the confirmation email'
+                        : 'A note to include in the invitation email'
+                    }
                     rows={4}
                     value={message}
                     onChange={(e) => onMessageChange(e.target.value)}
                   />
                 </div>
-                <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
-                  <div>
-                    <p className="font-medium">Require approval</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Guest requests need your OK before the stay is confirmed.
-                    </p>
+                {preApproved ? (
+                  <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    This stay is booked immediately. Your guest gets a
+                    confirmation email and trip reminders — no acceptance step.
+                  </p>
+                ) : (
+                  <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                    <div>
+                      <p className="font-medium">Require approval</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Guest requests need your OK before the stay is confirmed.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={requiresApproval}
+                      onCheckedChange={onRequiresApprovalChange}
+                    />
                   </div>
-                  <Switch
-                    checked={requiresApproval}
-                    onCheckedChange={onRequiresApprovalChange}
-                  />
-                </div>
+                )}
               </div>
             )}
 
@@ -600,7 +689,9 @@ export function HostBookingSurvey({
                   <dd className="mt-1 font-medium">
                     {actionType === 'manual'
                       ? 'Manual stay'
-                      : INVITATION_TYPE_LABELS[inviteType]}
+                      : preApproved
+                        ? 'Already booked'
+                        : INVITATION_TYPE_LABELS[inviteType]}
                   </dd>
                 </div>
                 <div className="rounded-xl border p-4">
@@ -655,7 +746,11 @@ export function HostBookingSurvey({
                       Approval
                     </dt>
                     <dd className="mt-1 font-medium">
-                      {requiresApproval ? 'Required' : 'Not required'}
+                      {preApproved
+                        ? 'Booked directly — no acceptance needed'
+                        : requiresApproval
+                          ? 'Required'
+                          : 'Not required'}
                     </dd>
                   </div>
                 )}

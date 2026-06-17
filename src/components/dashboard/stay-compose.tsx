@@ -24,6 +24,7 @@ import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { Button } from '@/components/ui/button';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
 import { isLimitReachedResponse } from '@/lib/billing-client';
+import { guestProfileHref } from '@/lib/guest-keys';
 
 type ComposeVariant = 'page' | 'embedded' | 'split';
 
@@ -84,6 +85,8 @@ function HostComposeForm({
   const [guestPhone, setGuestPhone] = useState('');
   const [message, setMessage] = useState('');
   const [requiresApproval, setRequiresApproval] = useState(false);
+  const [wholeHome, setWholeHome] = useState(false);
+  const [preApproved, setPreApproved] = useState(false);
   const [notes, setNotes] = useState('');
   const [notifyGuest, setNotifyGuest] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -166,6 +169,9 @@ function HostComposeForm({
         guest_last_name: guestLastName.trim() || undefined,
         type: inviteType,
         requires_approval: requiresApproval,
+        whole_home: wholeHome,
+        pre_approved: preApproved,
+        party_size: preApproved ? guests : undefined,
         message: message.trim() || undefined,
         room_ids: selectedRoomIds,
         windows: windows.filter((w) => w.start_date && w.end_date),
@@ -181,6 +187,13 @@ function HostComposeForm({
       return;
     }
 
+    if (data.preApproved) {
+      toast.success('Stay booked — your guest has been notified.');
+      router.push(`/dashboard/${slug}/overview`);
+      router.refresh();
+      return;
+    }
+
     if (data.emailSent === false) {
       toast.warning(
         'Invitation created, but email could not be sent. Copy the link from Guests.'
@@ -188,7 +201,7 @@ function HostComposeForm({
     } else {
       toast.success('Invitation sent!');
     }
-    router.push(`/dashboard/${slug}/guests`);
+    router.push(guestProfileHref(slug, guestEmail.trim()));
     router.refresh();
   }
 
@@ -282,6 +295,10 @@ function HostComposeForm({
         onNotesChange={setNotes}
         requiresApproval={requiresApproval}
         onRequiresApprovalChange={setRequiresApproval}
+        wholeHome={wholeHome}
+        onWholeHomeChange={setWholeHome}
+        preApproved={preApproved}
+        onPreApprovedChange={setPreApproved}
         notifyGuest={notifyGuest}
         onNotifyGuestChange={setNotifyGuest}
         datesEditable={datesEditable}

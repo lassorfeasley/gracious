@@ -233,6 +233,8 @@ export default async function GuestRoomPage({
                   bookings={roomBookings}
                   blocks={blocks ?? []}
                   allowedRanges={allowedRanges}
+                  wholeHome={invitation.whole_home}
+                  houseHref={houseHref}
                 />
               ) : (
                 <div className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">

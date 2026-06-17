@@ -141,6 +141,8 @@ export interface Invitation {
   expires_at: string | null;
   message: string | null;
   requires_approval: boolean;
+  /** Entire-home invitation: the guest must book all offered rooms. */
+  whole_home: boolean;
   created_by: string;
   created_at: string;
 }

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Wordmark } from '@/components/brand/wordmark';
 import { LegalFooterLinks } from '@/components/legal-footer-links';
 
@@ -13,7 +15,12 @@ export function SiteFooter({ name }: { name?: string }) {
           <Wordmark className="h-5 text-primary" />
         )}
         {name && (
-          <p className="text-sm text-muted-foreground">Powered by Gracious</p>
+          <Link
+            href="/"
+            className="w-fit text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Graciously hosted
+          </Link>
         )}
         <LegalFooterLinks />
         <p className="text-xs text-muted-foreground">© {year} Gracious</p>

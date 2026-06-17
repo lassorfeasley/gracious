@@ -88,6 +88,10 @@ export interface HostStaySidebarProps {
   onNotesChange: (v: string) => void;
   requiresApproval: boolean;
   onRequiresApprovalChange: (v: boolean) => void;
+  wholeHome: boolean;
+  onWholeHomeChange: (v: boolean) => void;
+  preApproved: boolean;
+  onPreApprovedChange: (v: boolean) => void;
   notifyGuest: boolean;
   onNotifyGuestChange: (v: boolean) => void;
   datesEditable: boolean;
@@ -120,6 +124,10 @@ export function HostStaySidebar({
   onNotesChange,
   requiresApproval,
   onRequiresApprovalChange,
+  wholeHome,
+  onWholeHomeChange,
+  preApproved,
+  onPreApprovedChange,
   notifyGuest,
   onNotifyGuestChange,
   datesEditable,
@@ -348,6 +356,10 @@ export function HostStaySidebar({
         onNotesChange={onNotesChange}
         requiresApproval={requiresApproval}
         onRequiresApprovalChange={onRequiresApprovalChange}
+        wholeHome={wholeHome}
+        onWholeHomeChange={onWholeHomeChange}
+        preApproved={preApproved}
+        onPreApprovedChange={onPreApprovedChange}
         notifyGuest={notifyGuest}
         onNotifyGuestChange={onNotifyGuestChange}
         loading={loading}

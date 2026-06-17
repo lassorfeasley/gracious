@@ -3,6 +3,11 @@ export function guestKeyFromEmail(email: string): string {
   return `e-${encodeURIComponent(email.trim().toLowerCase())}`;
 }
 
+/** Host dashboard path to a guest's profile (invitation + stay history). */
+export function guestProfileHref(slug: string, guestEmail: string): string {
+  return `/dashboard/${slug}/guests/${guestKeyFromEmail(guestEmail)}`;
+}
+
 /** URL-safe key for a manual guest with no email. */
 export function guestKeyFromManualBooking(bookingId: string): string {
   return `m-${bookingId}`;

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { parseISO, format, differenceInCalendarDays } from 'date-fns';
-import { Minus, Plus } from 'lucide-react';
+import { Home, Minus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,10 @@ interface BookingSidebarProps {
   bookings: CalendarBooking[];
   blocks: CalendarBlock[];
   allowedRanges?: DateRange[];
+  /** Invitation is for the entire home — individual rooms can't be booked alone. */
+  wholeHome?: boolean;
+  /** Link back to the whole-house booking page. */
+  houseHref?: string;
 }
 
 function formatBox(date: string | null): string {
@@ -123,6 +128,8 @@ export function BookingSidebar({
   bookings,
   blocks,
   allowedRanges,
+  wholeHome = false,
+  houseHref,
 }: BookingSidebarProps) {
   const router = useRouter();
   const { checkIn, checkOut, guests, activeField, setGuests, setActiveField, clear } =
@@ -222,6 +229,28 @@ export function BookingSidebar({
         bookingStatus={existingStay.status}
         bookingId={existingStay.id}
       />
+    );
+  }
+
+  // Entire-home invitations can't be booked one room at a time. Point the guest
+  // back to the whole-house booking instead of showing a per-room widget.
+  if (wholeHome) {
+    return (
+      <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted">
+          <Home className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <p className="mt-4 text-lg font-semibold">Booked as a whole home</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {propertyName} is offered as the entire place, so {room.name} comes with
+          it. Pick your dates on the home page to reserve everything together.
+        </p>
+        {houseHref && (
+          <Button asChild className="mt-4 w-full" size="lg">
+            <Link href={houseHref}>Book the entire home</Link>
+          </Button>
+        )}
+      </div>
     );
   }
 

@@ -238,7 +238,7 @@ export function PropertySetupWizard({
   return (
     <div className="flex h-[min(82vh,760px)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border bg-card shadow-sm">
       <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-10 sm:px-10">
-        <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-semibold tracking-tight">
           {stepTitle(currentStep)}
         </h1>
 

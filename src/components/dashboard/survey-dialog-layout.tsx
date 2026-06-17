@@ -34,8 +34,8 @@ export function SurveyDialogLayout({
     >
       <DialogTitle className="sr-only">{title}</DialogTitle>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-6 pt-12">
-        <h3 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">{stepTitle}</h3>
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-6 pt-10">
+        <h3 className="text-2xl font-semibold tracking-tight sm:text-3xl">{stepTitle}</h3>
         <div className="mt-6">{children}</div>
       </div>
 

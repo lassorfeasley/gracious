@@ -136,6 +136,7 @@ export const invitationSchema = z
     guest_last_name: z.string().optional(),
     type: z.enum(['standing', 'date_offer', 'prix_fixe']),
     requires_approval: z.boolean(),
+    whole_home: z.boolean().optional(),
     message: z.string().optional(),
     expires_at: z.string().optional(),
     room_ids: z.array(z.string()).min(1, 'Select at least one room'),

@@ -172,7 +172,7 @@ export default async function InvitePage({
           rooms={bookableRooms}
           roomAvailability={roomAvailability}
           defaultSelectedRoomIds={roomIds}
-          lockRoomSelection={isPrixFixe}
+          lockRoomSelection={isPrixFixe || invitation.whole_home}
           defaultRange={defaultRange}
           defaultGuests={1}
         >

@@ -41,6 +41,23 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
     const admin = createAdminClient();
 
+    // For an entire-home invitation, the offer must cover every room in the
+    // property so the guest genuinely books the whole place.
+    let roomIds = data.room_ids;
+    if (data.whole_home) {
+      const { data: allRooms } = await admin
+        .from('rooms')
+        .select('id')
+        .eq('property_id', property_id);
+      roomIds = (allRooms ?? []).map((r) => r.id);
+      if (roomIds.length === 0) {
+        return NextResponse.json(
+          { error: 'Add at least one room before offering the entire home' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Pre-approved stays still record an invitation (kept "accepted" so guest
     // emails can deep-link back into the app), but skip the acceptance flow and
     // create the confirmed booking immediately.
@@ -75,6 +92,7 @@ export async function POST(request: NextRequest) {
         type: data.type,
         message: data.message ?? null,
         requires_approval: preApproved ? false : data.requires_approval,
+        whole_home: data.whole_home ?? false,
         expires_at: data.expires_at ?? null,
         created_by: user.id,
         status: preApproved ? 'accepted' : 'pending',
@@ -87,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     await admin.from('invitation_rooms').insert(
-      data.room_ids.map((room_id) => ({
+      roomIds.map((room_id) => ({
         invitation_id: invitation.id,
         room_id,
       }))
@@ -112,7 +130,7 @@ export async function POST(request: NextRequest) {
         guestEmail: data.guest_email.toLowerCase(),
         guestFirstName: data.guest_first_name ?? null,
         guestLastName: data.guest_last_name ?? null,
-        roomIds: data.room_ids,
+        roomIds,
         partySize: data.party_size ?? 1,
         checkIn: window.start_date,
         checkOut: window.end_date,
