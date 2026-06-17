@@ -268,3 +268,75 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+/* Legal documents — shared between admin editor and public pages */
+.legal-prose h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.legal-prose h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.legal-prose p {
+  margin-bottom: 1rem;
+}
+
+.legal-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose ul,
+.legal-prose ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.legal-prose ul {
+  list-style: disc;
+}
+
+.legal-prose ol {
+  list-style: decimal;
+}
+
+.legal-prose li {
+  margin-bottom: 0.25rem;
+}
+
+.legal-prose a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.legal-prose blockquote {
+  margin: 1rem 0;
+  border-left: 2px solid hsl(var(--border));
+  padding-left: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.legal-prose hr {
+  margin: 1.5rem 0;
+  border-color: hsl(var(--border));
+}
+
+.legal-prose .ProseMirror:focus {
+  outline: none;
+}
+
+.legal-prose .ProseMirror p.is-empty::before {
+  color: hsl(var(--muted-foreground));
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
