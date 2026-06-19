@@ -154,7 +154,7 @@ export default async function InvitePage({
         {/* Host-only: this is a guest-facing page, so give hosts a way back. */}
         {isHost && (
           <Link
-            href={`/dashboard/${property.slug}/bookings`}
+            href={`/dashboard/${property.slug}/guests`}
             className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
