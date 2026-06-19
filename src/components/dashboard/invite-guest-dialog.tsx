@@ -107,7 +107,7 @@ export function InviteGuestDialog({
       guest_first_name: '',
       guest_last_name: '',
       type: 'standing',
-      requires_approval: true,
+      requires_approval: false,
       whole_home: false,
       message: '',
       room_ids: defaultRoomIds.length > 0 ? defaultRoomIds : rooms.map((r) => r.id),
@@ -171,7 +171,7 @@ export function InviteGuestDialog({
       guest_first_name: '',
       guest_last_name: '',
       type: 'standing',
-      requires_approval: true,
+      requires_approval: false,
       whole_home: false,
       message: '',
       room_ids:
