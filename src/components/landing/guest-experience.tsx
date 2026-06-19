@@ -16,7 +16,9 @@ import {
   Trash2,
   Wifi,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Logomark } from '@/components/brand/wordmark';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 /*
@@ -302,6 +304,11 @@ export function GuestExperience({ className }: { className?: string }) {
             From the first invitation to the final goodbye, we send the right
             note at the right moment — so no one ever has to ask.
           </p>
+          <div className="mt-8">
+            <Button asChild size="lg">
+              <Link href="/signup">Get started</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mt-12 lg:mt-0">

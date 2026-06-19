@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { SiteFooter } from '@/components/site-footer';
 import { Wordmark } from '@/components/brand/wordmark';
 import { HowItWorks } from '@/components/landing/how-it-works';
+import { FounderNote } from '@/components/landing/founder-note';
 import { GuestExperience } from '@/components/landing/guest-experience';
 import { StayShowcase } from '@/components/landing/stay-showcase';
 import { PricingCards } from '@/components/pricing-cards';
@@ -24,6 +25,10 @@ export default async function HomePage({
     redirect(await getAuthenticatedHomePath(user));
   }
 
+  // In landing preview, a signed-in user stays on this page, so point the
+  // header at their app home instead of showing sign-in / sign-up.
+  const homePath = user ? await getAuthenticatedHomePath(user) : null;
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
       <header className="border-b border-border/60">
@@ -32,12 +37,20 @@ export default async function HomePage({
             <Wordmark className="h-5 text-primary sm:h-6" />
           </Link>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
-              <Link href="/signup">Get started</Link>
-            </Button>
+            {homePath ? (
+              <Button size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
+                <Link href={homePath}>Go to dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button size="sm" className="px-3 sm:h-10 sm:px-4 sm:text-base" asChild>
+                  <Link href="/signup">Get started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -78,9 +91,35 @@ export default async function HomePage({
         </div>
       </section>
 
+      <section id="founder-note" className="border-t border-border/60 py-28">
+        <div className="container mx-auto px-4">
+          <FounderNote />
+        </div>
+      </section>
+
       <section id="pricing" className="border-t border-border/60 py-28">
         <div className="container mx-auto px-4">
           <PricingCards />
+        </div>
+      </section>
+
+      <section className="border-t border-border/60 bg-primary py-24 text-primary-foreground">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            Be the host they remember.
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-lg leading-relaxed text-primary-foreground/80">
+            Set up your home in minutes — your first two stays are free.
+          </p>
+          <div className="mt-8 flex justify-center">
+            <Button
+              size="lg"
+              className="bg-background text-foreground hover:bg-background/90"
+              asChild
+            >
+              <Link href="/signup">Get started</Link>
+            </Button>
+          </div>
         </div>
       </section>
 

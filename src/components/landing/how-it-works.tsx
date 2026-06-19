@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   CorrespondenceArtifact,
   HouseReadyArtifact,
@@ -126,6 +128,11 @@ export function HowItWorks({ className }: { className?: string }) {
           Gracious handles scheduling and logistics so you can focus on creating
           a memorable experience with your guests.
         </h3>
+        <div className="mt-8 flex justify-center">
+          <Button asChild size="lg">
+            <Link href="/signup">Get started</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
