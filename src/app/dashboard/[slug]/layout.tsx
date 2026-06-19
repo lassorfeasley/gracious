@@ -3,6 +3,7 @@ import { requireAuth, getOwnerProperties } from '@/lib/auth';
 import { isSiteAdmin } from '@/lib/site-admin';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardTopNav } from '@/components/dashboard/top-nav';
+import { RequestsAlertBanner } from '@/components/dashboard/requests-alert-banner';
 import { SiteFooter } from '@/components/site-footer';
 
 export default async function PropertyDashboardLayout({
@@ -37,6 +38,10 @@ export default async function PropertyDashboardLayout({
         userEmail={user.email ?? undefined}
         userId={user.id}
         showAdminLink={isSiteAdmin(user)}
+      />
+      <RequestsAlertBanner
+        slug={currentProperty.slug}
+        requestCount={requestCount ?? 0}
       />
       <main className="flex-1 px-6 pt-6 pb-32">{children}</main>
       <SiteFooter name={currentProperty.name} />
