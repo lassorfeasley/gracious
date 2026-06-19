@@ -196,12 +196,16 @@ function HostComposeForm({
 
     if (data.emailSent === false) {
       toast.warning(
-        'Invitation created, but email could not be sent. Copy the link from Guests.'
+        'Invitation created, but email could not be sent. Copy the link to share it.'
       );
     } else {
       toast.success('Invitation sent!');
     }
-    router.push(guestProfileHref(slug, guestEmail.trim()));
+    if (data.invitation?.token) {
+      router.push(`/invite/${data.invitation.token}?invited=1`);
+    } else {
+      router.push(guestProfileHref(slug, guestEmail.trim()));
+    }
     router.refresh();
   }
 

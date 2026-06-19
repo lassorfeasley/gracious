@@ -350,14 +350,16 @@ export function InviteGuestDialog({
       toast.success('Stay booked — your guest has been notified.');
     } else if (data.emailSent === false) {
       toast.warning(
-        'Invitation created, but the email could not be sent. Use “Copy link” on the Guests page to share it manually.'
+        'Invitation created, but the email could not be sent. Copy the link to share it manually.'
       );
     } else {
       toast.success('Invitation sent!');
     }
     setOpen(false);
     resetForm();
-    if (propertySlug) {
+    if (!data.preApproved && data.invitation?.token) {
+      router.push(`/invite/${data.invitation.token}?invited=1`);
+    } else if (propertySlug) {
       router.push(guestProfileHref(propertySlug, formValues.guest_email));
     }
     router.refresh();

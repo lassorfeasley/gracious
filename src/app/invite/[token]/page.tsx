@@ -5,11 +5,12 @@ import {
   getInvitationByToken,
   guestMatchesInvitation,
   invitationHostName,
+  inviteUrl,
   isInvitationActive,
 } from '@/lib/invitations';
 import { getCoGuestsForInvitation } from '@/lib/coguests';
 import { getGuestStayForInvitation } from '@/lib/bookings';
-import { getAuthUser } from '@/lib/auth';
+import { canManageProperty, getAuthUser } from '@/lib/auth';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { PropertySections } from '@/components/property-sections';
@@ -26,7 +27,8 @@ import {
   parseGuestPreviewBookingStatus,
 } from '@/lib/guest-preview';
 import { Badge } from '@/components/ui/badge';
-import { CalendarCheck, CalendarRange, MapPin, Sparkles } from 'lucide-react';
+import { ArrowLeft, CalendarCheck, CalendarRange, MapPin, Sparkles } from 'lucide-react';
+import { InviteCreatedDialog } from '@/components/invite/invite-created-dialog';
 import { RoomCard } from '@/components/room-card';
 import { formatPersonName } from '@/lib/names';
 import {
@@ -61,10 +63,15 @@ export default async function InvitePage({
   searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ preview?: string; as?: string; status?: string }>;
+  searchParams: Promise<{
+    preview?: string;
+    as?: string;
+    status?: string;
+    invited?: string;
+  }>;
 }) {
   const { token } = await params;
-  const { preview, as, status } = await searchParams;
+  const { preview, as, status, invited } = await searchParams;
   const invitation = await getInvitationByToken(token);
 
   if (!invitation) notFound();
@@ -77,6 +84,10 @@ export default async function InvitePage({
   const active = isInvitationActive(invitation);
   const authUser = await getAuthUser();
   const isAuthenticated = guestMatchesInvitation(authUser, invitation);
+  const isHost = authUser
+    ? await canManageProperty(invitation.property_id, authUser.id)
+    : false;
+  const justCreated = isHost && invited === '1';
 
   const existingStay =
     isAuthenticated && authUser
@@ -139,6 +150,17 @@ export default async function InvitePage({
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-24 sm:px-6">
+        {/* Host-only: this is a guest-facing page, so give hosts a way back. */}
+        {isHost && (
+          <Link
+            href={`/dashboard/${property.slug}/bookings`}
+            className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to bookings
+          </Link>
+        )}
+
         {/* Invitation headline */}
         <h1 className="mb-8 max-w-4xl break-words text-3xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
           {hostName} has sent you {inviteArticle} {inviteTypeWord} invitation to
@@ -328,6 +350,20 @@ export default async function InvitePage({
       </div>
 
       <SiteFooter name={property.name} />
+
+      {justCreated && (
+        <InviteCreatedDialog
+          token={invitation.token}
+          initialUrl={inviteUrl(invitation.token)}
+          propertyName={property.name}
+          guestEmail={invitation.guest_email}
+          guestName={
+            [invitation.guest_first_name, invitation.guest_last_name]
+              .filter(Boolean)
+              .join(' ') || undefined
+          }
+        />
+      )}
     </div>
   );
 }
