@@ -5,6 +5,11 @@ import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { inviteUrl } from '@/lib/invitations';
 import {
+  FINAL_INVITE_REMINDER_STEP,
+  inviteReminderLogType,
+  type InviteReminderStep,
+} from '@/lib/invite-reminders';
+import {
   buildAuthenticatedInviteUrl,
   buildHostOnboardingUrl,
 } from '@/lib/auth-links';
@@ -84,6 +89,8 @@ async function guestReminderDelivery(guestId: string | null): Promise<{
 }
 
 import InvitationSentEmail from '../../../emails/invitation-sent';
+import InviteReminderEmail from '../../../emails/invite-reminder';
+import InviteStalledHostEmail from '../../../emails/invite-stalled-host';
 import StayRequestedEmail from '../../../emails/stay-requested';
 import BookingApprovedEmail from '../../../emails/booking-approved';
 import BookingDeclinedEmail from '../../../emails/booking-declined';
@@ -152,6 +159,104 @@ export async function notifyInvitationSent(invitationId: string) {
   });
 
   await logNotification({ invitationId, type: 'invitation_sent' });
+}
+
+/**
+ * A drip reminder to a guest who hasn't responded to their invitation yet.
+ * Mirrors `notifyInvitationSent` (re-mints the one-click sign-in link, sends as
+ * the host) but with nudge copy that escalates on the final step. Transactional
+ * — the host personally invited them, so there's no opt-out, same as the
+ * original invite. Caller is responsible for only sending while the invitation
+ * is still `pending` and unexpired.
+ */
+export async function notifyInviteReminder(
+  invitationId: string,
+  step: InviteReminderStep
+) {
+  const admin = createAdminClient();
+  const { data: inv } = await admin
+    .from('invitations')
+    .select(
+      '*, property:properties(name, hero_image_url), creator:users!created_by(first_name, last_name, email)'
+    )
+    .eq('id', invitationId)
+    .single();
+
+  if (!inv) return;
+
+  const signInUrl = await buildAuthenticatedInviteUrl(
+    admin,
+    inv.guest_email,
+    inv.token
+  );
+
+  const hostFooter = await hostInviteFooterProps(admin, inv.guest_email);
+
+  const creatorRaw = inv.creator;
+  const creator = (Array.isArray(creatorRaw) ? creatorRaw[0] : creatorRaw) as {
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+  } | null;
+  const hostName = formatPersonName(
+    creator ? { ...creator, email: null } : null
+  );
+
+  const isFinal = step >= FINAL_INVITE_REMINDER_STEP;
+  const subject = isFinal
+    ? `Last reminder: your invite to ${inv.property.name}`
+    : hostName
+      ? `Reminder: ${hostName} invited you to ${inv.property.name}`
+      : `Reminder: you're invited to ${inv.property.name}`;
+
+  await enqueueEmail({
+    to: inv.guest_email,
+    subject,
+    react: InviteReminderEmail({
+      guestName: inv.guest_name ?? inv.guest_email.split('@')[0],
+      hostName: hostName ?? undefined,
+      propertyName: inv.property.name,
+      inviteUrl: signInUrl,
+      message: inv.message ?? undefined,
+      expiresAt: inv.expires_at ? formatDate(inv.expires_at) : undefined,
+      heroImageUrl: inv.property.hero_image_url ?? undefined,
+      step,
+      recipientIsHost: hostFooter.recipientIsHost,
+      hostOnboardingUrl: hostFooter.hostOnboardingUrl,
+    }),
+    fromName: hostName,
+    replyTo: creator?.email ?? undefined,
+  });
+
+  await logNotification({ invitationId, type: inviteReminderLogType(step) });
+}
+
+/**
+ * A per-host digest for invitations that have gone quiet after the full guest
+ * drip — nudging the host to share the link directly (text/message). Grouped
+ * one email per host. Logging the per-invitation `invite_host_nudge` rows is the
+ * caller's job (so the cron can dedup), since one email can cover several invites.
+ */
+export async function notifyInviteStalled(
+  ownerId: string,
+  ownerEmail: string,
+  ownerName: string,
+  invitations: { guestName: string; propertyName: string; inviteUrl: string }[]
+) {
+  await enqueueEmail({
+    to: ownerEmail,
+    subject:
+      invitations.length > 1
+        ? "Some guests haven't opened their invite"
+        : "A guest hasn't opened their invite",
+    react: InviteStalledHostEmail({
+      ownerName,
+      invitations,
+      dashboardUrl: `${appUrl()}/dashboard`,
+      unsubscribeUrl: unsubscribePageUrl(ownerId, 'host_activity'),
+    }),
+    headers: listUnsubscribeHeaders(ownerId, 'host_activity'),
+  });
 }
 
 export async function notifyStayRequested(bookingId: string) {

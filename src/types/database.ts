@@ -31,6 +31,8 @@ export interface NotificationPrefs {
   booking_requests: boolean;
   booking_cancelled: boolean;
   invitation_expiring: boolean;
+  // Nudge when an invited guest hasn't responded after the reminder drip
+  invitation_stalled: boolean;
   // Guest stay reminders (opt-out)
   guest_reminders: boolean;
   // Host onboarding/engagement nudges, e.g. "finish your home profile" (opt-out)

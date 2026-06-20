@@ -75,6 +75,43 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     preconditions: ['invitation exists'],
     registryId: 'invitation-sent',
   },
+  {
+    event: 'Cron: pending invitation is 1/2/3 days old (guest drip)',
+    fn: 'notifyInviteReminder',
+    logType: 'invite_reminder_1',
+    recipient: 'guest',
+    gating: MANDATORY,
+    preconditions: ['invitation status is pending', 'invitation not expired'],
+    registryId: 'invite-reminder',
+  },
+  {
+    event: 'Cron: pending invitation is 1/2/3 days old (guest drip)',
+    fn: 'notifyInviteReminder',
+    logType: 'invite_reminder_2',
+    recipient: 'guest',
+    gating: MANDATORY,
+    preconditions: ['invitation status is pending', 'invitation not expired'],
+    registryId: 'invite-reminder',
+  },
+  {
+    event: 'Cron: pending invitation is 1/2/3 days old (guest drip)',
+    fn: 'notifyInviteReminder',
+    logType: 'invite_reminder_3',
+    recipient: 'guest',
+    gating: MANDATORY,
+    preconditions: ['invitation status is pending', 'invitation not expired'],
+    registryId: 'invite-reminder',
+  },
+  {
+    event: 'Cron: pending invitation still unanswered 4 days after sending',
+    fn: 'notifyInviteStalled',
+    logType: 'invite_host_nudge',
+    recipient: 'property_owner',
+    // Gated upstream in the reminders cron, not inside the notify function.
+    gating: pref('invitation_stalled'),
+    preconditions: ['invitation status is pending', 'invitation not expired'],
+    registryId: 'invite-stalled',
+  },
 
   // --- New stay needing approval ------------------------------------------
   {

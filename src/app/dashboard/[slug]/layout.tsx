@@ -4,7 +4,9 @@ import { isSiteAdmin } from '@/lib/site-admin';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardTopNav } from '@/components/dashboard/top-nav';
 import { RequestsAlertBanner } from '@/components/dashboard/requests-alert-banner';
+import { StalledInvitesBanner } from '@/components/dashboard/stalled-invites-banner';
 import { SiteFooter } from '@/components/site-footer';
+import { INVITE_STALL_DAY } from '@/lib/invite-reminders';
 
 export default async function PropertyDashboardLayout({
   children,
@@ -29,6 +31,21 @@ export default async function PropertyDashboardLayout({
     .eq('property_id', currentProperty.id)
     .eq('status', 'requested');
 
+  // Invites that have gone quiet through the full reminder drip — surfaced so
+  // the host can share the link directly. Mirrors the cron's age/expiry gating.
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const stallCutoff = new Date(
+    now.getTime() - INVITE_STALL_DAY * 24 * 60 * 60 * 1000
+  ).toISOString();
+  const { count: stalledInviteCount } = await supabase
+    .from('invitations')
+    .select('*', { count: 'exact', head: true })
+    .eq('property_id', currentProperty.id)
+    .eq('status', 'pending')
+    .lte('created_at', stallCutoff)
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
+
   return (
     <div className="flex min-h-screen flex-col">
       <DashboardTopNav
@@ -41,6 +58,10 @@ export default async function PropertyDashboardLayout({
       <RequestsAlertBanner
         slug={currentProperty.slug}
         requestCount={requestCount ?? 0}
+      />
+      <StalledInvitesBanner
+        slug={currentProperty.slug}
+        stalledCount={stalledInviteCount ?? 0}
       />
       <main className="flex-1 px-6 pt-6 pb-32">{children}</main>
       <SiteFooter name={currentProperty.name} />

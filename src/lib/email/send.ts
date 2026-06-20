@@ -227,4 +227,18 @@ export async function wasNotificationSent(
   return (data?.length ?? 0) > 0;
 }
 
+export async function wasInvitationNotificationSent(
+  invitationId: string,
+  type: string
+): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('notifications_log')
+    .select('id')
+    .eq('invitation_id', invitationId)
+    .eq('type', type)
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
 export { appUrl };

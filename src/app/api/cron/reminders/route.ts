@@ -9,11 +9,22 @@ import {
   notifyCheckoutInstructions,
   notifyPostStay,
   notifyInvitationsExpiring,
+  notifyInviteReminder,
+  notifyInviteStalled,
 } from '@/lib/email/notifications';
-import { wasNotificationSent } from '@/lib/email/send';
+import {
+  wasNotificationSent,
+  wasInvitationNotificationSent,
+} from '@/lib/email/send';
 import { drainEmailOutbox } from '@/lib/email/outbox';
 import { formatDate } from '@/lib/dates';
+import { inviteUrl } from '@/lib/invitations';
 import { wantsEmail } from '@/lib/notification-prefs';
+import {
+  dueInviteReminderStep,
+  isInviteStalledByAge,
+  INVITE_HOST_NUDGE_LOG_TYPE,
+} from '@/lib/invite-reminders';
 import type { NotificationPrefs } from '@/types/database';
 
 // Fallback timezone for properties that haven't set one.
@@ -95,6 +106,129 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Invite reminder drip — nudge guests who haven't responded yet, once per day
+  // on days 1/2/3 after the invite was sent. Stops the moment the invitation
+  // leaves `pending` (booked/requested/revoked) or expires. Deduped per step via
+  // notifications_log, so running more than once a day is safe. The final nudge
+  // (day 3) is the last guest touch; day 4+ escalates to the host below.
+  const nowIso = now.toISOString();
+  const { data: pendingInvites } = await admin
+    .from('invitations')
+    .select('id, created_at, expires_at')
+    .eq('status', 'pending')
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
+
+  let inviteReminderSends = 0;
+  let inviteStalled = 0;
+
+  for (const inv of pendingInvites ?? []) {
+    const step = dueInviteReminderStep(inv.created_at, now);
+    if (step === null) continue;
+    if (await wasInvitationNotificationSent(inv.id, `invite_reminder_${step}`))
+      continue;
+    await notifyInviteReminder(inv.id, step);
+    inviteReminderSends++;
+  }
+
+  // Stalled-invite host nudge — when the drip is exhausted and the guest still
+  // hasn't responded, tell the host so they can share the link directly. One
+  // digest per host, logged per invitation so it only ever sends once.
+  const { data: alreadyNudged } = await admin
+    .from('notifications_log')
+    .select('invitation_id')
+    .eq('type', INVITE_HOST_NUDGE_LOG_TYPE)
+    .not('invitation_id', 'is', null);
+  const nudgedSet = new Set(
+    (alreadyNudged ?? []).map((r) => r.invitation_id as string)
+  );
+
+  const stalled = (pendingInvites ?? []).filter(
+    (inv) => !nudgedSet.has(inv.id) && isInviteStalledByAge(inv.created_at, now)
+  );
+
+  if (stalled.length > 0) {
+    const stalledIds = stalled.map((inv) => inv.id);
+    const { data: stalledDetails } = await admin
+      .from('invitations')
+      .select(
+        'id, token, guest_name, guest_email, property:properties(name, owner_id, owner:users!owner_id(id, email, name, notification_prefs))'
+      )
+      .in('id', stalledIds);
+
+    type StalledOwner = {
+      id: string;
+      email: string;
+      name: string;
+      invitations: { guestName: string; propertyName: string; inviteUrl: string }[];
+      invitationIds: string[];
+    };
+    const byOwner = new Map<string, StalledOwner>();
+
+    type StalledProperty = {
+      name: string;
+      owner_id: string;
+      owner?:
+        | {
+            id: string;
+            email: string;
+            name: string | null;
+            notification_prefs?: NotificationPrefs;
+          }
+        | {
+            id: string;
+            email: string;
+            name: string | null;
+            notification_prefs?: NotificationPrefs;
+          }[];
+    };
+
+    for (const inv of stalledDetails ?? []) {
+      const propertyRaw = inv.property as unknown;
+      const property = (
+        Array.isArray(propertyRaw) ? propertyRaw[0] : propertyRaw
+      ) as StalledProperty | null;
+      const owner = property?.owner
+        ? Array.isArray(property.owner)
+          ? property.owner[0]
+          : property.owner
+        : null;
+      if (!owner) continue;
+      if (!wantsEmail(owner.notification_prefs, 'invitation_stalled')) continue;
+      if (!byOwner.has(owner.id)) {
+        byOwner.set(owner.id, {
+          id: owner.id,
+          email: owner.email,
+          name: owner.name ?? 'there',
+          invitations: [],
+          invitationIds: [],
+        });
+      }
+      const bucket = byOwner.get(owner.id)!;
+      bucket.invitations.push({
+        guestName: inv.guest_name ?? inv.guest_email,
+        propertyName: property!.name,
+        inviteUrl: inviteUrl(inv.token),
+      });
+      bucket.invitationIds.push(inv.id);
+    }
+
+    for (const owner of Array.from(byOwner.values())) {
+      await notifyInviteStalled(
+        owner.id,
+        owner.email,
+        owner.name,
+        owner.invitations
+      );
+      for (const invitationId of owner.invitationIds) {
+        await admin.from('notifications_log').insert({
+          invitation_id: invitationId,
+          type: INVITE_HOST_NUDGE_LOG_TYPE,
+        });
+        inviteStalled++;
+      }
+    }
+  }
+
   // Invitation expiring digest — once per day at a fixed UTC hour so hosts
   // don't get an hourly repeat.
   let expiringCount = 0;
@@ -165,6 +299,8 @@ export async function GET(request: NextRequest) {
     ok: true,
     processed: approvedBookings?.length ?? 0,
     lifecycleSends,
+    inviteReminderSends,
+    inviteStalled,
     expiring: expiringCount,
     outboxSent,
   });

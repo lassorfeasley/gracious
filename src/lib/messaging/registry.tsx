@@ -3,6 +3,8 @@ import type { NotificationPrefs } from '@/types/database';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 
 import InvitationSentEmail from '../../../emails/invitation-sent';
+import InviteReminderEmail from '../../../emails/invite-reminder';
+import InviteStalledHostEmail from '../../../emails/invite-stalled-host';
 import StayRequestedEmail from '../../../emails/stay-requested';
 import BookingApprovedEmail from '../../../emails/booking-approved';
 import BookingDeclinedEmail from '../../../emails/booking-declined';
@@ -241,6 +243,102 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
             inviteUrl={SAMPLE.inviteUrl}
             message="We'd love to have you for the long weekend — the lake is perfect this time of year."
             expiresAt={SAMPLE.expiresAt}
+          />
+        ),
+      },
+    ],
+  },
+  {
+    id: 'invite-reminder',
+    name: 'Invite reminder',
+    channel: 'email',
+    category: 'Invitations',
+    recipients: ['guest'],
+    status: 'active',
+    audience: 'Invited guest who hasn\u2019t responded',
+    description:
+      'A drip of up to three daily nudges to a guest who hasn\u2019t responded to their invitation, escalating to a final "last reminder". Sent as "{host} via Gracious", like the original invite.',
+    trigger:
+      'A pending invitation is 1, 2, or 3 days old and the guest hasn\u2019t booked or requested.',
+    timing: 'Scheduled — once per day on days 1, 2, and 3 after the invite',
+    replyTo: 'The host\u2019s email address — guests can reply directly',
+    logTypes: ['invite_reminder_1', 'invite_reminder_2', 'invite_reminder_3'],
+    notificationPref: null,
+    source: 'src/app/api/cron/reminders/route.ts',
+    variants: [
+      {
+        label: 'First nudge',
+        subject: `Reminder: ${SAMPLE.ownerName} invited you to ${SAMPLE.propertyName}`,
+        element: (
+          <InviteReminderEmail
+            guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
+            propertyName={SAMPLE.propertyName}
+            inviteUrl={SAMPLE.inviteUrl}
+            message="We'd love to have you for the long weekend — the lake is perfect this time of year."
+            expiresAt={SAMPLE.expiresAt}
+            heroImageUrl={SAMPLE.heroImageUrl}
+            step={1}
+          />
+        ),
+      },
+      {
+        label: 'Last reminder',
+        subject: `Last reminder: your invite to ${SAMPLE.propertyName}`,
+        element: (
+          <InviteReminderEmail
+            guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
+            propertyName={SAMPLE.propertyName}
+            inviteUrl={SAMPLE.inviteUrl}
+            expiresAt={SAMPLE.expiresAt}
+            heroImageUrl={SAMPLE.heroImageUrl}
+            step={3}
+          />
+        ),
+      },
+    ],
+  },
+  {
+    id: 'invite-stalled',
+    name: 'Invite went quiet',
+    channel: 'email',
+    category: 'Invitations',
+    recipients: ['host'],
+    status: 'active',
+    audience: 'Property owner',
+    description:
+      'A digest telling a host which invited guests still haven\u2019t responded after the reminder drip, with the public link for each so they can share it directly (e.g. by text).',
+    trigger:
+      'A pending invitation is still unanswered 4 days after it was sent.',
+    timing: 'Scheduled — once, the day after the final guest reminder',
+    logTypes: ['invite_host_nudge'],
+    notificationPref: {
+      key: 'invitation_stalled',
+      label: 'Invitation went quiet',
+      enforced: true,
+    },
+    source: 'src/app/api/cron/reminders/route.ts',
+    variants: [
+      {
+        label: 'Default',
+        subject: "Some guests haven't opened their invite",
+        element: (
+          <InviteStalledHostEmail
+            ownerName={SAMPLE.ownerName}
+            invitations={[
+              {
+                guestName: SAMPLE.guestName,
+                propertyName: SAMPLE.propertyName,
+                inviteUrl: SAMPLE.inviteUrl,
+              },
+              {
+                guestName: 'Alex Chen',
+                propertyName: SAMPLE.propertyName,
+                inviteUrl: 'https://gracious.host/invite/another-token',
+              },
+            ]}
+            dashboardUrl={SAMPLE.dashboardUrl}
           />
         ),
       },
@@ -833,6 +931,13 @@ export const GUEST_JOURNEY: JourneyStep[] = [
     messageIds: ['invitation-sent'],
   },
   {
+    title: "A nudge if you haven't replied",
+    when: 'Once a day for up to three days after your invite',
+    description:
+      'Gentle reminders that stop the moment you pick dates — the third is a final "last reminder".',
+    messageIds: ['invite-reminder'],
+  },
+  {
     title: 'Your sign-in link',
     when: 'When you open your invite and sign in',
     messageIds: ['auth-magic-link'],
@@ -877,6 +982,13 @@ export const GUEST_JOURNEY: JourneyStep[] = [
 ];
 
 export const HOST_JOURNEY: JourneyStep[] = [
+  {
+    title: 'An invited guest went quiet',
+    when: 'Four days after an invite with no response',
+    description:
+      "After we've nudged the guest a few times, we let you know so you can share the link directly.",
+    messageIds: ['invite-stalled'],
+  },
   {
     title: 'A guest requested a stay',
     when: 'As soon as a guest submits their dates',

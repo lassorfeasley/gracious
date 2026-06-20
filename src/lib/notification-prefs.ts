@@ -9,6 +9,7 @@ export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   booking_requests: true,
   booking_cancelled: true,
   invitation_expiring: true,
+  invitation_stalled: true,
   guest_reminders: true,
   host_tips: true,
   product_updates: true,
@@ -44,7 +45,12 @@ export const CATEGORY_FLAGS: Record<
   (keyof NotificationPrefs)[]
 > = {
   guest_reminders: ['guest_reminders'],
-  host_activity: ['booking_requests', 'booking_cancelled', 'invitation_expiring'],
+  host_activity: [
+    'booking_requests',
+    'booking_cancelled',
+    'invitation_expiring',
+    'invitation_stalled',
+  ],
   host_tips: ['host_tips'],
   product_updates: ['product_updates'],
 };

@@ -158,6 +158,7 @@ export function SettingsForm({
                     ['booking_requests', 'New booking requests'],
                     ['booking_cancelled', 'Booking cancellations'],
                     ['invitation_expiring', 'Invitations expiring soon'],
+                    ['invitation_stalled', 'Invites that went quiet'],
                     ['host_tips', 'Hosting tips & suggestions'],
                   ] as const
                 ).map(([key, label]) => (
