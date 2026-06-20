@@ -3,8 +3,9 @@
 import type { ReactNode } from 'react';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
-import { BookingProvider } from '@/components/guest/booking-context';
+import { VisitProvider } from '@/components/guest/visit-context';
 import { HostPageSidebar } from '@/components/dashboard/host-page-sidebar';
+import { MobileDockedCard } from '@/components/mobile-docked-card';
 import { InvitationUsageBanner } from '@/components/dashboard/invitation-usage-banner';
 import { cn } from '@/lib/utils';
 
@@ -40,20 +41,38 @@ export function HostPageLayout({
   invitationUsage?: InvitationUsageSummary;
   children: ReactNode;
 }) {
-  const bookableRooms = rooms.map((r) => ({
+  const requestableRooms = rooms.map((r) => ({
     id: r.id,
     name: r.name,
     max_occupancy: r.max_occupancy,
   }));
 
-  const allRoomIds = bookableRooms.map((r) => r.id);
+  const allRoomIds = requestableRooms.map((r) => r.id);
   const selectedIds =
     defaultSelectedRoomIds?.filter((id) => allRoomIds.includes(id)) ??
     allRoomIds;
 
+  const sidebar = (
+    <HostPageSidebar
+      propertyId={propertyId}
+      rooms={rooms}
+      roomAvailability={roomAvailability}
+      preselectedRoomIds={preselectedRoomIds ?? defaultSelectedRoomIds}
+      headerSlot={
+        invitationUsage ? (
+          <InvitationUsageBanner
+            remaining={invitationUsage.remaining}
+            limit={invitationUsage.limit}
+            settingsPath={invitationUsage.settingsPath}
+          />
+        ) : undefined
+      }
+    />
+  );
+
   return (
-    <BookingProvider
-      rooms={bookableRooms}
+    <VisitProvider
+      rooms={requestableRooms}
       roomAvailability={roomAvailability}
       defaultGuests={1}
       defaultSelectedRoomIds={selectedIds}
@@ -69,24 +88,22 @@ export function HostPageLayout({
           {leading}
           <div className={cn('divide-y', leading && 'mt-2')}>{children}</div>
         </div>
-        <aside className={cn('lg:sticky lg:self-start', stickyTop)}>
-          <HostPageSidebar
-            propertyId={propertyId}
-            rooms={rooms}
-            roomAvailability={roomAvailability}
-            preselectedRoomIds={preselectedRoomIds ?? defaultSelectedRoomIds}
-            headerSlot={
-              invitationUsage ? (
-                <InvitationUsageBanner
-                  remaining={invitationUsage.remaining}
-                  limit={invitationUsage.limit}
-                  settingsPath={invitationUsage.settingsPath}
-                />
-              ) : undefined
-            }
-          />
+        {/* Desktop only; mobile docks the same card to the bottom of the screen. */}
+        <aside
+          className={cn('hidden lg:sticky lg:block lg:self-start', stickyTop)}
+        >
+          {sidebar}
         </aside>
       </div>
-    </BookingProvider>
+
+      <MobileDockedCard
+        ctaLabel="Invite a guest"
+        idleTitle="Invite a guest"
+        idleSubtitle="Pick your dates to request a visit"
+        trackDates
+      >
+        {sidebar}
+      </MobileDockedCard>
+    </VisitProvider>
   );
 }

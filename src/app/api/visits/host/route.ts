@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser, canManageProperty } from '@/lib/auth';
-import { hostBookingSchema } from '@/lib/validations';
-import { checkRoomConflicts } from '@/lib/bookings';
-import { notifyBookingApproved } from '@/lib/email/notifications';
+import { hostVisitSchema } from '@/lib/validations';
+import { checkRoomConflicts } from '@/lib/visits';
+import { notifyVisitApproved } from '@/lib/email/notifications';
 import type { Room } from '@/types/database';
 
 export async function POST(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = hostBookingSchema.safeParse(body);
+    const parsed = hostVisitSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.flatten().fieldErrors },
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     );
     if (conflicts.hasConflict) {
       return NextResponse.json(
-        { error: 'Selected dates conflict with an existing booking or block' },
+        { error: 'Selected dates conflict with an existing visit or block' },
         { status: 400 }
       );
     }
@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
       guestUserId = existingUser?.id ?? null;
     }
 
-    const { data: booking, error: bookingError } = await admin
-      .from('bookings')
+    const { data: visit, error: visitError } = await admin
+      .from('visits')
       .insert({
         property_id: data.property_id,
         invitation_id: null,
@@ -107,28 +107,28 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (bookingError || !booking) {
-      return NextResponse.json({ error: bookingError?.message }, { status: 500 });
+    if (visitError || !visit) {
+      return NextResponse.json({ error: visitError?.message }, { status: 500 });
     }
 
-    await admin.from('booking_dates').insert({
-      booking_id: booking.id,
+    await admin.from('visit_dates').insert({
+      visit_id: visit.id,
       check_in: data.check_in,
       check_out: data.check_out,
     });
 
-    await admin.from('booking_rooms').insert(
+    await admin.from('visit_rooms').insert(
       data.room_ids.map((room_id) => ({
-        booking_id: booking.id,
+        visit_id: visit.id,
         room_id,
       }))
     );
 
     if (data.notify_guest && guestEmail) {
-      notifyBookingApproved(booking.id).catch(console.error);
+      notifyVisitApproved(visit.id).catch(console.error);
     }
 
-    return NextResponse.json({ booking });
+    return NextResponse.json({ visit });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

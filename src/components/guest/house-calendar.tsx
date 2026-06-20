@@ -1,7 +1,7 @@
 'use client';
 
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
-import { useBooking } from './booking-context';
+import { useVisit } from './visit-context';
 
 interface DateRange {
   start: string;
@@ -12,12 +12,12 @@ export function HouseCalendar({
   allowedRanges,
   monthsToShow = 2,
   disabled,
-  bookingHrefBase,
+  visitHrefBase,
 }: {
   allowedRanges?: DateRange[];
   monthsToShow?: number;
   disabled?: boolean;
-  bookingHrefBase?: string;
+  visitHrefBase?: string;
 }) {
   const {
     checkIn,
@@ -25,15 +25,15 @@ export function HouseCalendar({
     activeField,
     setRange,
     setActiveField,
-    combinedBookings,
+    combinedVisits,
     combinedBlocks,
     rooms,
     roomAvailability,
-  } = useBooking();
+  } = useVisit();
 
   return (
     <AvailabilityCalendar
-      bookings={combinedBookings}
+      visits={combinedVisits}
       blocks={combinedBlocks}
       rooms={rooms.map((r) => ({ id: r.id, name: r.name }))}
       roomAvailability={roomAvailability}
@@ -44,7 +44,7 @@ export function HouseCalendar({
       allowedRanges={allowedRanges}
       activeField={activeField}
       onActiveFieldChange={setActiveField}
-      bookingHrefBase={bookingHrefBase}
+      visitHrefBase={visitHrefBase}
     />
   );
 }

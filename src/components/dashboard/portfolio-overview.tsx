@@ -4,7 +4,7 @@ import { Plus, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardContainer } from '@/components/dashboard/dashboard-container';
 import { PortfolioSchedule } from '@/components/dashboard/portfolio-schedule';
-import { PortfolioBookingSidebar } from '@/components/dashboard/portfolio-booking-sidebar';
+import { PortfolioVisitSidebar } from '@/components/dashboard/portfolio-visit-sidebar';
 import { formatDateRange } from '@/lib/dates';
 import { PlaceholderImage } from '@/components/placeholder-image';
 import type { PortfolioData, PortfolioHouse } from '@/lib/portfolio';
@@ -38,7 +38,7 @@ export function PortfolioOverview({
       <div className="mt-8">
         <PortfolioSchedule
           timelineRows={portfolio.timelineRows}
-          calendarBookings={portfolio.calendarBookings}
+          calendarVisits={portfolio.calendarVisits}
           calendarBlocks={portfolio.calendarBlocks}
         />
       </div>
@@ -60,7 +60,7 @@ export function PortfolioOverview({
         </section>
 
         <aside className="lg:sticky lg:top-20 lg:self-start">
-          <PortfolioBookingSidebar
+          <PortfolioVisitSidebar
             houses={portfolio.houses.map((h) => ({
               id: h.property.id,
               name: h.property.name,

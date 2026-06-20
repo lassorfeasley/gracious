@@ -46,7 +46,7 @@ async function countInvitationUsage(
   const propertyIds = properties?.map((p) => p.id) ?? [];
   if (propertyIds.length === 0) return 0;
 
-  const [{ count: pendingCount }, { count: activeBookingCount }] =
+  const [{ count: pendingCount }, { count: activeVisitCount }] =
     await Promise.all([
       admin
         .from('invitations')
@@ -54,14 +54,14 @@ async function countInvitationUsage(
         .in('property_id', propertyIds)
         .eq('status', 'pending'),
       admin
-        .from('bookings')
+        .from('visits')
         .select('*', { count: 'exact', head: true })
         .in('property_id', propertyIds)
         .not('invitation_id', 'is', null)
         .in('status', ['requested', 'approved']),
     ]);
 
-  return (pendingCount ?? 0) + (activeBookingCount ?? 0);
+  return (pendingCount ?? 0) + (activeVisitCount ?? 0);
 }
 
 export async function getAccountUsage(ownerId: string): Promise<AccountUsage> {

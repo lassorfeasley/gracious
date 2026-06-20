@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { formatDateRange } from '@/lib/dates';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
-import { BookingProvider, useBooking } from '@/components/guest/booking-context';
+import { VisitProvider, useVisit } from '@/components/guest/visit-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import { SurveyDialogLayout } from '@/components/dashboard/survey-dialog-layout';
 import { Button } from '@/components/ui/button';
@@ -24,12 +24,12 @@ import { CalendarPlus } from 'lucide-react';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
 import { isLimitReachedResponse } from '@/lib/billing-client';
 
-interface HostBookingDialogProps {
+interface HostVisitDialogProps {
   propertyId: string;
   rooms: Room[];
   roomAvailability: Record<string, RoomAvailability>;
-  /** When true, uses the surrounding BookingProvider (e.g. host page sidebar). */
-  useParentBookingContext?: boolean;
+  /** When true, uses the surrounding VisitProvider (e.g. host page sidebar). */
+  useParentVisitContext?: boolean;
   trigger?: ReactNode;
 }
 
@@ -79,12 +79,12 @@ export function ManualStaySurvey({
     guests,
     setGuests,
     maxGuests,
-    rooms: bookableRooms,
+    rooms: requestableRooms,
     selectedRoomIds,
     toggleRoom,
     selectAllRooms,
     lockRoomSelection,
-  } = useBooking();
+  } = useVisit();
 
   const current = Math.min(step, STEPS.length - 1);
   const stepKey = STEPS[current];
@@ -100,11 +100,11 @@ export function ManualStaySurvey({
     }
   }, [lockRoomSelection, selectAllRooms]);
 
-  const selectedRooms = bookableRooms.filter((r) =>
+  const selectedRooms = requestableRooms.filter((r) =>
     selectedRoomIds.includes(r.id)
   );
   const roomsLabel =
-    selectedRoomIds.length === bookableRooms.length
+    selectedRoomIds.length === requestableRooms.length
       ? 'Entire place'
       : selectedRooms.map((r) => r.name).join(', ') || '—';
 
@@ -147,7 +147,7 @@ export function ManualStaySurvey({
     }
 
     setLoading(true);
-    const res = await fetch('/api/bookings/host', {
+    const res = await fetch('/api/visits/host', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -293,7 +293,7 @@ export function ManualStaySurvey({
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            {bookableRooms
+            {requestableRooms
               .filter((r) => !selectedRoomIds.includes(r.id))
               .map((room) => (
                 <button
@@ -425,17 +425,17 @@ export function ManualStaySurvey({
   );
 }
 
-export function HostBookingDialog({
+export function HostVisitDialog({
   propertyId,
   rooms,
   roomAvailability,
-  useParentBookingContext = false,
+  useParentVisitContext = false,
   trigger,
   returnPath,
-}: HostBookingDialogProps & { returnPath?: string }) {
+}: HostVisitDialogProps & { returnPath?: string }) {
   const [open, setOpen] = useState(false);
 
-  const bookableRooms = rooms.map((r) => ({
+  const requestableRooms = rooms.map((r) => ({
     id: r.id,
     name: r.name,
     max_occupancy: r.max_occupancy,
@@ -460,17 +460,17 @@ export function HostBookingDialog({
         )}
       </DialogTrigger>
       {open &&
-        (useParentBookingContext ? (
+        (useParentVisitContext ? (
           survey
         ) : (
-          <BookingProvider
-            rooms={bookableRooms}
+          <VisitProvider
+            rooms={requestableRooms}
             roomAvailability={roomAvailability}
             defaultGuests={1}
-            defaultSelectedRoomIds={bookableRooms.map((r) => r.id)}
+            defaultSelectedRoomIds={requestableRooms.map((r) => r.id)}
           >
             {survey}
-          </BookingProvider>
+          </VisitProvider>
         ))}
     </Dialog>
   );

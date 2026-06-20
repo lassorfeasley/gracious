@@ -20,7 +20,7 @@ import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-bu
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
 import { isLimitReachedResponse } from '@/lib/billing-client';
 
-interface RequestBooking {
+interface RequestVisit {
   id: string;
   status: string;
   party_size: number;
@@ -34,24 +34,24 @@ interface RequestBooking {
     | { name: string | null; email: string }[]
     | null;
   dates: { check_in: string; check_out: string } | { check_in: string; check_out: string }[];
-  booking_rooms: { room: { name: string } | { name: string }[] }[];
+  visit_rooms: { room: { name: string } | { name: string }[] }[];
 }
 
-function guestDisplayName(booking: RequestBooking): string {
-  const guest = Array.isArray(booking.guest)
-    ? booking.guest[0]
-    : booking.guest;
+function guestDisplayName(visit: RequestVisit): string {
+  const guest = Array.isArray(visit.guest)
+    ? visit.guest[0]
+    : visit.guest;
   if (guest) {
     return guest.name ?? guest.email;
   }
-  return booking.guest_name ?? booking.guest_email ?? 'Guest';
+  return visit.guest_name ?? visit.guest_email ?? 'Guest';
 }
 
-export function BookingRequests({
-  bookings,
+export function VisitRequests({
+  visits,
   slug,
 }: {
-  bookings: RequestBooking[];
+  visits: RequestVisit[];
   slug: string;
 }) {
   const router = useRouter();
@@ -65,12 +65,12 @@ export function BookingRequests({
   } | null>(null);
 
   async function handleAction(
-    bookingId: string,
+    visitId: string,
     action: 'approve' | 'decline',
     message?: string
   ) {
-    setLoading(bookingId);
-    const res = await fetch(`/api/bookings/${bookingId}`, {
+    setLoading(visitId);
+    const res = await fetch(`/api/visits/${visitId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, decline_message: message }),
@@ -89,12 +89,12 @@ export function BookingRequests({
       return;
     }
 
-    toast.success(action === 'approve' ? 'Booking approved' : 'Booking declined');
+    toast.success(action === 'approve' ? 'Visit approved' : 'Visit declined');
     router.refresh();
   }
 
-  const pending = bookings.filter((b) => b.status === 'requested');
-  const recent = bookings.filter((b) => b.status !== 'requested');
+  const pending = visits.filter((b) => b.status === 'requested');
+  const recent = visits.filter((b) => b.status !== 'requested');
 
   return (
     <div className="space-y-10">
@@ -115,12 +115,12 @@ export function BookingRequests({
               </CardContent>
             </Card>
           ) : (
-            pending.map((booking) => {
-              const dates = Array.isArray(booking.dates)
-                ? booking.dates[0]
-                : booking.dates;
+            pending.map((visit) => {
+              const dates = Array.isArray(visit.dates)
+                ? visit.dates[0]
+                : visit.dates;
               const rooms =
-                booking.booking_rooms
+                visit.visit_rooms
                   ?.map((br) => {
                     const room = Array.isArray(br.room) ? br.room[0] : br.room;
                     return room?.name ?? 'Room';
@@ -128,12 +128,12 @@ export function BookingRequests({
                   .join(', ') ?? '';
 
               return (
-                <Card key={booking.id}>
+                <Card key={visit.id}>
                   <CardContent className="space-y-3 p-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium">
-                          {guestDisplayName(booking)}
+                          {guestDisplayName(visit)}
                         </p>
                         {dates && (
                           <p className="text-sm text-muted-foreground">
@@ -141,11 +141,11 @@ export function BookingRequests({
                           </p>
                         )}
                         <p className="text-sm text-muted-foreground">
-                          {rooms} · {booking.party_size} guests
+                          {rooms} · {visit.party_size} guests
                         </p>
-                        {booking.notes && (
+                        {visit.notes && (
                           <p className="mt-2 text-sm italic">
-                            &ldquo;{booking.notes}&rdquo;
+                            &ldquo;{visit.notes}&rdquo;
                           </p>
                         )}
                       </div>
@@ -153,21 +153,21 @@ export function BookingRequests({
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleAction(booking.id, 'approve')}
-                        disabled={loading === booking.id}
+                        onClick={() => handleAction(visit.id, 'approve')}
+                        disabled={loading === visit.id}
                       >
                         Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setDeclineId(booking.id)}
-                        disabled={loading === booking.id}
+                        onClick={() => setDeclineId(visit.id)}
+                        disabled={loading === visit.id}
                       >
                         Decline
                       </Button>
                       <Button size="sm" variant="ghost" asChild>
-                        <Link href={`/dashboard/${slug}/bookings/${booking.id}`}>
+                        <Link href={`/dashboard/${slug}/visits/${visit.id}`}>
                           Manage
                         </Link>
                       </Button>
@@ -184,19 +184,19 @@ export function BookingRequests({
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Recent activity</h2>
           <div className="space-y-3">
-            {recent.slice(0, 10).map((booking) => {
-              const dates = Array.isArray(booking.dates)
-                ? booking.dates[0]
-                : booking.dates;
+            {recent.slice(0, 10).map((visit) => {
+              const dates = Array.isArray(visit.dates)
+                ? visit.dates[0]
+                : visit.dates;
               return (
-                <Card key={booking.id}>
+                <Card key={visit.id}>
                   <CardContent className="flex items-center justify-between gap-4 p-4">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium">
-                          {guestDisplayName(booking)}
+                          {guestDisplayName(visit)}
                         </p>
-                        {!booking.invitation_id && (
+                        {!visit.invitation_id && (
                           <Badge variant="secondary" className="text-xs">
                             Manual stay
                           </Badge>
@@ -208,20 +208,20 @@ export function BookingRequests({
                         </p>
                       )}
                       <p className="text-xs capitalize text-muted-foreground">
-                        {booking.status}
+                        {visit.status}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {booking.status === 'approved' &&
-                        booking.invitation_id && (
-                          <AddToCalendarButton bookingId={booking.id} />
+                      {visit.status === 'approved' &&
+                        visit.invitation_id && (
+                          <AddToCalendarButton visitId={visit.id} />
                         )}
-                      {booking.status === 'approved' &&
-                        !booking.invitation_id && (
-                          <CancelHostStayButton bookingId={booking.id} />
+                      {visit.status === 'approved' &&
+                        !visit.invitation_id && (
+                          <CancelHostStayButton visitId={visit.id} />
                         )}
                       <Button size="sm" variant="ghost" asChild>
-                        <Link href={`/dashboard/${slug}/bookings/${booking.id}`}>
+                        <Link href={`/dashboard/${slug}/visits/${visit.id}`}>
                           Manage
                         </Link>
                       </Button>

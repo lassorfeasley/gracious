@@ -51,7 +51,7 @@ export function InvitationsManager({
 
   function previewBooking(token: string) {
     window.open(
-      `${getInviteUrl(token)}?${guestPreviewQuery('booking')}`,
+      `${getInviteUrl(token)}?${guestPreviewQuery('visit')}`,
       '_blank'
     );
   }
@@ -119,7 +119,7 @@ export function InvitationsManager({
                       onClick={() => previewBooking(inv.token)}
                     >
                       <Eye className="mr-1 h-3 w-3" />
-                      Preview booking
+                      Preview visit
                     </Button>
                   )}
                   <Button

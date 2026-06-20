@@ -2,6 +2,7 @@ import { Check, Navigation } from 'lucide-react';
 import { PropertyMap } from '@/components/dashboard/property-map';
 import { DirectionsDialog } from '@/components/directions-dialog';
 import { PropertyNotesDisplay } from '@/components/property-notes-display';
+import { ExpandableText } from '@/components/expandable-text';
 import { Button } from '@/components/ui/button';
 import type { Property, PropertyNoteCategory } from '@/types/database';
 
@@ -29,9 +30,10 @@ export function PropertySections({
           <h2 className="text-2xl font-semibold tracking-tight">
             About this place
           </h2>
-          <p className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-foreground/90">
-            {property.description}
-          </p>
+          <ExpandableText
+            text={property.description}
+            className="mt-6 whitespace-pre-wrap text-lg leading-relaxed text-foreground/90"
+          />
         </section>
       )}
 

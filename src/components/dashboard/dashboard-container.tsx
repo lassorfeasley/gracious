@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
  * widths in one place so profile/detail pages stay consistent, with narrower
  * variants for list and form pages.
  *
- *  - wide     profile & detail pages (home, room, bookings, guests). Sized to
+ *  - wide     profile & detail pages (home, room, visits, guests). Sized to
  *             Airbnb's actual reading content column (~1120-1280px). Airbnb's
  *             1920px frame is only full-bleed chrome (nav, section backgrounds);
  *             its real content never stretches that wide, and stretching ours

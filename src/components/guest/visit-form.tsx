@@ -30,9 +30,9 @@ import { toast } from 'sonner';
 import type { InvitationWithDetails, Room } from '@/types/database';
 import { formatDateRange } from '@/lib/dates';
 import {
-  guestBookingCtaLabel,
-  guestBookingSuccessMessage,
-} from '@/lib/invitation-booking';
+  guestVisitCtaLabel,
+  guestVisitSuccessMessage,
+} from '@/lib/invitation-visit';
 
 const formSchema = z.object({
   check_in: z.string().min(1, 'Check-in is required'),
@@ -46,25 +46,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface BookingFormProps {
+interface VisitFormProps {
   invitation: InvitationWithDetails;
   isAuthenticated: boolean;
   guestEmail: string;
   guestName?: string | null;
-  /** When set, the form is locked to booking this single room. */
+  /** When set, the form is locked to request a visiting this single room. */
   lockedRoom?: Room;
   /** Dev-only: renders the full flow but stubs out submission. */
   previewMode?: boolean;
 }
 
-export function BookingForm({
+export function VisitForm({
   invitation,
   isAuthenticated,
   guestEmail,
   guestName,
   lockedRoom,
   previewMode = false,
-}: BookingFormProps) {
+}: VisitFormProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -107,7 +107,7 @@ export function BookingForm({
 
   async function onSubmit(values: FormValues) {
     if (previewMode) {
-      toast.info('Preview mode — no booking was submitted', {
+      toast.info('Preview mode — no visit was requested', {
         description: `${values.check_in || 'dates'} → ${
           values.check_out || ''
         } · ${values.room_ids.length} room(s) · party of ${values.party_size}`,
@@ -123,7 +123,7 @@ export function BookingForm({
 
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await fetch('/api/visits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,7 +140,7 @@ export function BookingForm({
         toast.error(err || 'Failed to submit request');
         return;
       }
-      toast.success(guestBookingSuccessMessage(invitation));
+      toast.success(guestVisitSuccessMessage(invitation));
       setOpen(false);
       router.push('/my-trips');
       router.refresh();
@@ -151,7 +151,7 @@ export function BookingForm({
     }
   }
 
-  const ctaLabel = guestBookingCtaLabel(invitation);
+  const ctaLabel = guestVisitCtaLabel(invitation);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -199,7 +199,7 @@ export function BookingForm({
 
             {lockedRoom && (
               <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">Booking</p>
+                <p className="text-xs text-muted-foreground">Visit</p>
                 <p className="font-medium">{lockedRoom.name}</p>
                 <p className="text-xs text-muted-foreground">
                   Up to {lockedRoom.max_occupancy} guests

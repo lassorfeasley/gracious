@@ -2,12 +2,12 @@ import type { NotificationPrefs } from '@/types/database';
 
 /**
  * Every email is transactional except product updates. Some transactional
- * categories are mandatory (auth, invitations, booking confirmations) and have
+ * categories are mandatory (auth, invitations, visit confirmations) and have
  * no flag here — they always send. The flags below are the opt-out categories.
  */
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
-  booking_requests: true,
-  booking_cancelled: true,
+  visit_requests: true,
+  visit_cancelled: true,
   invitation_expiring: true,
   invitation_stalled: true,
   guest_reminders: true,
@@ -46,8 +46,8 @@ export const CATEGORY_FLAGS: Record<
 > = {
   guest_reminders: ['guest_reminders'],
   host_activity: [
-    'booking_requests',
-    'booking_cancelled',
+    'visit_requests',
+    'visit_cancelled',
     'invitation_expiring',
     'invitation_stalled',
   ],
@@ -72,7 +72,7 @@ export const CATEGORY_META: Record<UnsubscribeCategory, CategoryMeta> = {
   host_activity: {
     label: 'Host activity notifications',
     description:
-      'Booking requests, cancellations, and expiring invitations for homes you host.',
+      'Visit requests, cancellations, and expiring invitations for homes you host.',
     audience: 'host',
   },
   host_tips: {

@@ -10,13 +10,13 @@ type BookingCalendarRow = {
     | null;
 };
 
-export function mapPropertyBookingsToCalendar(
-  bookings: BookingCalendarRow[],
+export function mapPropertyVisitsToCalendar(
+  visits: BookingCalendarRow[],
   options?: { includeRequested?: boolean }
 ) {
   const includeRequested = options?.includeRequested ?? false;
 
-  return bookings
+  return visits
     .filter((b) => {
       if (b.status === 'approved') return true;
       if (includeRequested && b.status === 'requested') return true;

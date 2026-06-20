@@ -6,5 +6,5 @@ export default async function GuestsPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  redirect(`/dashboard/${slug}/bookings`);
+  redirect(`/dashboard/${slug}/visits`);
 }

@@ -37,8 +37,8 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { SurveyDialogLayout } from '@/components/dashboard/survey-dialog-layout';
-import { ManualStaySurvey } from '@/components/dashboard/host-booking-dialog';
-import { BookingProvider, useOptionalBooking } from '@/components/guest/booking-context';
+import { ManualStaySurvey } from '@/components/dashboard/host-visit-dialog';
+import { VisitProvider, useOptionalVisit } from '@/components/guest/visit-context';
 import { toast } from 'sonner';
 import { UserPlus } from 'lucide-react';
 import type { RoomAvailability } from '@/lib/guest-calendar';
@@ -55,8 +55,8 @@ interface InviteGuestDialogProps {
   rooms: Room[];
   roomAvailability?: Record<string, RoomAvailability>;
   preselectedRoomIds?: string[];
-  /** When true, manual stay uses the surrounding BookingProvider. */
-  useParentBookingContext?: boolean;
+  /** When true, manual stay uses the surrounding VisitProvider. */
+  useParentVisitContext?: boolean;
   trigger?: ReactNode;
 }
 
@@ -66,7 +66,7 @@ const STEP_TITLES: Record<StepKey, string> = {
   guest: 'Who are you inviting?',
   type: 'What kind of invitation?',
   dates: 'When can they come?',
-  rooms: 'Which rooms can they book?',
+  rooms: 'Which rooms can they request?',
   details: 'Add a personal touch',
   review: 'Review and send',
 };
@@ -76,13 +76,13 @@ export function InviteGuestDialog({
   rooms,
   roomAvailability = {},
   preselectedRoomIds,
-  useParentBookingContext = false,
+  useParentVisitContext = false,
   trigger,
 }: InviteGuestDialogProps) {
   const router = useRouter();
   const params = useParams();
   const propertySlug = typeof params.slug === 'string' ? params.slug : undefined;
-  const parentBooking = useOptionalBooking();
+  const parentBooking = useOptionalVisit();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'invite' | 'manual'>('invite');
   const [loading, setLoading] = useState(false);
@@ -123,16 +123,16 @@ export function InviteGuestDialog({
     .filter((r) => values.room_ids?.includes(r.id))
     .reduce((sum, r) => sum + r.max_occupancy, 0);
 
-  // "Already booked" is the pre-approved direct-booking path surfaced as a
+  // "Already confirmed" is the pre-approved direct-visit path surfaced as a
   // first-class choice. Under the hood it's a fixed-date stay booked on the
   // guest's behalf — no acceptance step.
   const KIND_OPTIONS = [
     ...INVITATION_TYPE_OPTIONS,
     {
       value: 'confirmed',
-      label: 'Already booked',
+      label: 'Already confirmed',
       description:
-        'You confirmed this stay outside Gracious — book it now and we’ll notify the guest. No acceptance needed.',
+        'You confirmed this stay outside Gracious — confirm it now and we’ll notify the guest. No acceptance needed.',
     },
   ];
   const selectedKind = preApproved ? 'confirmed' : invType;
@@ -221,7 +221,7 @@ export function InviteGuestDialog({
     if (next) {
       resetForm();
       // Carry over any dates the host already picked in the page sidebar.
-      const pre = useParentBookingContext ? parentBooking : null;
+      const pre = useParentVisitContext ? parentBooking : null;
       if (pre?.checkIn && pre?.checkOut) {
         setDateSelection({ checkIn: pre.checkIn, checkOut: pre.checkOut });
         form.setValue('type', 'prix_fixe');
@@ -231,7 +231,7 @@ export function InviteGuestDialog({
     }
   }
 
-  const bookableRooms = rooms.map((r) => ({
+  const requestableRooms = rooms.map((r) => ({
     id: r.id,
     name: r.name,
     max_occupancy: r.max_occupancy,
@@ -308,15 +308,15 @@ export function InviteGuestDialog({
       return;
     }
 
-    const bookDirectly = formValues.type === 'prix_fixe' && preApproved;
+    const confirmDirectly = formValues.type === 'prix_fixe' && preApproved;
 
     setLoading(true);
     const payload = {
       property_id: propertyId,
       ...formValues,
-      requires_approval: bookDirectly ? false : formValues.requires_approval,
-      pre_approved: bookDirectly,
-      party_size: bookDirectly ? formValues.party_size : undefined,
+      requires_approval: confirmDirectly ? false : formValues.requires_approval,
+      pre_approved: confirmDirectly,
+      party_size: confirmDirectly ? formValues.party_size : undefined,
       windows: formValues.type !== 'standing' ? validWindows : undefined,
     };
 
@@ -332,22 +332,22 @@ export function InviteGuestDialog({
     if (!res.ok) {
       if (data.error === 'limit_reached') {
         toast.error(
-          "You've reached your hosted-stay limit. Upgrade your plan to book more stays."
+          "You've reached your hosted-stay limit. Upgrade your plan to host more visits."
         );
         return;
       }
       toast.error(
         typeof data.error === 'string'
           ? data.error
-          : bookDirectly
-            ? 'Failed to book the stay'
+          : confirmDirectly
+            ? 'Failed to confirm the stay'
             : 'Failed to create invitation'
       );
       return;
     }
 
     if (data.preApproved) {
-      toast.success('Stay booked — your guest has been notified.');
+      toast.success('Visit confirmed — your guest has been notified.');
     } else if (data.emailSent === false) {
       toast.warning(
         'Invitation created, but the email could not be sent. Copy the link to share it manually.'
@@ -378,40 +378,40 @@ export function InviteGuestDialog({
         {trigger ?? (
           <Button size="sm" disabled={rooms.length === 0}>
             <UserPlus className="mr-1 h-4 w-4" />
-            Book a guest
+            Invite a guest
           </Button>
         )}
       </DialogTrigger>
 
       {open &&
         mode === 'manual' &&
-        (useParentBookingContext ? (
+        (useParentVisitContext ? (
           manualSurvey
         ) : (
-          <BookingProvider
-            rooms={bookableRooms}
+          <VisitProvider
+            rooms={requestableRooms}
             roomAvailability={roomAvailability}
             defaultGuests={1}
             defaultSelectedRoomIds={
               defaultRoomIds.length > 0
                 ? defaultRoomIds
-                : bookableRooms.map((r) => r.id)
+                : requestableRooms.map((r) => r.id)
             }
           >
             {manualSurvey}
-          </BookingProvider>
+          </VisitProvider>
         ))}
 
       {open && mode === 'invite' && (
       <SurveyDialogLayout
-        title="Book a guest"
+        title="Invite a guest"
         stepIndex={current}
         stepCount={steps.length}
         stepTitle={
           preApproved && stepKey === 'dates'
             ? 'When is the stay?'
             : preApproved && stepKey === 'rooms'
-              ? 'Which rooms are booked?'
+              ? 'Which rooms are confirmed?'
               : STEP_TITLES[stepKey]
         }
         onBack={current > 0 ? () => setStep(current - 1) : undefined}
@@ -420,8 +420,8 @@ export function InviteGuestDialog({
           isLast
             ? preApproved
               ? loading
-                ? 'Booking…'
-                : 'Book stay'
+                ? 'Visit…'
+                : 'Confirm visit'
               : loading
                 ? 'Sending…'
                 : 'Send invitation'
@@ -520,11 +520,11 @@ export function InviteGuestDialog({
               <p className="text-sm text-muted-foreground">
                 {invType === 'prix_fixe'
                   ? 'Select the exact dates of the stay.'
-                  : 'Select one or more date ranges they can book within.'}
+                  : 'Select one or more date ranges they can request within.'}
               </p>
 
               <AvailabilityCalendar
-                bookings={[]}
+                visits={[]}
                 monthsToShow={2}
                 selectable
                 value={dateSelection}
@@ -592,7 +592,7 @@ export function InviteGuestDialog({
                   <div>
                     <p className="font-medium">Entire home only</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Guests book the whole place — they can&apos;t pick
+                      Guests request the whole place — they can&apos;t pick
                       individual rooms.
                     </p>
                   </div>
@@ -692,7 +692,7 @@ export function InviteGuestDialog({
                         <p className="text-sm text-muted-foreground">
                           {field.value
                             ? 'Guests submit a request; you approve or decline.'
-                            : 'Bookings are confirmed immediately.'}
+                            : 'Visits are confirmed immediately.'}
                         </p>
                       </div>
                       <FormControl>
@@ -813,14 +813,14 @@ export function InviteGuestDialog({
               </div>
               <div className="rounded-xl border p-4">
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {preApproved ? 'Booking' : 'Invitation'}
+                  {preApproved ? 'Visit' : 'Invitation'}
                 </dt>
                 <dd className="mt-1 font-medium">
-                  {preApproved ? 'Already booked' : INVITATION_TYPE_LABELS[invType]}
+                  {preApproved ? 'Already confirmed' : INVITATION_TYPE_LABELS[invType]}
                 </dd>
                 <dd className="mt-1 text-muted-foreground">
                   {preApproved
-                    ? 'Booked directly — guest notified, no acceptance needed'
+                    ? 'Confirmed directly — guest notified, no acceptance needed'
                     : values.requires_approval
                       ? 'Requires your approval'
                       : 'Auto-confirms'}

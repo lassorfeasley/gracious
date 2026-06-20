@@ -9,13 +9,13 @@ export function guestProfileHref(slug: string, guestEmail: string): string {
 }
 
 /** URL-safe key for a manual guest with no email. */
-export function guestKeyFromManualBooking(bookingId: string): string {
-  return `m-${bookingId}`;
+export function guestKeyFromManualVisit(visitId: string): string {
+  return `m-${visitId}`;
 }
 
 export function parseGuestKey(
   guestKey: string
-): { type: 'email'; email: string } | { type: 'manual'; bookingId: string } | null {
+): { type: 'email'; email: string } | { type: 'manual'; visitId: string } | null {
   if (guestKey.startsWith('e-')) {
     try {
       const email = decodeURIComponent(guestKey.slice(2));
@@ -25,8 +25,8 @@ export function parseGuestKey(
     }
   }
   if (guestKey.startsWith('m-')) {
-    const bookingId = guestKey.slice(2);
-    if (bookingId.length > 0) return { type: 'manual', bookingId };
+    const visitId = guestKey.slice(2);
+    if (visitId.length > 0) return { type: 'manual', visitId };
   }
   return null;
 }

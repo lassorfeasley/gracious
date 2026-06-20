@@ -1,4 +1,4 @@
-import type { GuestPreviewAs, GuestPreviewBookingStatus } from '@/lib/guest-preview';
+import type { GuestPreviewAs, GuestPreviewVisitStatus } from '@/lib/guest-preview';
 import { guestPreviewQuery } from '@/lib/guest-preview';
 
 export type AppView = 'landing' | 'guest' | 'host' | 'admin';
@@ -36,8 +36,8 @@ export function extractPropertySlug(pathname: string): string | null {
 
 export function buildGuestDevPath(
   token: string,
-  as: GuestPreviewAs = 'booking',
-  status?: GuestPreviewBookingStatus
+  as: GuestPreviewAs = 'visit',
+  status?: GuestPreviewVisitStatus
 ): string {
   return `/invite/${token}?${guestPreviewQuery(as, status)}`;
 }

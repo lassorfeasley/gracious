@@ -119,7 +119,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     fn: 'notifyStayRequested',
     logType: 'stay_requested',
     recipient: 'property_owner',
-    gating: pref('booking_requests'),
+    gating: pref('visit_requests'),
     preconditions: [],
     registryId: 'stay-requested',
   },
@@ -128,7 +128,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     fn: 'notifyStayRequested',
     logType: 'stay_requested',
     recipient: 'property_managers',
-    gating: pref('booking_requests'),
+    gating: pref('visit_requests'),
     preconditions: [],
     registryId: 'stay-requested',
   },
@@ -145,65 +145,65 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
   // --- New stay auto-approved (pre-approved invite / open availability) ----
   {
     event: 'Stay is booked on the auto-approve path',
-    fn: 'notifyStayBooked',
+    fn: 'notifyStayConfirmed',
     logType: 'stay_booked',
     recipient: 'property_owner',
-    gating: pref('booking_requests'),
+    gating: pref('visit_requests'),
     preconditions: [],
-    registryId: 'stay-booked',
+    registryId: 'stay-confirmed',
   },
   {
     event: 'Stay is booked on the auto-approve path',
-    fn: 'notifyStayBooked',
+    fn: 'notifyStayConfirmed',
     logType: 'stay_booked',
     recipient: 'property_managers',
-    gating: pref('booking_requests'),
+    gating: pref('visit_requests'),
     preconditions: [],
-    registryId: 'stay-booked',
+    registryId: 'stay-confirmed',
   },
 
   // --- Approval (manual approve, auto-approve, host offline, edit) ---------
   {
     event:
-      'Stay becomes approved (host approves, auto-approve, host offline booking, or approved-stay edit)',
-    fn: 'notifyBookingApproved',
-    logType: 'booking_approved',
+      'Stay becomes approved (host approves, auto-approve, host offline visit, or approved-stay edit)',
+    fn: 'notifyVisitApproved',
+    logType: 'visit_approved',
     recipient: 'guest',
     gating: MANDATORY,
     preconditions: ['notify_guest', 'guest.email', 'includes .ics attachment'],
-    registryId: 'booking-approved',
+    registryId: 'visit-approved',
   },
 
   // --- Decline -------------------------------------------------------------
   {
     event: 'Host declines a stay request',
-    fn: 'notifyBookingDeclined',
-    logType: 'booking_declined',
+    fn: 'notifyVisitDeclined',
+    logType: 'visit_declined',
     recipient: 'guest',
     // NOTE: decline does NOT gate on notify_guest; it requires an invitation.
     gating: MANDATORY,
     preconditions: ['guest.email', 'invitation exists'],
-    registryId: 'booking-declined',
+    registryId: 'visit-declined',
   },
 
   // --- Cancellation (routing + gating depend on who cancelled) ------------
   {
     event: 'Guest cancels their stay',
-    fn: 'notifyBookingCancelled',
-    logType: 'booking_cancelled_guest',
+    fn: 'notifyVisitCancelled',
+    logType: 'visit_cancelled_guest',
     recipient: 'property_owner',
-    gating: pref('booking_cancelled'),
+    gating: pref('visit_cancelled'),
     preconditions: [],
-    registryId: 'booking-cancelled',
+    registryId: 'visit-cancelled',
   },
   {
     event: 'Host cancels the stay',
-    fn: 'notifyBookingCancelled',
-    logType: 'booking_cancelled_owner',
+    fn: 'notifyVisitCancelled',
+    logType: 'visit_cancelled_owner',
     recipient: 'guest',
     gating: MANDATORY,
     preconditions: ['notify_guest', 'guest.email'],
-    registryId: 'booking-cancelled',
+    registryId: 'visit-cancelled',
   },
 
   // --- Lifecycle reminders (cron, gated by guest_reminders) ---------------

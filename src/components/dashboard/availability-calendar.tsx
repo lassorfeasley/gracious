@@ -19,7 +19,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { datesOverlap } from '@/lib/dates';
 
-interface CalendarBooking {
+interface CalendarVisit {
   id: string;
   guestName: string;
   checkIn: string;
@@ -35,7 +35,7 @@ interface CalendarBlock {
 }
 
 interface RoomAvailability {
-  bookings: CalendarBooking[];
+  visits: CalendarVisit[];
   blocks: CalendarBlock[];
 }
 
@@ -50,7 +50,7 @@ interface TakenRoom {
   guestName?: string;
   pending?: boolean;
   blocked?: boolean;
-  bookingId?: string;
+  visitId?: string;
 }
 
 interface DateRange {
@@ -66,7 +66,7 @@ export interface CalendarSelection {
 export type DateField = 'checkIn' | 'checkOut';
 
 interface AvailabilityCalendarProps {
-  bookings: CalendarBooking[];
+  visits: CalendarVisit[];
   blocks?: CalendarBlock[];
   monthsToShow?: number;
   /** Enables date-range selection. */
@@ -78,8 +78,8 @@ interface AvailabilityCalendarProps {
   /** Which field the next calendar click should fill. */
   activeField?: DateField | null;
   onActiveFieldChange?: (field: DateField | null) => void;
-  /** If set, booked days link to `${bookingHrefBase}/${bookingId}`. */
-  bookingHrefBase?: string;
+  /** If set, booked days link to `${visitHrefBase}/${visitId}`. */
+  visitHrefBase?: string;
   /**
    * Full in-scope room set. When provided alongside `roomAvailability`, the
    * calendar treats availability per-room: a day is only fully blocked when
@@ -191,15 +191,15 @@ function takenRoomsForDay(
   for (const room of rooms) {
     const avail = roomAvailability[room.id];
     if (!avail) continue;
-    const booking = avail.bookings.find((b) =>
+    const stay = avail.visits.find((b) =>
       coversDay(day, b.checkIn, b.checkOut)
     );
-    if (booking) {
+    if (stay) {
       taken.push({
         roomName: room.name,
-        guestName: booking.guestName,
-        pending: booking.pending,
-        bookingId: booking.id,
+        guestName: stay.guestName,
+        pending: stay.pending,
+        visitId: stay.id,
       });
       continue;
     }
@@ -235,7 +235,7 @@ function TakenRoomsTooltip({ taken }: { taken: TakenRoom[] }) {
 
 function MonthGrid({
   month,
-  bookings,
+  visits,
   blocks,
   rooms,
   roomAvailability,
@@ -246,10 +246,10 @@ function MonthGrid({
   isAllowed,
   restrictToAllowed,
   onSelect,
-  bookingHrefBase,
+  visitHrefBase,
 }: {
   month: Date;
-  bookings: CalendarBooking[];
+  visits: CalendarVisit[];
   blocks: CalendarBlock[];
   rooms?: CalendarRoom[];
   roomAvailability?: Record<string, RoomAvailability>;
@@ -260,7 +260,7 @@ function MonthGrid({
   isAllowed: (dateStr: string) => boolean;
   restrictToAllowed: boolean;
   onSelect: (dateStr: string) => void;
-  bookingHrefBase?: string;
+  visitHrefBase?: string;
 }) {
   const today = startOfDay(new Date());
   const days = useMemo(
@@ -287,7 +287,7 @@ function MonthGrid({
       if (taken.some((t) => t.pending)) return 'pending';
       return 'blocked';
     }
-    const booked = bookings.filter((b) => coversDay(day, b.checkIn, b.checkOut));
+    const booked = visits.filter((b) => coversDay(day, b.checkIn, b.checkOut));
     if (booked.some((b) => !b.pending)) return 'confirmed';
     if (booked.length > 0) return 'pending';
     if (blocks.some((bl) => coversDay(day, bl.start_date, bl.end_date))) {
@@ -319,7 +319,7 @@ function MonthGrid({
             roomMode && rooms && roomAvailability
               ? takenRoomsForDay(day, rooms, roomAvailability)
               : [];
-          const booked = bookings.filter((b) =>
+          const booked = visits.filter((b) =>
             coversDay(day, b.checkIn, b.checkOut)
           );
           const isBlocked = blocks.some((bl) =>
@@ -345,11 +345,11 @@ function MonthGrid({
           const unavailable = fullyBooked;
 
           const representativeBookingId = roomMode
-            ? taken.find((t) => t.bookingId)?.bookingId
+            ? taken.find((t) => t.visitId)?.visitId
             : booked[0]?.id;
           const bookingHref =
-            bookingHrefBase && representativeBookingId
-              ? `${bookingHrefBase}/${representativeBookingId}`
+            visitHrefBase && representativeBookingId
+              ? `${visitHrefBase}/${representativeBookingId}`
               : undefined;
 
           // Tooltip: list of taken rooms (room mode) or guest names (legacy).
@@ -649,7 +649,7 @@ function MonthGrid({
 }
 
 export function AvailabilityCalendar({
-  bookings,
+  visits,
   blocks = [],
   monthsToShow = 2,
   selectable = false,
@@ -658,16 +658,29 @@ export function AvailabilityCalendar({
   allowedRanges = [],
   activeField = null,
   onActiveFieldChange,
-  bookingHrefBase,
+  visitHrefBase,
   rooms,
   roomAvailability,
 }: AvailabilityCalendarProps) {
-  const [base, setBase] = useState(() => startOfMonth(new Date()));
+  // Open on the first month that actually has dates to request a visit — the earliest
+  // invited window (or an already-selected check-in), never a past month — so
+  // guests don't land on an empty current month and have to page forward.
+  const [base, setBase] = useState(() => {
+    const monthFloor = startOfMonth(new Date());
+    const candidates: Date[] = [];
+    if (value?.checkIn) candidates.push(parseISO(value.checkIn));
+    for (const r of allowedRanges) candidates.push(parseISO(r.start));
+    const target = candidates
+      .map((d) => startOfMonth(d))
+      .filter((m) => !isBefore(m, monthFloor))
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    return target ?? monthFloor;
+  });
   const today = startOfDay(new Date());
 
   // Per-room mode: availability is computed across the full room set, so a day
   // is only un-selectable when *every* room is taken. Falls back to the flat
-  // bookings/blocks lists for display-only calendars.
+  // visits/blocks lists for display-only calendars.
   const roomMode = !!(rooms && rooms.length > 0 && roomAvailability);
 
   const months = Array.from({ length: monthsToShow }, (_, i) =>
@@ -682,7 +695,7 @@ export function AvailabilityCalendar({
   function roomFreeForRange(roomId: string, start: string, end: string): boolean {
     const avail = roomAvailability?.[roomId];
     if (!avail) return true;
-    const blockedByBooking = avail.bookings.some((b) =>
+    const blockedByBooking = avail.visits.some((b) =>
       datesOverlap(start, end, b.checkIn, b.checkOut)
     );
     if (blockedByBooking) return false;
@@ -701,7 +714,7 @@ export function AvailabilityCalendar({
     if (roomMode) {
       return takenRoomsForDay(day, rooms!, roomAvailability!).length >= rooms!.length;
     }
-    const booked = bookings.some((b) => coversDay(day, b.checkIn, b.checkOut));
+    const booked = visits.some((b) => coversDay(day, b.checkIn, b.checkOut));
     const blocked = blocks.some((bl) =>
       coversDay(day, bl.start_date, bl.end_date)
     );
@@ -806,11 +819,20 @@ export function AvailabilityCalendar({
             monthsToShow <= 1 && 'px-2'
           )}
         >
-          {months.map((m) => (
-            <MonthGrid
+          {months.map((m, i) => (
+            <div
               key={m.toISOString()}
+              // Only the first month shows on mobile; extra months appear once
+              // the grid has room (sm for 3+, lg for 2).
+              className={cn(
+                i > 0 && (monthsToShow >= 3 && i === 1
+                  ? 'hidden sm:block'
+                  : 'hidden lg:block')
+              )}
+            >
+            <MonthGrid
               month={m}
-              bookings={bookings}
+              visits={visits}
               blocks={blocks}
               rooms={rooms}
               roomAvailability={roomAvailability}
@@ -821,12 +843,13 @@ export function AvailabilityCalendar({
               isAllowed={isAllowed}
               restrictToAllowed={restrictToAllowed}
               onSelect={handleSelect}
-              bookingHrefBase={bookingHrefBase}
+              visitHrefBase={visitHrefBase}
             />
+            </div>
           ))}
         </div>
       </div>
-      {selectable && bookingHrefBase && bookings.length > 0 && (
+      {selectable && visitHrefBase && visits.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="inline-flex size-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
@@ -843,7 +866,7 @@ export function AvailabilityCalendar({
               Some rooms booked
             </span>
           )}
-          {bookings.some((b) => b.pending) && (
+          {visits.some((b) => b.pending) && (
             <span className="flex items-center gap-1.5">
               <span className="inline-flex size-5 items-center justify-center rounded-md bg-brass/15 text-[10px] font-medium text-brass">
                 1
@@ -857,7 +880,7 @@ export function AvailabilityCalendar({
         </div>
       )}
       {!selectable &&
-        (restrictToAllowed || bookings.length > 0 || blocks.length > 0) && (
+        (restrictToAllowed || visits.length > 0 || blocks.length > 0) && (
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
           {restrictToAllowed && (
             <span className="flex items-center gap-1.5">
@@ -867,7 +890,7 @@ export function AvailabilityCalendar({
               Your invited dates
             </span>
           )}
-          {bookings.some((b) => !b.pending) && (
+          {visits.some((b) => !b.pending) && (
             <span className="flex items-center gap-1.5">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
                 1
@@ -875,7 +898,7 @@ export function AvailabilityCalendar({
               Confirmed stay
             </span>
           )}
-          {bookings.some((b) => b.pending) && (
+          {visits.some((b) => b.pending) && (
             <span className="flex items-center gap-1.5">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-brass/15 text-[10px] font-medium text-brass">
                 1
@@ -891,7 +914,7 @@ export function AvailabilityCalendar({
               Blocked
             </span>
           )}
-          {(bookings.length > 0 || blocks.length > 0) && (
+          {(visits.length > 0 || blocks.length > 0) && (
             <span className="w-full sm:w-auto">
               Hover a date to see who&apos;s staying.
             </span>

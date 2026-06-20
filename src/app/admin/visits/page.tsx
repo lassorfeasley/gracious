@@ -12,13 +12,13 @@ const statusVariant: Record<
   cancelled: 'outline',
 };
 
-export const metadata = { title: 'Bookings · Admin' };
+export const metadata = { title: 'Visits · Admin' };
 
-export default async function AdminBookingsPage() {
+export default async function AdminVisitsPage() {
   const admin = createAdminClient();
 
-  const { data: bookings } = await admin
-    .from('bookings')
+  const { data: visits } = await admin
+    .from('visits')
     .select(
       `
       id,
@@ -27,8 +27,8 @@ export default async function AdminBookingsPage() {
       created_at,
       property:properties(name, slug),
       guest:users!guest_user_id(email, name),
-      dates:booking_dates(check_in, check_out),
-      booking_rooms(room:rooms(name))
+      dates:visit_dates(check_in, check_out),
+      visit_rooms(room:rooms(name))
     `
     )
     .order('created_at', { ascending: false })
@@ -44,9 +44,9 @@ export default async function AdminBookingsPage() {
     <div className="space-y-10">
       <section className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Bookings</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Visits</h1>
           <p className="mt-1 text-muted-foreground">
-            Latest {bookings?.length ?? 0} bookings (most recent first)
+            Latest {visits?.length ?? 0} visits (most recent first)
           </p>
         </div>
 
@@ -63,14 +63,14 @@ export default async function AdminBookingsPage() {
               </tr>
             </thead>
             <tbody>
-              {bookings?.map((b) => {
+              {visits?.map((b) => {
                 const property = Array.isArray(b.property)
                   ? b.property[0]
                   : b.property;
                 const guest = Array.isArray(b.guest) ? b.guest[0] : b.guest;
                 const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
                 const rooms =
-                  b.booking_rooms?.map(
+                  b.visit_rooms?.map(
                     (br: { room: { name: string } | { name: string }[] }) => {
                       const room = Array.isArray(br.room) ? br.room[0] : br.room;
                       return room?.name;
@@ -106,9 +106,9 @@ export default async function AdminBookingsPage() {
               })}
             </tbody>
           </table>
-          {!bookings?.length && (
+          {!visits?.length && (
             <p className="p-8 text-center text-muted-foreground">
-              No bookings yet.
+              No visits yet.
             </p>
           )}
         </div>

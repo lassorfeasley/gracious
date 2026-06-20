@@ -9,7 +9,7 @@ import {
   isInvitationActive,
 } from '@/lib/invitations';
 import { getCoGuestsForInvitation } from '@/lib/coguests';
-import { getGuestStayForInvitation } from '@/lib/bookings';
+import { getGuestStayForInvitation } from '@/lib/visits';
 import { canManageProperty, getAuthUser } from '@/lib/auth';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { formatDateRange, formatDate } from '@/lib/dates';
@@ -17,15 +17,18 @@ import { PropertySections } from '@/components/property-sections';
 import { PropertyNotesDisplay } from '@/components/property-notes-display';
 import { DirectionsDialog } from '@/components/directions-dialog';
 import { SiteFooter } from '@/components/site-footer';
-import { BookingProvider } from '@/components/guest/booking-context';
+import { VisitProvider } from '@/components/guest/visit-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
-import { HouseBookingSidebar } from '@/components/guest/house-booking-sidebar';
+import { HouseVisitSidebar } from '@/components/guest/house-visit-sidebar';
+import { MobileDockedCard } from '@/components/mobile-docked-card';
 import {
   appendGuestPreviewToPath,
   isGuestPreviewEnabled,
   parseGuestPreviewAs,
-  parseGuestPreviewBookingStatus,
+  parseGuestPreviewVisitStatus,
+  resolveGuestPreviewUi,
 } from '@/lib/guest-preview';
+import { guestVisitCtaLabel } from '@/lib/invitation-visit';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, CalendarCheck, CalendarRange, MapPin, Sparkles } from 'lucide-react';
 import { InviteCreatedDialog } from '@/components/invite/invite-created-dialog';
@@ -79,9 +82,9 @@ export default async function InvitePage({
 
   const previewMode = isGuestPreviewEnabled(preview);
   const guestPreviewAs = parseGuestPreviewAs(as);
-  const guestPreviewBookingStatus = parseGuestPreviewBookingStatus(status);
-  const showBookingCalendar =
-    !previewMode || guestPreviewAs !== 'booked';
+  const guestPreviewVisitStatus = parseGuestPreviewVisitStatus(status);
+  const showVisitRequestCalendar =
+    !previewMode || guestPreviewAs !== 'confirmed';
   const active = isInvitationActive(invitation);
   const authUser = await getAuthUser();
   const isAuthenticated = guestMatchesInvitation(authUser, invitation);
@@ -118,11 +121,55 @@ export default async function InvitePage({
         }))
       : undefined;
 
-  const bookableRooms = invitation.rooms.map((r) => ({
+  const requestableRooms = invitation.rooms.map((r) => ({
     id: r.id,
     name: r.name,
     max_occupancy: r.max_occupancy,
   }));
+
+  const showSidebar = active || previewMode || !!existingStay;
+  const previewUi = resolveGuestPreviewUi(
+    previewMode,
+    guestPreviewAs,
+    isAuthenticated
+  );
+  const isManageStay =
+    (!previewMode && !!existingStay) || previewUi.showManageStay;
+  const dock = isManageStay
+    ? {
+        ctaLabel: 'View stay',
+        idleTitle: 'Your stay',
+        idleSubtitle: property.name,
+        trackDates: false,
+      }
+    : previewUi.showSignIn
+      ? {
+          ctaLabel: 'Sign in',
+          idleTitle: 'Sign in to request a visit',
+          idleSubtitle: 'Magic link to your invited email',
+          trackDates: false,
+        }
+      : {
+          ctaLabel: guestVisitCtaLabel(invitation),
+          idleTitle: 'Add your dates',
+          idleSubtitle: isPrixFixe
+            ? 'Fixed-date stay'
+            : 'Choose when you’ll arrive',
+          trackDates: true,
+        };
+  const houseVisitSidebar = (
+    <HouseVisitSidebar
+      invitation={invitation}
+      propertyName={property.name}
+      isAuthenticated={isAuthenticated}
+      existingStay={existingStay}
+      previewMode={previewMode}
+      guestPreviewAs={guestPreviewAs}
+      guestPreviewVisitStatus={guestPreviewVisitStatus}
+      isPrixFixe={isPrixFixe}
+      allowedRanges={allowedRanges}
+    />
+  );
 
   const typeLabel = INVITATION_TYPE_LABELS[invitation.type];
   const typeDescription =
@@ -154,7 +201,7 @@ export default async function InvitePage({
         {/* Host-only: this is a guest-facing page, so give hosts a way back. */}
         {isHost && (
           <Link
-            href={`/dashboard/${property.slug}/bookings`}
+            href={`/dashboard/${property.slug}/visits`}
             className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -200,8 +247,8 @@ export default async function InvitePage({
           }
         />
 
-        <BookingProvider
-          rooms={bookableRooms}
+        <VisitProvider
+          rooms={requestableRooms}
           roomAvailability={roomAvailability}
           defaultSelectedRoomIds={roomIds}
           lockRoomSelection={isPrixFixe || invitation.whole_home}
@@ -272,7 +319,7 @@ export default async function InvitePage({
                     </p>
                   ))}
 
-                {(active || previewMode) && showBookingCalendar && (
+                {(active || previewMode) && showVisitRequestCalendar && (
                   <div className="mt-8">
                     <HouseCalendar
                       allowedRanges={allowedRanges}
@@ -297,7 +344,7 @@ export default async function InvitePage({
                           ? appendGuestPreviewToPath(
                               `/invite/${invitation.token}/rooms/${room.id}`,
                               guestPreviewAs,
-                              guestPreviewBookingStatus
+                              guestPreviewVisitStatus
                             )
                           : `/invite/${invitation.token}/rooms/${room.id}`
                       }
@@ -336,19 +383,9 @@ export default async function InvitePage({
               </div>
             </div>
 
-            <aside className="lg:sticky lg:top-8 lg:self-start">
-              {active || previewMode || existingStay ? (
-                <HouseBookingSidebar
-                  invitation={invitation}
-                  propertyName={property.name}
-                  isAuthenticated={isAuthenticated}
-                  existingStay={existingStay}
-                  previewMode={previewMode}
-                  guestPreviewAs={guestPreviewAs}
-                  guestPreviewBookingStatus={guestPreviewBookingStatus}
-                  isPrixFixe={isPrixFixe}
-                  allowedRanges={allowedRanges}
-                />
+            <aside className="hidden lg:sticky lg:top-8 lg:block lg:self-start">
+              {showSidebar ? (
+                houseVisitSidebar
               ) : (
                 <div className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">
                   This invitation is no longer active.
@@ -356,7 +393,18 @@ export default async function InvitePage({
               )}
             </aside>
           </div>
-        </BookingProvider>
+
+          {showSidebar && (
+            <MobileDockedCard
+              ctaLabel={dock.ctaLabel}
+              idleTitle={dock.idleTitle}
+              idleSubtitle={dock.idleSubtitle}
+              trackDates={dock.trackDates}
+            >
+              {houseVisitSidebar}
+            </MobileDockedCard>
+          )}
+        </VisitProvider>
       </div>
 
       <SiteFooter name={property.name} />

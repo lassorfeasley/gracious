@@ -29,7 +29,7 @@ export function ComposePageActions({
         trigger={
           <Button size="sm" disabled={disabled}>
             <UserPlus className="mr-1 h-4 w-4" />
-            Book a guest
+            Invite a guest
           </Button>
         }
       />

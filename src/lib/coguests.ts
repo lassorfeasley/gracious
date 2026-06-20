@@ -30,15 +30,15 @@ export async function getCoGuestsForDates(
 ): Promise<CoGuestDisplay> {
   const admin = createAdminClient();
 
-  const { data: approvedBookings } = await admin
-    .from('bookings')
+  const { data: approvedVisits } = await admin
+    .from('visits')
     .select(
       `
       guest_user_id,
       guest_name,
       guest_email,
       guest:users!guest_user_id(id, name, visible_to_coguests),
-      dates:booking_dates(check_in, check_out)
+      dates:visit_dates(check_in, check_out)
     `
     )
     .eq('property_id', propertyId)
@@ -47,12 +47,12 @@ export async function getCoGuestsForDates(
   const visible: { label: string; name: string }[] = [];
   let hasHidden = false;
 
-  for (const booking of approvedBookings ?? []) {
-    if (booking.guest_user_id === excludeUserId) continue;
+  for (const visit of approvedVisits ?? []) {
+    if (visit.guest_user_id === excludeUserId) continue;
 
-    const dates = Array.isArray(booking.dates)
-      ? booking.dates[0]
-      : booking.dates;
+    const dates = Array.isArray(visit.dates)
+      ? visit.dates[0]
+      : visit.dates;
     if (!dates) continue;
 
     if (
@@ -60,10 +60,10 @@ export async function getCoGuestsForDates(
     )
       continue;
 
-    if (booking.guest_user_id) {
-      const guest = (Array.isArray(booking.guest)
-        ? booking.guest[0]
-        : booking.guest) as User | null;
+    if (visit.guest_user_id) {
+      const guest = (Array.isArray(visit.guest)
+        ? visit.guest[0]
+        : visit.guest) as User | null;
       if (!guest) continue;
       if (!forOwner && !guest.visible_to_coguests) {
         hasHidden = true;
@@ -75,8 +75,8 @@ export async function getCoGuestsForDates(
       });
     } else {
       const name =
-        booking.guest_name ??
-        booking.guest_email?.split('@')[0] ??
+        visit.guest_name ??
+        visit.guest_email?.split('@')[0] ??
         'Guest';
       visible.push({
         label: formatDisplayName(name),

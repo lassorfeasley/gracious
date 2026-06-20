@@ -1,6 +1,6 @@
 import { datesOverlap } from '@/lib/dates';
 
-export interface CalendarBooking {
+export interface CalendarVisit {
   id: string;
   guestName: string;
   checkIn: string;
@@ -16,7 +16,7 @@ export interface CalendarBlock {
 }
 
 export interface RoomAvailability {
-  bookings: CalendarBooking[];
+  visits: CalendarVisit[];
   blocks: CalendarBlock[];
 }
 
@@ -24,12 +24,12 @@ export interface RoomAvailability {
 export function rangeConflictsWithAvailability(
   checkIn: string | null,
   checkOut: string | null,
-  bookings: CalendarBooking[],
+  visits: CalendarVisit[],
   blocks: CalendarBlock[]
 ): boolean {
   if (!checkIn || !checkOut) return false;
 
-  for (const b of bookings) {
+  for (const b of visits) {
     if (datesOverlap(checkIn, checkOut, b.checkIn, b.checkOut)) {
       return true;
     }

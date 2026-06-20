@@ -10,7 +10,7 @@ interface Props {
   unsubscribeUrl?: string;
 }
 
-export default function BookingCancelledEmail({
+export default function VisitCancelledEmail({
   recipientName,
   guestName,
   propertyName,

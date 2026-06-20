@@ -13,7 +13,7 @@ interface GuestProfileActionsProps {
   invitationToken?: string | null;
   invitationId?: string | null;
   invitationStatus?: string;
-  manualBookingId?: string | null;
+  manualVisitId?: string | null;
   invitePageHref?: string;
 }
 
@@ -21,7 +21,7 @@ export function GuestProfileActions({
   invitationToken,
   invitationId,
   invitationStatus,
-  manualBookingId,
+  manualVisitId,
   invitePageHref,
 }: GuestProfileActionsProps) {
   const router = useRouter();
@@ -70,12 +70,12 @@ export function GuestProfileActions({
           {isDev && (
             <Button variant="outline" size="sm" asChild>
               <a
-                href={`${getInviteUrl(invitationToken)}?${guestPreviewQuery('booking')}`}
+                href={`${getInviteUrl(invitationToken)}?${guestPreviewQuery('visit')}`}
                 target="_blank"
                 rel="noreferrer"
               >
                 <Eye className="mr-1 h-4 w-4" />
-                Preview booking
+                Preview visit
               </a>
             </Button>
           )}
@@ -89,8 +89,8 @@ export function GuestProfileActions({
           </Button>
         </>
       )}
-      {manualBookingId && (
-        <CancelHostStayButton bookingId={manualBookingId} />
+      {manualVisitId && (
+        <CancelHostStayButton visitId={manualVisitId} />
       )}
     </div>
   );

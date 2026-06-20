@@ -1,28 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser, canManageProperty } from '@/lib/auth';
-import { getBookingWithDetails, checkRoomConflicts } from '@/lib/bookings';
-import { bookingUpdateSchema } from '@/lib/validations';
-import { notifyBookingApproved } from '@/lib/email/notifications';
+import { getVisitWithDetails, checkRoomConflicts } from '@/lib/visits';
+import { visitUpdateSchema } from '@/lib/validations';
+import { notifyVisitApproved } from '@/lib/email/notifications';
 import {
-  approveBooking,
-  declineBooking,
-  cancelBooking,
-  type BookingActionResult,
-} from '@/lib/booking-actions';
+  approveVisit,
+  declineVisit,
+  cancelVisit,
+  type VisitActionResult,
+} from '@/lib/visit-actions';
 import type { Room } from '@/types/database';
 
 function actionFailureResponse(
-  result: Extract<BookingActionResult, { ok: false }>
+  result: Extract<VisitActionResult, { ok: false }>
 ): NextResponse {
   switch (result.reason) {
     case 'not_found':
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Visit not found' }, { status: 404 });
     case 'forbidden':
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     case 'not_pending':
       return NextResponse.json(
-        { error: 'This booking can no longer be updated' },
+        { error: 'This visit can no longer be updated' },
         { status: 409 }
       );
   }
@@ -46,35 +46,35 @@ export async function PATCH(
     }
 
     if (action === 'approve' || action === 'decline' || action === 'cancel') {
-      let result: BookingActionResult;
+      let result: VisitActionResult;
       if (action === 'approve') {
-        result = await approveBooking(id, user.id);
+        result = await approveVisit(id, user.id);
       } else if (action === 'decline') {
-        result = await declineBooking(id, user.id, {
+        result = await declineVisit(id, user.id, {
           declineMessage: decline_message,
         });
       } else {
-        result = await cancelBooking(id, user.id);
+        result = await cancelVisit(id, user.id);
       }
 
       if (!result.ok) {
         return actionFailureResponse(result);
       }
 
-      const updated = await getBookingWithDetails(id);
-      return NextResponse.json({ booking: updated });
+      const updated = await getVisitWithDetails(id);
+      return NextResponse.json({ visit: updated });
     }
 
     if (action === 'update') {
-      const booking = await getBookingWithDetails(id);
-      if (!booking) {
-        return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      const visit = await getVisitWithDetails(id);
+      if (!visit) {
+        return NextResponse.json({ error: 'Visit not found' }, { status: 404 });
       }
-      if (!(await canManageProperty(booking.property_id, user.id))) {
+      if (!(await canManageProperty(visit.property_id, user.id))) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      const parsed = bookingUpdateSchema.safeParse(body);
+      const parsed = visitUpdateSchema.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json(
           { error: parsed.error.flatten().fieldErrors },
@@ -94,7 +94,7 @@ export async function PATCH(
       const { data: rooms } = await admin
         .from('rooms')
         .select('*')
-        .eq('property_id', booking.property_id)
+        .eq('property_id', visit.property_id)
         .in('id', data.room_ids);
 
       if (!rooms || rooms.length !== data.room_ids.length) {
@@ -125,33 +125,33 @@ export async function PATCH(
       );
       if (conflicts.hasConflict) {
         return NextResponse.json(
-          { error: 'Selected dates conflict with an existing booking or block' },
+          { error: 'Selected dates conflict with an existing visit or block' },
           { status: 400 }
         );
       }
 
       await admin
-        .from('bookings')
+        .from('visits')
         .update({ party_size: data.party_size, notes: data.notes ?? null })
         .eq('id', id);
 
       await admin
-        .from('booking_dates')
+        .from('visit_dates')
         .update({ check_in: data.check_in, check_out: data.check_out })
-        .eq('booking_id', id);
+        .eq('visit_id', id);
 
-      await admin.from('booking_rooms').delete().eq('booking_id', id);
-      await admin.from('booking_rooms').insert(
-        data.room_ids.map((room_id) => ({ booking_id: id, room_id }))
+      await admin.from('visit_rooms').delete().eq('visit_id', id);
+      await admin.from('visit_rooms').insert(
+        data.room_ids.map((room_id) => ({ visit_id: id, room_id }))
       );
 
       // Inform the guest of the change (re-sends confirmation with new details).
-      if (booking.status === 'approved' && booking.notify_guest && booking.guest.email) {
-        notifyBookingApproved(id).catch(console.error);
+      if (visit.status === 'approved' && visit.notify_guest && visit.guest.email) {
+        notifyVisitApproved(id).catch(console.error);
       }
 
-      const updated = await getBookingWithDetails(id);
-      return NextResponse.json({ booking: updated });
+      const updated = await getVisitWithDetails(id);
+      return NextResponse.json({ visit: updated });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

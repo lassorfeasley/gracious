@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
  * Shared room-by-room stay timeline. A horizontal, Gantt-style schedule: one
  * row per room, with stays drawn as labeled bands across a scrollable date
  * window. Purely presentational and date-driven — both the landing-page
- * showcase (hardcoded demo data) and the host dashboard (live bookings) feed it
+ * showcase (hardcoded demo data) and the host dashboard (live visits) feed it
  * the same `rows` shape. Status colors mirror the rest of the calendar system:
  * pine = confirmed, brass = pending, muted = owner block.
  */

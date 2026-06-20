@@ -1,7 +1,7 @@
 export type PlanId = 'free' | 'pro';
 export type InvitationType = 'standing' | 'date_offer' | 'prix_fixe';
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
-export type BookingStatus = 'requested' | 'approved' | 'declined' | 'cancelled';
+export type VisitStatus = 'requested' | 'approved' | 'declined' | 'cancelled';
 
 export interface User {
   id: string;
@@ -28,8 +28,8 @@ export interface User {
 
 export interface NotificationPrefs {
   // Host activity (opt-out, granular)
-  booking_requests: boolean;
-  booking_cancelled: boolean;
+  visit_requests: boolean;
+  visit_cancelled: boolean;
   invitation_expiring: boolean;
   // Nudge when an invited guest hasn't responded after the reminder drip
   invitation_stalled: boolean;
@@ -162,13 +162,13 @@ export interface InvitationWindow {
   end_date: string;
 }
 
-export interface BookingGuest {
+export interface VisitGuest {
   id: string | null;
   name: string | null;
   email: string | null;
 }
 
-export interface Booking {
+export interface Visit {
   id: string;
   invitation_id: string | null;
   property_id: string;
@@ -181,22 +181,22 @@ export interface Booking {
   guest_phone: string | null;
   notify_guest: boolean;
   created_by: string | null;
-  status: BookingStatus;
+  status: VisitStatus;
   party_size: number;
   notes: string | null;
   decline_message: string | null;
   created_at: string;
 }
 
-export interface BookingRoom {
+export interface VisitRoom {
   id: string;
-  booking_id: string;
+  visit_id: string;
   room_id: string;
 }
 
-export interface BookingDates {
+export interface VisitDates {
   id: string;
-  booking_id: string;
+  visit_id: string;
   check_in: string;
   check_out: string;
 }
@@ -207,9 +207,9 @@ export interface InvitationWithDetails extends Invitation {
   windows: InvitationWindow[];
 }
 
-export interface BookingWithDetails extends Booking {
-  guest: BookingGuest;
-  dates: BookingDates;
+export interface VisitWithDetails extends Visit {
+  guest: VisitGuest;
+  dates: VisitDates;
   rooms: Room[];
   property: Property;
   invitation: Invitation | null;

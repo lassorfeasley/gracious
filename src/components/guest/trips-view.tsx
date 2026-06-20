@@ -9,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CancelBookingButton } from '@/components/guest/cancel-booking-button';
+import { CancelVisitButton } from '@/components/guest/cancel-visit-button';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 import { PropertyNotesDisplay } from '@/components/property-notes-display';
-import type { BookingStatus, PropertyNote } from '@/types/database';
+import type { VisitStatus, PropertyNote } from '@/types/database';
 
 const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   requested: 'secondary',
@@ -21,9 +21,9 @@ const statusColors: Record<string, 'default' | 'secondary' | 'destructive' | 'ou
   cancelled: 'outline',
 };
 
-export interface TripBooking {
+export interface TripVisit {
   id: string;
-  status: BookingStatus;
+  status: VisitStatus;
   property: {
     name: string;
     slug: string;
@@ -33,49 +33,49 @@ export interface TripBooking {
     | { check_in: string; check_out: string }
     | { check_in: string; check_out: string }[]
     | null;
-  booking_rooms?: { room: { name: string } | null }[];
+  visit_rooms?: { room: { name: string } | null }[];
   invitation?: { token: string } | null;
 }
 
-function getBookingDates(booking: TripBooking) {
-  if (!booking.dates) return null;
-  return Array.isArray(booking.dates) ? booking.dates[0] : booking.dates;
+function getVisitDates(visit: TripVisit) {
+  if (!visit.dates) return null;
+  return Array.isArray(visit.dates) ? visit.dates[0] : visit.dates;
 }
 
-function isUpcomingActive(booking: TripBooking, today: string) {
-  const dates = getBookingDates(booking);
+function isUpcomingActive(visit: TripVisit, today: string) {
+  const dates = getVisitDates(visit);
   if (!dates) return false;
-  if (booking.status !== 'requested' && booking.status !== 'approved') return false;
+  if (visit.status !== 'requested' && visit.status !== 'approved') return false;
   return dates.check_out >= today;
 }
 
-export function TripsView({ bookings }: { bookings: TripBooking[] }) {
+export function TripsView({ visits }: { visits: TripVisit[] }) {
   const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
 
-  const upcomingBookings = useMemo(
-    () => bookings.filter((b) => isUpcomingActive(b, today)),
-    [bookings, today]
+  const upcomingVisits = useMemo(
+    () => visits.filter((v) => isUpcomingActive(v, today)),
+    [visits, today]
   );
 
-  const calendarBookings = useMemo(
+  const calendarVisits = useMemo(
     () =>
-      upcomingBookings
-        .map((booking) => {
-          const dates = getBookingDates(booking);
+      upcomingVisits
+        .map((visit) => {
+          const dates = getVisitDates(visit);
           if (!dates) return null;
           return {
-            id: booking.id,
-            guestName: booking.property?.name ?? 'Stay',
+            id: visit.id,
+            guestName: visit.property?.name ?? 'Stay',
             checkIn: dates.check_in,
             checkOut: dates.check_out,
-            pending: booking.status === 'requested',
+            pending: visit.status === 'requested',
           };
         })
         .filter((b): b is NonNullable<typeof b> => b !== null),
-    [upcomingBookings]
+    [upcomingVisits]
   );
 
-  if (!bookings.length) {
+  if (!visits.length) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
@@ -96,22 +96,22 @@ export function TripsView({ bookings }: { bookings: TripBooking[] }) {
       </TabsList>
 
       <TabsContent value="list" className="mt-6 space-y-4">
-        {bookings.map((booking) => {
-          const dates = getBookingDates(booking);
+        {visits.map((visit) => {
+          const dates = getVisitDates(visit);
           const rooms =
-            booking.booking_rooms
+            visit.visit_rooms
               ?.map((br) => br.room?.name)
               .filter((name): name is string => !!name) ?? [];
 
           return (
-            <Card key={booking.id}>
+            <Card key={visit.id}>
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-lg">
-                    {booking.property?.name}
+                    {visit.property?.name}
                   </CardTitle>
-                  <Badge variant={statusColors[booking.status] ?? 'outline'}>
-                    {booking.status}
+                  <Badge variant={statusColors[visit.status] ?? 'outline'}>
+                    {visit.status}
                   </Badge>
                 </div>
               </CardHeader>
@@ -126,30 +126,30 @@ export function TripsView({ bookings }: { bookings: TripBooking[] }) {
                     Rooms: {rooms.join(', ')}
                   </p>
                 )}
-                {booking.status === 'approved' &&
-                  booking.property?.property_notes &&
-                  booking.property.property_notes.length > 0 && (
+                {visit.status === 'approved' &&
+                  visit.property?.property_notes &&
+                  visit.property.property_notes.length > 0 && (
                     <PropertyNotesDisplay
-                      notes={booking.property.property_notes}
+                      notes={visit.property.property_notes}
                       categories={['house', 'checkin', 'checkout']}
                       headingAs="h3"
                       className="border-t pt-4"
                     />
                   )}
                 <div className="flex flex-wrap gap-2">
-                  {booking.status === 'approved' && (
-                    <AddToCalendarButton bookingId={booking.id} />
+                  {visit.status === 'approved' && (
+                    <AddToCalendarButton visitId={visit.id} />
                   )}
-                  {booking.invitation?.token && (
+                  {visit.invitation?.token && (
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/invite/${booking.invitation.token}`}>
+                      <Link href={`/invite/${visit.invitation.token}`}>
                         View house
                       </Link>
                     </Button>
                   )}
-                  {(booking.status === 'requested' ||
-                    booking.status === 'approved') && (
-                    <CancelBookingButton bookingId={booking.id} />
+                  {(visit.status === 'requested' ||
+                    visit.status === 'approved') && (
+                    <CancelVisitButton visitId={visit.id} />
                   )}
                 </div>
               </CardContent>
@@ -159,7 +159,7 @@ export function TripsView({ bookings }: { bookings: TripBooking[] }) {
       </TabsContent>
 
       <TabsContent value="calendar" className="mt-6">
-        {calendarBookings.length === 0 ? (
+        {calendarVisits.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">No upcoming trips.</p>
@@ -171,7 +171,7 @@ export function TripsView({ bookings }: { bookings: TripBooking[] }) {
         ) : (
           <div className="rounded-2xl border p-6">
             <AvailabilityCalendar
-              bookings={calendarBookings}
+              visits={calendarVisits}
               monthsToShow={2}
               selectable={false}
             />

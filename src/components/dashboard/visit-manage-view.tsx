@@ -5,28 +5,28 @@ import Link from 'next/link';
 import { Mail, Phone, User as UserIcon } from 'lucide-react';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 import {
-  BookingProvider,
-  useBooking,
-  type BookableRoom,
-} from '@/components/guest/booking-context';
+  VisitProvider,
+  useVisit,
+  type RequestableRoom,
+} from '@/components/guest/visit-context';
 import { HostManageStayCard } from '@/components/dashboard/host-manage-stay-card';
-import { BookingMainActions } from '@/components/dashboard/booking-main-actions';
-import type { CalendarBooking, RoomAvailability } from '@/lib/guest-calendar';
-import type { BookingWithDetails } from '@/types/database';
+import { VisitMainActions } from '@/components/dashboard/visit-main-actions';
+import type { CalendarVisit, RoomAvailability } from '@/lib/guest-calendar';
+import type { VisitWithDetails } from '@/types/database';
 import { INVITATION_TYPE_LABELS } from '@/lib/invitation-types';
 
-function bookingTypeInfo(booking: BookingWithDetails): {
+function visitTypeInfo(visit: VisitWithDetails): {
   label: string;
   description: string;
 } {
-  if (!booking.invitation_id || !booking.invitation) {
+  if (!visit.invitation_id || !visit.invitation) {
     return {
       label: 'Manual stay',
       description:
         'You added this stay directly. The guest isn\u2019t using the app, so dates are simply blocked on your calendar.',
     };
   }
-  switch (booking.invitation.type) {
+  switch (visit.invitation.type) {
     case 'standing':
       return {
         label: INVITATION_TYPE_LABELS.standing,
@@ -50,58 +50,58 @@ function bookingTypeInfo(booking: BookingWithDetails): {
 }
 
 function ManageCalendar({
-  stayBooking,
-  bookingHrefBase,
+  stayVisit,
+  visitHrefBase,
 }: {
-  stayBooking: CalendarBooking;
-  bookingHrefBase?: string;
+  stayVisit: CalendarVisit;
+  visitHrefBase?: string;
 }) {
-  const { combinedBookings, combinedBlocks } = useBooking();
+  const { combinedVisits, combinedBlocks } = useVisit();
 
   return (
     <AvailabilityCalendar
-      bookings={[...combinedBookings, stayBooking]}
+      visits={[...combinedVisits, stayVisit]}
       blocks={combinedBlocks}
       monthsToShow={2}
-      bookingHrefBase={bookingHrefBase}
+      visitHrefBase={visitHrefBase}
     />
   );
 }
 
-export function BookingManageView({
-  booking,
+export function VisitManageView({
+  visit,
   rooms,
   roomAvailability,
   guestProfileHref,
-  bookingHrefBase,
+  visitHrefBase,
   children,
 }: {
-  booking: BookingWithDetails;
-  rooms: BookableRoom[];
+  visit: VisitWithDetails;
+  rooms: RequestableRoom[];
   roomAvailability: Record<string, RoomAvailability>;
   guestProfileHref?: string;
-  bookingHrefBase?: string;
+  visitHrefBase?: string;
   children: ReactNode;
 }) {
-  const stayBooking: CalendarBooking = {
-    id: booking.id,
-    guestName: booking.guest.name ?? 'This stay',
-    checkIn: booking.dates.check_in,
-    checkOut: booking.dates.check_out,
+  const stayVisit: CalendarVisit = {
+    id: visit.id,
+    guestName: visit.guest.name ?? 'This stay',
+    checkIn: visit.dates.check_in,
+    checkOut: visit.dates.check_out,
   };
 
-  const typeInfo = bookingTypeInfo(booking);
+  const typeInfo = visitTypeInfo(visit);
 
   return (
-    <BookingProvider
+    <VisitProvider
       rooms={rooms}
       roomAvailability={roomAvailability}
-      defaultSelectedRoomIds={booking.rooms.map((r) => r.id)}
+      defaultSelectedRoomIds={visit.rooms.map((r) => r.id)}
       defaultRange={{
-        checkIn: booking.dates.check_in,
-        checkOut: booking.dates.check_out,
+        checkIn: visit.dates.check_in,
+        checkOut: visit.dates.check_out,
       }}
-      defaultGuests={booking.party_size}
+      defaultGuests={visit.party_size}
     >
       <div className="mt-8 grid gap-x-12 gap-y-12 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0 divide-y">
@@ -119,24 +119,24 @@ export function BookingManageView({
           <section className="py-10">
             <h2 className="text-2xl font-semibold tracking-tight">Guest</h2>
             <p className="mt-4 text-lg font-medium">
-              {booking.guest.name ?? 'Guest'}
+              {visit.guest.name ?? 'Guest'}
             </p>
             <div className="mt-2 space-y-1.5 text-base">
-              {booking.guest.email && (
+              {visit.guest.email && (
                 <p className="flex items-center gap-2 text-muted-foreground">
                   <Mail className="h-4 w-4 shrink-0" />
                   <a
-                    href={`mailto:${booking.guest.email}`}
+                    href={`mailto:${visit.guest.email}`}
                     className="hover:text-foreground"
                   >
-                    {booking.guest.email}
+                    {visit.guest.email}
                   </a>
                 </p>
               )}
-              {booking.guest_phone && (
+              {visit.guest_phone && (
                 <p className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="h-4 w-4 shrink-0" />
-                  {booking.guest_phone}
+                  {visit.guest_phone}
                 </p>
               )}
               {guestProfileHref && (
@@ -159,19 +159,19 @@ export function BookingManageView({
             </p>
             <div className="mt-6">
               <ManageCalendar
-                stayBooking={stayBooking}
-                bookingHrefBase={bookingHrefBase}
+                stayVisit={stayVisit}
+                visitHrefBase={visitHrefBase}
               />
             </div>
           </section>
           {children}
-          <BookingMainActions booking={booking} />
+          <VisitMainActions visit={visit} />
         </div>
 
         <aside className="lg:sticky lg:top-8 lg:self-start">
-          <HostManageStayCard booking={booking} />
+          <HostManageStayCard visit={visit} />
         </aside>
       </div>
-    </BookingProvider>
+    </VisitProvider>
   );
 }

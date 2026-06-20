@@ -162,7 +162,7 @@ export const invitationSchema = z
     path: ['party_size'],
   });
 
-export const bookingRequestSchema = z.object({
+export const visitRequestSchema = z.object({
   invitation_token: z.string().uuid(),
   check_in: z.string().min(1, 'Check-in date is required'),
   check_out: z.string().min(1, 'Check-out date is required'),
@@ -173,7 +173,7 @@ export const bookingRequestSchema = z.object({
   guest_last_name: z.string().optional(),
 });
 
-export const hostBookingSchema = z
+export const hostVisitSchema = z
   .object({
     property_id: z.string().uuid(),
     guest_first_name: z.string().min(1, 'First name is required'),
@@ -195,7 +195,7 @@ export const hostBookingSchema = z
     }
   );
 
-export const bookingUpdateSchema = z.object({
+export const visitUpdateSchema = z.object({
   check_in: z.string().min(1, 'Check-in date is required'),
   check_out: z.string().min(1, 'Check-out date is required'),
   room_ids: z.array(z.string()).min(1, 'Select at least one room'),
@@ -203,7 +203,7 @@ export const bookingUpdateSchema = z.object({
   notes: z.string().optional(),
 });
 
-export type BookingUpdateInput = z.infer<typeof bookingUpdateSchema>;
+export type VisitUpdateInput = z.infer<typeof visitUpdateSchema>;
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
@@ -212,5 +212,5 @@ export type SignupInput = z.infer<typeof signupSchema>;
 export type PropertyInput = z.infer<typeof propertySchema>;
 export type RoomInput = z.infer<typeof roomSchema>;
 export type InvitationInput = z.infer<typeof invitationSchema>;
-export type BookingRequestInput = z.infer<typeof bookingRequestSchema>;
-export type HostBookingInput = z.infer<typeof hostBookingSchema>;
+export type VisitRequestInput = z.infer<typeof visitRequestSchema>;
+export type HostVisitInput = z.infer<typeof hostVisitSchema>;

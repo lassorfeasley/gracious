@@ -7,20 +7,20 @@ export const CALENDAR_COLORS = [
   'bg-teal-100 text-teal-800',
 ];
 
-export interface CalendarBookingInput {
+export interface CalendarVisitInput {
   id: string;
   guestName: string;
   checkIn: string;
   checkOut: string;
 }
 
-export function assignColors<T extends CalendarBookingInput>(
-  bookings: T[]
+export function assignColors<T extends CalendarVisitInput>(
+  visits: T[]
 ): (T & { color: string })[] {
   const guestColorMap = new Map<string, string>();
   let colorIdx = 0;
 
-  return bookings.map((b) => {
+  return visits.map((b) => {
     if (!guestColorMap.has(b.guestName)) {
       guestColorMap.set(
         b.guestName,

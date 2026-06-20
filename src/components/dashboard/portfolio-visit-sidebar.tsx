@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { Room } from '@/types/database';
 import type { RoomAvailability } from '@/lib/guest-calendar';
-import { BookingProvider } from '@/components/guest/booking-context';
+import { VisitProvider } from '@/components/guest/visit-context';
 import { HostPageSidebar } from '@/components/dashboard/host-page-sidebar';
 import { Label } from '@/components/ui/label';
 import {
@@ -21,7 +21,7 @@ export interface PortfolioSidebarHouse {
   roomAvailability: Record<string, RoomAvailability>;
 }
 
-export function PortfolioBookingSidebar({
+export function PortfolioVisitSidebar({
   houses,
 }: {
   houses: PortfolioSidebarHouse[];
@@ -33,7 +33,7 @@ export function PortfolioBookingSidebar({
 
   const homeSelect = (
     <div className="space-y-2">
-      <Label htmlFor="portfolio-home-select">Booking for</Label>
+      <Label htmlFor="portfolio-home-select">Visit for</Label>
       <Select value={house.id} onValueChange={setSelectedId}>
         <SelectTrigger id="portfolio-home-select" className="w-full">
           <SelectValue />
@@ -51,7 +51,7 @@ export function PortfolioBookingSidebar({
 
   return (
     // Remount per home so dates/rooms/guests reset cleanly on switch.
-    <BookingProvider
+    <VisitProvider
       key={house.id}
       rooms={house.rooms}
       roomAvailability={house.roomAvailability}
@@ -63,6 +63,6 @@ export function PortfolioBookingSidebar({
         roomAvailability={house.roomAvailability}
         headerSlot={homeSelect}
       />
-    </BookingProvider>
+    </VisitProvider>
   );
 }

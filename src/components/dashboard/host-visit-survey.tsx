@@ -10,7 +10,7 @@ import {
   INVITATION_TYPE_LABELS,
 } from '@/lib/invitation-types';
 import type { Room } from '@/types/database';
-import { useBooking } from '@/components/guest/booking-context';
+import { useVisit } from '@/components/guest/visit-context';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +44,7 @@ type StepKey = 'kind' | 'rooms' | 'guest' | 'details' | 'review';
 const STEPS: StepKey[] = ['kind', 'rooms', 'guest', 'details', 'review'];
 
 const STEP_TITLES: Record<StepKey, string> = {
-  kind: 'What kind of booking is this?',
+  kind: 'What kind of visit is this?',
   rooms: 'Which rooms are included?',
   guest: 'Who is the guest?',
   details: 'Any final details?',
@@ -68,17 +68,17 @@ function guestDisplayName(first: string, last: string): string {
 function RoomPillPicker() {
   const [open, setOpen] = useState(false);
   const {
-    rooms: bookableRooms,
+    rooms: requestableRooms,
     selectedRoomIds,
     toggleRoom,
     selectAllRooms,
     lockRoomSelection,
-  } = useBooking();
+  } = useVisit();
 
-  const selectedRooms = bookableRooms.filter((r) =>
+  const selectedRooms = requestableRooms.filter((r) =>
     selectedRoomIds.includes(r.id)
   );
-  const unselectedRooms = bookableRooms.filter(
+  const unselectedRooms = requestableRooms.filter(
     (r) => !selectedRoomIds.includes(r.id)
   );
 
@@ -156,8 +156,8 @@ function RoomPillPicker() {
             </PopoverContent>
           </Popover>
         )}
-        {bookableRooms.length > 1 &&
-          selectedRoomIds.length < bookableRooms.length && (
+        {requestableRooms.length > 1 &&
+          selectedRoomIds.length < requestableRooms.length && (
             <button
               type="button"
               onClick={selectAllRooms}
@@ -171,7 +171,7 @@ function RoomPillPicker() {
   );
 }
 
-export function HostBookingSurvey({
+export function HostVisitSurvey({
   open,
   onOpenChange,
   propertyId,
@@ -242,11 +242,11 @@ export function HostBookingSurvey({
     checkIn,
     checkOut,
     guests,
-    rooms: bookableRooms,
+    rooms: requestableRooms,
     selectedRoomIds,
     selectAllRooms,
     lockRoomSelection,
-  } = useBooking();
+  } = useVisit();
 
   const [step, setStep] = useState(0);
 
@@ -269,7 +269,7 @@ export function HostBookingSurvey({
     }
   }, [open, lockRoomSelection, selectAllRooms]);
 
-  const wholeHomeAvailable = actionType === 'invite' && bookableRooms.length > 1;
+  const wholeHomeAvailable = actionType === 'invite' && requestableRooms.length > 1;
   const wholeHomeOn = wholeHomeAvailable && wholeHome;
 
   function handleWholeHomeChange(on: boolean) {
@@ -279,17 +279,17 @@ export function HostBookingSurvey({
 
   const roomsLabel = wholeHomeOn
     ? 'Entire home'
-    : selectedRoomIds.length === bookableRooms.length
+    : selectedRoomIds.length === requestableRooms.length
       ? 'Entire place'
       : selectedRoomIds.length === 1
-        ? bookableRooms.find((r) => r.id === selectedRoomIds[0])?.name ?? '1 room'
+        ? requestableRooms.find((r) => r.id === selectedRoomIds[0])?.name ?? '1 room'
         : `${selectedRoomIds.length} rooms`;
 
   const submitLabel =
     actionType === 'manual'
       ? 'Add to calendar'
       : preApproved
-        ? 'Book stay'
+        ? 'Confirm visit'
         : 'Send invitation';
 
   function validateStep(key: StepKey): boolean {
@@ -391,7 +391,7 @@ export function HostBookingSurvey({
       <DialogContent className="flex max-h-[min(90vh,820px)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <div className="shrink-0 border-b px-8 pb-5 pt-8">
           <DialogHeader>
-            <DialogTitle>Finish your booking</DialogTitle>
+            <DialogTitle>Finish your visit</DialogTitle>
           </DialogHeader>
           <div className="mt-5">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -464,9 +464,9 @@ export function HostBookingSurvey({
                       )}
                     >
                       <div>
-                        <p className="font-medium">Already booked</p>
+                        <p className="font-medium">Already confirmed</p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          You confirmed this stay outside Gracious — book it now
+                          You confirmed this stay outside Gracious — confirm it now
                           and notify the guest. No acceptance needed.
                         </p>
                       </div>
@@ -477,7 +477,7 @@ export function HostBookingSurvey({
 
                 <div className="space-y-3 border-t pt-5">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Other ways to book
+                    Other ways to request a visit
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {actionType === 'manual' ? (
@@ -543,7 +543,7 @@ export function HostBookingSurvey({
                     <div>
                       <p className="font-medium">Entire home only</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Guests book the whole place — they can&apos;t pick
+                        Guests request the whole place — they can&apos;t pick
                         individual rooms.
                       </p>
                     </div>
@@ -556,7 +556,7 @@ export function HostBookingSurvey({
                 )}
                 {wholeHomeOn ? (
                   <p className="text-sm text-muted-foreground">
-                    All {bookableRooms.length} rooms are included.
+                    All {requestableRooms.length} rooms are included.
                   </p>
                 ) : (
                   <RoomPillPicker />
@@ -690,7 +690,7 @@ export function HostBookingSurvey({
                     {actionType === 'manual'
                       ? 'Manual stay'
                       : preApproved
-                        ? 'Already booked'
+                        ? 'Already confirmed'
                         : INVITATION_TYPE_LABELS[inviteType]}
                   </dd>
                 </div>
@@ -747,7 +747,7 @@ export function HostBookingSurvey({
                     </dt>
                     <dd className="mt-1 font-medium">
                       {preApproved
-                        ? 'Booked directly — no acceptance needed'
+                        ? 'Confirmed directly — no acceptance needed'
                         : requiresApproval
                           ? 'Required'
                           : 'Not required'}

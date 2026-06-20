@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/lib/dates';
 import type { InvitationInput } from '@/lib/validations';
 import type { Room } from '@/types/database';
-import { useBooking } from '@/components/guest/booking-context';
+import { useVisit } from '@/components/guest/visit-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
-import { HostBookingSurvey } from '@/components/dashboard/host-booking-survey';
+import { HostVisitSurvey } from '@/components/dashboard/host-visit-survey';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -145,7 +145,7 @@ export function HostStaySidebar({
     setActiveField,
     clear,
     maxGuests,
-  } = useBooking();
+  } = useVisit();
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -332,7 +332,7 @@ export function HostStaySidebar({
         </div>
       )}
 
-      <HostBookingSurvey
+      <HostVisitSurvey
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
         propertyId={propertyId}

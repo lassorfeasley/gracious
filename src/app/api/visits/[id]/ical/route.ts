@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { getBookingWithDetails } from '@/lib/bookings';
+import { getVisitWithDetails } from '@/lib/visits';
 import { buildStayEvent, generateIcs } from '@/lib/ical';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { canManageProperty } from '@/lib/auth';
 
 /**
- * Add-to-calendar endpoint for a booking.
+ * Add-to-calendar endpoint for a visit.
  * - default: downloads an .ics file (Apple Calendar, desktop Outlook, etc.)
  * - ?provider=google|outlook: redirects to that calendar's pre-filled add-event page
  */
@@ -20,30 +20,30 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const booking = await getBookingWithDetails(id);
-  if (!booking || booking.status !== 'approved') {
+  const visit = await getVisitWithDetails(id);
+  if (!visit || visit.status !== 'approved') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const isGuest = booking.guest_user_id === user.id;
-  const isOwner = await canManageProperty(booking.property_id, user.id);
+  const isGuest = visit.guest_user_id === user.id;
+  const isOwner = await canManageProperty(visit.property_id, user.id);
   if (!isGuest && !isOwner) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const provider = request.nextUrl.searchParams.get('provider');
   if (provider === 'google') {
-    return NextResponse.redirect(googleCalendarUrl(buildStayEvent(booking)));
+    return NextResponse.redirect(googleCalendarUrl(buildStayEvent(visit)));
   }
   if (provider === 'outlook') {
-    return NextResponse.redirect(outlookCalendarUrl(buildStayEvent(booking)));
+    return NextResponse.redirect(outlookCalendarUrl(buildStayEvent(visit)));
   }
 
-  const ics = generateIcs(booking);
+  const ics = generateIcs(visit);
   return new NextResponse(ics, {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': `attachment; filename="stay-${booking.property.slug}.ics"`,
+      'Content-Disposition': `attachment; filename="stay-${visit.property.slug}.ics"`,
     },
   });
 }

@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { useBareCard } from '@/components/card-chrome';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StaySummaryList } from '@/components/stay-summary-list';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
-import type { GuestPreviewBookingStatus } from '@/lib/guest-preview';
+import type { GuestPreviewVisitStatus } from '@/lib/guest-preview';
 
 const statusVariant: Record<
-  GuestPreviewBookingStatus,
+  GuestPreviewVisitStatus,
   'default' | 'secondary' | 'destructive' | 'outline'
 > = {
   requested: 'secondary',
@@ -23,9 +25,9 @@ interface GuestManageStayCardProps {
   checkOut: string;
   roomNames: string[];
   partySize: number;
-  bookingStatus: GuestPreviewBookingStatus;
+  visitStatus: GuestPreviewVisitStatus;
   /** Real booking id — enables the live add-to-calendar menu. */
-  bookingId?: string;
+  visitId?: string;
   previewMode?: boolean;
 }
 
@@ -35,18 +37,19 @@ export function GuestManageStayCard({
   checkOut,
   roomNames,
   partySize,
-  bookingStatus,
-  bookingId,
+  visitStatus,
+  visitId,
   previewMode = false,
 }: GuestManageStayCardProps) {
+  const bare = useBareCard();
   return (
-    <div className="rounded-2xl border p-6 shadow-sm">
+    <div className={cn('p-6', !bare && 'rounded-2xl border shadow-sm')}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-lg font-semibold">Your stay</p>
           <p className="mt-0.5 text-sm text-muted-foreground">{propertyName}</p>
         </div>
-        <Badge variant={statusVariant[bookingStatus]}>{bookingStatus}</Badge>
+        <Badge variant={statusVariant[visitStatus]}>{visitStatus}</Badge>
       </div>
 
       <div className="mt-5">
@@ -59,14 +62,14 @@ export function GuestManageStayCard({
         />
       </div>
 
-      {bookingStatus === 'requested' && (
+      {visitStatus === 'requested' && (
         <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
           Your host will review this request. You&apos;ll be notified when it&apos;s
           confirmed.
         </p>
       )}
 
-      {bookingStatus === 'approved' && (
+      {visitStatus === 'approved' && (
         <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
           You&apos;re confirmed for this stay. See your trip details below for
           arrival and checkout notes.
@@ -77,10 +80,10 @@ export function GuestManageStayCard({
         <Button variant="outline" className="w-full" asChild>
           <Link href="/my-trips">View all trips</Link>
         </Button>
-        {bookingStatus === 'approved' &&
-          (bookingId ? (
+        {visitStatus === 'approved' &&
+          (visitId ? (
             <AddToCalendarButton
-              bookingId={bookingId}
+              visitId={visitId}
               size="default"
               className="w-full"
             />
@@ -97,7 +100,7 @@ export function GuestManageStayCard({
               Add to calendar
             </Button>
           ))}
-        {(bookingStatus === 'requested' || bookingStatus === 'approved') && (
+        {(visitStatus === 'requested' || visitStatus === 'approved') && (
           <Button
             type="button"
             variant="ghost"
@@ -115,8 +118,8 @@ export function GuestManageStayCard({
 
       <p className="mt-4 text-center text-xs text-muted-foreground">
         {previewMode
-          ? 'Preview of post-booking management UI'
-          : 'Manage your booking from My trips'}
+          ? 'Preview of post-visit management UI'
+          : 'Manage your visit from My trips'}
       </p>
     </div>
   );

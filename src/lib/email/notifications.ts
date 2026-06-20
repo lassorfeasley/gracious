@@ -14,12 +14,12 @@ import {
   buildHostOnboardingUrl,
 } from '@/lib/auth-links';
 import { userManagesAnyProperty } from '@/lib/auth';
-import { getBookingWithDetails } from '@/lib/bookings';
+import { getVisitWithDetails } from '@/lib/visits';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { wantsEmail } from '@/lib/notification-prefs';
 import { unsubscribePageUrl, listUnsubscribeHeaders } from '@/lib/unsubscribe';
 import { formatPersonName } from '@/lib/names';
-import type { BookingWithDetails, NotificationPrefs } from '@/types/database';
+import type { VisitWithDetails, NotificationPrefs } from '@/types/database';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -92,14 +92,14 @@ import InvitationSentEmail from '../../../emails/invitation-sent';
 import InviteReminderEmail from '../../../emails/invite-reminder';
 import InviteStalledHostEmail from '../../../emails/invite-stalled-host';
 import StayRequestedEmail from '../../../emails/stay-requested';
-import BookingApprovedEmail from '../../../emails/booking-approved';
-import BookingDeclinedEmail from '../../../emails/booking-declined';
-import BookingCancelledEmail from '../../../emails/booking-cancelled';
+import VisitApprovedEmail from '../../../emails/visit-approved';
+import VisitDeclinedEmail from '../../../emails/visit-declined';
+import VisitCancelledEmail from '../../../emails/visit-cancelled';
 import TripReminderEmail from '../../../emails/trip-reminder';
 import InvitationExpiringEmail from '../../../emails/invitation-expiring';
 import CheckoutInstructionsEmail from '../../../emails/checkout-instructions';
 import PostStayThankYouEmail from '../../../emails/post-stay-thankyou';
-import StayBookedEmail from '../../../emails/stay-booked';
+import StayConfirmedEmail from '../../../emails/stay-confirmed';
 import RequestReceivedEmail from '../../../emails/request-received';
 import ArrivalWelcomeEmail from '../../../emails/arrival-welcome';
 
@@ -259,15 +259,15 @@ export async function notifyInviteStalled(
   });
 }
 
-export async function notifyStayRequested(bookingId: string) {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking) return;
+export async function notifyStayRequested(visitId: string) {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit) return;
 
   const admin = createAdminClient();
   const { data: property } = await admin
     .from('properties')
     .select('*, owner:users!owner_id(*)')
-    .eq('id', booking.property_id)
+    .eq('id', visit.property_id)
     .single();
 
   if (!property) return;
@@ -275,7 +275,7 @@ export async function notifyStayRequested(bookingId: string) {
   const { data: managers } = await admin
     .from('property_managers')
     .select('user:users(id, email, notification_prefs)')
-    .eq('property_id', booking.property_id);
+    .eq('property_id', visit.property_id);
 
   type HostRecipient = {
     id: string;
@@ -286,23 +286,23 @@ export async function notifyStayRequested(bookingId: string) {
   const recipients = new Map<string, HostRecipient>();
   const ownerRaw = property.owner;
   const owner = (Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw) as HostRecipient;
-  if (wantsEmail(owner.notification_prefs, 'booking_requests')) {
+  if (wantsEmail(owner.notification_prefs, 'visit_requests')) {
     recipients.set(owner.id, owner);
   }
 
   for (const m of managers ?? []) {
     const userRaw = m.user;
     const user = (Array.isArray(userRaw) ? userRaw[0] : userRaw) as HostRecipient;
-    if (wantsEmail(user.notification_prefs, 'booking_requests')) {
+    if (wantsEmail(user.notification_prefs, 'visit_requests')) {
       recipients.set(user.id, user);
     }
   }
 
   const base = appUrl();
-  const rooms = booking.rooms.map((r) => r.name).join(', ');
+  const rooms = visit.rooms.map((r) => r.name).join(', ');
 
   const guestLabel =
-    booking.guest.name ?? booking.guest.email ?? 'A guest';
+    visit.guest.name ?? visit.guest.email ?? 'A guest';
 
   for (const recipient of recipients.values()) {
     await enqueueEmail({
@@ -310,38 +310,38 @@ export async function notifyStayRequested(bookingId: string) {
       subject: `Stay request from ${guestLabel}`,
       react: StayRequestedEmail({
         guestName: guestLabel,
-        propertyName: booking.property.name,
-        checkInDate: booking.dates.check_in,
-        checkOutDate: booking.dates.check_out,
+        propertyName: visit.property.name,
+        checkInDate: visit.dates.check_in,
+        checkOutDate: visit.dates.check_out,
         rooms,
-        partySize: booking.party_size,
-        notes: booking.notes ?? undefined,
-        approveUrl: `${base}/dashboard/${booking.property.slug}/requests?booking=${bookingId}&action=approve`,
-        declineUrl: `${base}/dashboard/${booking.property.slug}/requests?booking=${bookingId}&action=decline`,
+        partySize: visit.party_size,
+        notes: visit.notes ?? undefined,
+        approveUrl: `${base}/dashboard/${visit.property.slug}/requests?visit=${visitId}&action=approve`,
+        declineUrl: `${base}/dashboard/${visit.property.slug}/requests?visit=${visitId}&action=decline`,
         unsubscribeUrl: unsubscribePageUrl(recipient.id, 'host_activity'),
       }),
       headers: listUnsubscribeHeaders(recipient.id, 'host_activity'),
       // Hosts can reply straight to the guest to ask a question.
-      replyTo: booking.guest.email ?? undefined,
+      replyTo: visit.guest.email ?? undefined,
     });
   }
 
-  await logNotification({ bookingId, type: 'stay_requested' });
+  await logNotification({ visitId, type: 'stay_requested' });
 }
 
 /**
  * Tells hosts a booking was created on the auto-approve path (no request to
- * act on — purely informational so bookings never appear silently).
+ * act on — purely informational so visits never appear silently).
  */
-export async function notifyStayBooked(bookingId: string) {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking) return;
+export async function notifyStayConfirmed(visitId: string) {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit) return;
 
   const admin = createAdminClient();
   const { data: property } = await admin
     .from('properties')
     .select('*, owner:users!owner_id(*)')
-    .eq('id', booking.property_id)
+    .eq('id', visit.property_id)
     .single();
 
   if (!property) return;
@@ -349,7 +349,7 @@ export async function notifyStayBooked(bookingId: string) {
   const { data: managers } = await admin
     .from('property_managers')
     .select('user:users(id, email, notification_prefs)')
-    .eq('property_id', booking.property_id);
+    .eq('property_id', visit.property_id);
 
   type HostRecipient = {
     id: string;
@@ -360,87 +360,87 @@ export async function notifyStayBooked(bookingId: string) {
   const recipients = new Map<string, HostRecipient>();
   const ownerRaw = property.owner;
   const owner = (Array.isArray(ownerRaw) ? ownerRaw[0] : ownerRaw) as HostRecipient;
-  if (wantsEmail(owner.notification_prefs, 'booking_requests')) {
+  if (wantsEmail(owner.notification_prefs, 'visit_requests')) {
     recipients.set(owner.id, owner);
   }
 
   for (const m of managers ?? []) {
     const userRaw = m.user;
     const user = (Array.isArray(userRaw) ? userRaw[0] : userRaw) as HostRecipient;
-    if (wantsEmail(user.notification_prefs, 'booking_requests')) {
+    if (wantsEmail(user.notification_prefs, 'visit_requests')) {
       recipients.set(user.id, user);
     }
   }
 
   const base = appUrl();
-  const rooms = booking.rooms.map((r) => r.name).join(', ');
-  const guestLabel = booking.guest.name ?? booking.guest.email ?? 'A guest';
+  const rooms = visit.rooms.map((r) => r.name).join(', ');
+  const guestLabel = visit.guest.name ?? visit.guest.email ?? 'A guest';
 
   for (const recipient of recipients.values()) {
     await enqueueEmail({
       to: recipient.email,
-      subject: `${guestLabel} booked a stay at ${booking.property.name}`,
-      react: StayBookedEmail({
+      subject: `${guestLabel} booked a stay at ${visit.property.name}`,
+      react: StayConfirmedEmail({
         guestName: guestLabel,
-        propertyName: booking.property.name,
-        checkInDate: booking.dates.check_in,
-        checkOutDate: booking.dates.check_out,
+        propertyName: visit.property.name,
+        checkInDate: visit.dates.check_in,
+        checkOutDate: visit.dates.check_out,
         rooms,
-        partySize: booking.party_size,
-        notes: booking.notes ?? undefined,
-        bookingUrl: `${base}/dashboard/${booking.property.slug}/bookings/${bookingId}`,
+        partySize: visit.party_size,
+        notes: visit.notes ?? undefined,
+        visitUrl: `${base}/dashboard/${visit.property.slug}/visits/${visitId}`,
         unsubscribeUrl: unsubscribePageUrl(recipient.id, 'host_activity'),
       }),
       headers: listUnsubscribeHeaders(recipient.id, 'host_activity'),
       // Hosts can reply straight to the guest.
-      replyTo: booking.guest.email ?? undefined,
+      replyTo: visit.guest.email ?? undefined,
     });
   }
 
-  await logNotification({ bookingId, type: 'stay_booked' });
+  await logNotification({ visitId, type: 'stay_booked' });
 }
 
 /**
  * Receipt to the guest right after they submit a request that needs host
  * approval. Mandatory (a confirmation of their own action), so no unsubscribe.
  */
-export async function notifyRequestReceived(bookingId: string) {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking || !booking.notify_guest || !booking.guest.email) return;
+export async function notifyRequestReceived(visitId: string) {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit || !visit.notify_guest || !visit.guest.email) return;
 
   await enqueueEmail({
-    to: booking.guest.email,
-    subject: `Your request for ${booking.property.name} is in`,
+    to: visit.guest.email,
+    subject: `Your request for ${visit.property.name} is in`,
     react: RequestReceivedEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      checkInDate: booking.dates.check_in,
-      checkOutDate: booking.dates.check_out,
-      rooms: booking.rooms.map((r) => r.name).join(', '),
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      checkInDate: visit.dates.check_in,
+      checkOutDate: visit.dates.check_out,
+      rooms: visit.rooms.map((r) => r.name).join(', '),
     }),
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId,
+    userId: visit.guest_user_id ?? undefined,
+    visitId,
     type: 'request_received',
   });
 }
 
-export async function notifyBookingApproved(bookingId: string) {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking || !booking.notify_guest || !booking.guest.email) return;
+export async function notifyVisitApproved(visitId: string) {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit || !visit.notify_guest || !visit.guest.email) return;
 
-  const icsContent = generateIcs(booking);
-  const stayEvent = buildStayEvent(booking);
-  const rooms = booking.rooms.map((r) => r.name).join(', ');
+  const icsContent = generateIcs(visit);
+  const stayEvent = buildStayEvent(visit);
+  const rooms = visit.rooms.map((r) => r.name).join(', ');
 
   const { getCoGuestsForDates } = await import('@/lib/coguests');
   const coguests = await getCoGuestsForDates(
-    booking.property_id,
-    booking.dates.check_in,
-    booking.dates.check_out,
-    booking.guest_user_id ?? undefined
+    visit.property_id,
+    visit.dates.check_in,
+    visit.dates.check_out,
+    visit.guest_user_id ?? undefined
   );
   let coguestNote: string | undefined;
   if (coguests.visible.length > 0) {
@@ -449,30 +449,30 @@ export async function notifyBookingApproved(bookingId: string) {
   }
 
   const admin = createAdminClient();
-  const hostFooter = await hostInviteFooterProps(admin, booking.guest.email);
+  const hostFooter = await hostInviteFooterProps(admin, visit.guest.email);
 
   await enqueueEmail({
-    to: booking.guest.email,
-    subject: `Your stay at ${booking.property.name} is confirmed`,
-    react: BookingApprovedEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      checkInDate: booking.dates.check_in,
-      checkOutDate: booking.dates.check_out,
-      partySize: booking.party_size,
+    to: visit.guest.email,
+    subject: `Your stay at ${visit.property.name} is confirmed`,
+    react: VisitApprovedEmail({
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      checkInDate: visit.dates.check_in,
+      checkOutDate: visit.dates.check_out,
+      partySize: visit.party_size,
       rooms,
-      address: booking.property.address ?? undefined,
-      directions: booking.property.directions ?? undefined,
-      wifiName: booking.property.wifi_name ?? undefined,
-      wifiPassword: booking.property.wifi_password ?? undefined,
-      checkIn: booking.property.check_in_instructions ?? undefined,
-      houseRules: booking.property.house_rules ?? undefined,
+      address: visit.property.address ?? undefined,
+      directions: visit.property.directions ?? undefined,
+      wifiName: visit.property.wifi_name ?? undefined,
+      wifiPassword: visit.property.wifi_password ?? undefined,
+      checkIn: visit.property.check_in_instructions ?? undefined,
+      houseRules: visit.property.house_rules ?? undefined,
       coguestNote,
-      hostNote: booking.invitation?.message ?? undefined,
-      profileUrl: booking.invitation
-        ? inviteUrl(booking.invitation.token)
+      hostNote: visit.invitation?.message ?? undefined,
+      profileUrl: visit.invitation
+        ? inviteUrl(visit.invitation.token)
         : undefined,
-      heroImageUrl: booking.property.hero_image_url ?? undefined,
+      heroImageUrl: visit.property.hero_image_url ?? undefined,
       googleCalendarUrl: googleCalendarUrl(stayEvent),
       outlookCalendarUrl: outlookCalendarUrl(stayEvent),
       recipientIsHost: hostFooter.recipientIsHost,
@@ -487,57 +487,57 @@ export async function notifyBookingApproved(bookingId: string) {
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId,
-    type: 'booking_approved',
+    userId: visit.guest_user_id ?? undefined,
+    visitId,
+    type: 'visit_approved',
   });
 }
 
-export async function notifyBookingDeclined(
-  bookingId: string,
+export async function notifyVisitDeclined(
+  visitId: string,
   declineMessage?: string
 ) {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking || !booking.guest.email || !booking.invitation) return;
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit || !visit.guest.email || !visit.invitation) return;
 
   await enqueueEmail({
-    to: booking.guest.email,
-    subject: `Stay request declined — ${booking.property.name}`,
-    react: BookingDeclinedEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      dates: formatDateRange(booking.dates.check_in, booking.dates.check_out),
+    to: visit.guest.email,
+    subject: `Stay request declined — ${visit.property.name}`,
+    react: VisitDeclinedEmail({
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      dates: formatDateRange(visit.dates.check_in, visit.dates.check_out),
       message: declineMessage,
-      inviteUrl: inviteUrl(booking.invitation.token),
+      inviteUrl: inviteUrl(visit.invitation.token),
     }),
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId,
-    type: 'booking_declined',
+    userId: visit.guest_user_id ?? undefined,
+    visitId,
+    type: 'visit_declined',
   });
 }
 
-export async function notifyBookingCancelled(
-  bookingId: string,
+export async function notifyVisitCancelled(
+  visitId: string,
   cancelledBy: 'guest' | 'owner'
 ) {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking) return;
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit) return;
 
   const admin = createAdminClient();
   const { data: property } = await admin
     .from('properties')
     .select('*, owner:users!owner_id(*)')
-    .eq('id', booking.property_id)
+    .eq('id', visit.property_id)
     .single();
 
   if (!property) return;
 
-  const dates = formatDateRange(booking.dates.check_in, booking.dates.check_out);
+  const dates = formatDateRange(visit.dates.check_in, visit.dates.check_out);
   const guestName =
-    booking.guest.name ?? booking.guest.email ?? 'Guest';
+    visit.guest.name ?? visit.guest.email ?? 'Guest';
 
   if (cancelledBy === 'guest') {
     const ownerRaw = property.owner;
@@ -548,14 +548,14 @@ export async function notifyBookingCancelled(
       notification_prefs?: NotificationPrefs;
     };
     // Host copy is an opt-out activity notification.
-    if (wantsEmail(owner.notification_prefs, 'booking_cancelled')) {
+    if (wantsEmail(owner.notification_prefs, 'visit_cancelled')) {
       await enqueueEmail({
         to: owner.email,
         subject: `${guestName} cancelled their stay`,
-        react: BookingCancelledEmail({
+        react: VisitCancelledEmail({
           recipientName: owner.name ?? 'there',
           guestName,
-          propertyName: booking.property.name,
+          propertyName: visit.property.name,
           dates,
           cancelledBy: 'guest',
           unsubscribeUrl: unsubscribePageUrl(owner.id, 'host_activity'),
@@ -563,57 +563,57 @@ export async function notifyBookingCancelled(
         headers: listUnsubscribeHeaders(owner.id, 'host_activity'),
       });
     }
-  } else if (booking.notify_guest && booking.guest.email) {
+  } else if (visit.notify_guest && visit.guest.email) {
     // Guest copy is mandatory — they must know their stay was cancelled.
     await enqueueEmail({
-      to: booking.guest.email,
-      subject: `Your stay at ${booking.property.name} was cancelled`,
-      react: BookingCancelledEmail({
-        recipientName: booking.guest.name ?? 'there',
+      to: visit.guest.email,
+      subject: `Your stay at ${visit.property.name} was cancelled`,
+      react: VisitCancelledEmail({
+        recipientName: visit.guest.name ?? 'there',
         guestName,
-        propertyName: booking.property.name,
+        propertyName: visit.property.name,
         dates,
         cancelledBy: 'owner',
       }),
     });
   }
 
-  await logNotification({ bookingId, type: `booking_cancelled_${cancelledBy}` });
+  await logNotification({ visitId, type: `visit_cancelled_${cancelledBy}` });
 }
 
 export async function notifyTripReminder(
-  booking: BookingWithDetails,
+  visit: VisitWithDetails,
   daysUntil: number
 ) {
-  if (!booking.notify_guest || !booking.guest.email) return;
+  if (!visit.notify_guest || !visit.guest.email) return;
 
-  const delivery = await guestReminderDelivery(booking.guest.id);
+  const delivery = await guestReminderDelivery(visit.guest.id);
   if (!delivery.ok) return;
 
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
-  const stayEvent = buildStayEvent(booking);
+  const stayEvent = buildStayEvent(visit);
 
   await enqueueEmail({
-    to: booking.guest.email,
+    to: visit.guest.email,
     subject:
       daysUntil <= 1
-        ? `Tomorrow: your stay at ${booking.property.name}`
-        : `One week until your stay at ${booking.property.name}`,
+        ? `Tomorrow: your stay at ${visit.property.name}`
+        : `One week until your stay at ${visit.property.name}`,
     react: TripReminderEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      checkInDate: booking.dates.check_in,
-      checkOutDate: booking.dates.check_out,
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      checkInDate: visit.dates.check_in,
+      checkOutDate: visit.dates.check_out,
       daysUntil,
-      checkIn: booking.property.check_in_instructions ?? undefined,
-      address: booking.property.address ?? undefined,
-      wifiName: booking.property.wifi_name ?? undefined,
-      wifiPassword: booking.property.wifi_password ?? undefined,
-      profileUrl: booking.invitation
-        ? inviteUrl(booking.invitation.token)
+      checkIn: visit.property.check_in_instructions ?? undefined,
+      address: visit.property.address ?? undefined,
+      wifiName: visit.property.wifi_name ?? undefined,
+      wifiPassword: visit.property.wifi_password ?? undefined,
+      profileUrl: visit.invitation
+        ? inviteUrl(visit.invitation.token)
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
-      heroImageUrl: booking.property.hero_image_url ?? undefined,
+      heroImageUrl: visit.property.hero_image_url ?? undefined,
       googleCalendarUrl: googleCalendarUrl(stayEvent),
       outlookCalendarUrl: outlookCalendarUrl(stayEvent),
     }),
@@ -621,89 +621,89 @@ export async function notifyTripReminder(
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId: booking.id,
+    userId: visit.guest_user_id ?? undefined,
+    visitId: visit.id,
     type,
   });
 }
 
-export async function notifyArrivalWelcome(booking: BookingWithDetails) {
-  if (!booking.notify_guest || !booking.guest.email) return;
+export async function notifyArrivalWelcome(visit: VisitWithDetails) {
+  if (!visit.notify_guest || !visit.guest.email) return;
 
-  const delivery = await guestReminderDelivery(booking.guest.id);
+  const delivery = await guestReminderDelivery(visit.guest.id);
   if (!delivery.ok) return;
 
   await enqueueEmail({
-    to: booking.guest.email,
-    subject: `Today's the day — welcome to ${booking.property.name}`,
+    to: visit.guest.email,
+    subject: `Today's the day — welcome to ${visit.property.name}`,
     react: ArrivalWelcomeEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      checkIn: booking.property.check_in_instructions ?? undefined,
-      address: booking.property.address ?? undefined,
-      directions: booking.property.directions ?? undefined,
-      wifiName: booking.property.wifi_name ?? undefined,
-      wifiPassword: booking.property.wifi_password ?? undefined,
-      profileUrl: booking.invitation
-        ? inviteUrl(booking.invitation.token)
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      checkIn: visit.property.check_in_instructions ?? undefined,
+      address: visit.property.address ?? undefined,
+      directions: visit.property.directions ?? undefined,
+      wifiName: visit.property.wifi_name ?? undefined,
+      wifiPassword: visit.property.wifi_password ?? undefined,
+      profileUrl: visit.invitation
+        ? inviteUrl(visit.invitation.token)
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
-      heroImageUrl: booking.property.hero_image_url ?? undefined,
+      heroImageUrl: visit.property.hero_image_url ?? undefined,
     }),
     headers: delivery.headers,
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId: booking.id,
+    userId: visit.guest_user_id ?? undefined,
+    visitId: visit.id,
     type: 'arrival_welcome',
   });
 }
 
-export async function notifyCheckoutInstructions(booking: BookingWithDetails) {
-  if (!booking.notify_guest || !booking.guest.email) return;
+export async function notifyCheckoutInstructions(visit: VisitWithDetails) {
+  if (!visit.notify_guest || !visit.guest.email) return;
 
-  const delivery = await guestReminderDelivery(booking.guest.id);
+  const delivery = await guestReminderDelivery(visit.guest.id);
   if (!delivery.ok) return;
 
   await enqueueEmail({
-    to: booking.guest.email,
-    subject: `Checkout details for ${booking.property.name}`,
+    to: visit.guest.email,
+    subject: `Checkout details for ${visit.property.name}`,
     react: CheckoutInstructionsEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      checkoutTime: booking.property.checkout_time ?? undefined,
-      checkoutInstructions: booking.property.checkout_instructions ?? undefined,
-      houseRules: booking.property.house_rules ?? undefined,
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      checkoutTime: visit.property.checkout_time ?? undefined,
+      checkoutInstructions: visit.property.checkout_instructions ?? undefined,
+      houseRules: visit.property.house_rules ?? undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
     }),
     headers: delivery.headers,
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId: booking.id,
+    userId: visit.guest_user_id ?? undefined,
+    visitId: visit.id,
     type: 'checkout_instructions',
   });
 }
 
-export async function notifyPostStay(booking: BookingWithDetails) {
-  if (!booking.notify_guest || !booking.guest.email) return;
+export async function notifyPostStay(visit: VisitWithDetails) {
+  if (!visit.notify_guest || !visit.guest.email) return;
 
-  const delivery = await guestReminderDelivery(booking.guest.id);
+  const delivery = await guestReminderDelivery(visit.guest.id);
   if (!delivery.ok) return;
 
   const admin = createAdminClient();
-  const hostFooter = await hostInviteFooterProps(admin, booking.guest.email);
+  const hostFooter = await hostInviteFooterProps(admin, visit.guest.email);
 
   await enqueueEmail({
-    to: booking.guest.email,
-    subject: `Thanks for staying at ${booking.property.name}`,
+    to: visit.guest.email,
+    subject: `Thanks for staying at ${visit.property.name}`,
     react: PostStayThankYouEmail({
-      guestName: booking.guest.name ?? 'there',
-      propertyName: booking.property.name,
-      profileUrl: booking.invitation
-        ? inviteUrl(booking.invitation.token)
+      guestName: visit.guest.name ?? 'there',
+      propertyName: visit.property.name,
+      profileUrl: visit.invitation
+        ? inviteUrl(visit.invitation.token)
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
       recipientIsHost: hostFooter.recipientIsHost,
@@ -713,8 +713,8 @@ export async function notifyPostStay(booking: BookingWithDetails) {
   });
 
   await logNotification({
-    userId: booking.guest_user_id ?? undefined,
-    bookingId: booking.id,
+    userId: visit.guest_user_id ?? undefined,
+    visitId: visit.id,
     type: 'post_stay',
   });
 }

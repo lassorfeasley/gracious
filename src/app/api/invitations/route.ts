@@ -4,10 +4,10 @@ import { getCurrentUser, canManageProperty } from '@/lib/auth';
 import { invitationSchema } from '@/lib/validations';
 import {
   notifyInvitationSent,
-  notifyBookingApproved,
-  notifyStayBooked,
+  notifyVisitApproved,
+  notifyStayConfirmed,
 } from '@/lib/email/notifications';
-import { checkRoomConflicts } from '@/lib/bookings';
+import { checkRoomConflicts } from '@/lib/visits';
 import {
   assertCanSendInvitation,
   getPropertyOwnerId,
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (preApproved && !window) {
       return NextResponse.json(
-        { error: 'A fixed stay date is required to book directly' },
+        { error: 'A fixed stay date is required to request a visit directly' },
         { status: 400 }
       );
     }
@@ -228,7 +228,7 @@ async function bookPreApprovedStay(args: PreApprovedStayArgs) {
   if (conflicts.hasConflict) {
     await rollback();
     return NextResponse.json(
-      { error: 'Selected dates conflict with an existing booking or block' },
+      { error: 'Selected dates conflict with an existing visit or block' },
       { status: 400 }
     );
   }
@@ -239,8 +239,8 @@ async function bookPreApprovedStay(args: PreApprovedStayArgs) {
     .eq('email', guestEmail)
     .maybeSingle();
 
-  const { data: booking, error: bookingError } = await admin
-    .from('bookings')
+  const { data: visit, error: visitError } = await admin
+    .from('visits')
     .insert({
       invitation_id: invitationId,
       property_id: propertyId,
@@ -257,28 +257,28 @@ async function bookPreApprovedStay(args: PreApprovedStayArgs) {
     .select()
     .single();
 
-  if (bookingError || !booking) {
+  if (visitError || !visit) {
     await rollback();
     return NextResponse.json(
-      { error: bookingError?.message ?? 'Failed to create booking' },
+      { error: visitError?.message ?? 'Failed to create visit' },
       { status: 500 }
     );
   }
 
-  await admin.from('booking_dates').insert({
-    booking_id: booking.id,
+  await admin.from('visit_dates').insert({
+    visit_id: visit.id,
     check_in: checkIn,
     check_out: checkOut,
   });
 
-  await admin.from('booking_rooms').insert(
-    roomIds.map((room_id) => ({ booking_id: booking.id, room_id }))
+  await admin.from('visit_rooms').insert(
+    roomIds.map((room_id) => ({ visit_id: visit.id, room_id }))
   );
 
-  notifyBookingApproved(booking.id).catch(console.error);
-  notifyStayBooked(booking.id).catch(console.error);
+  notifyVisitApproved(visit.id).catch(console.error);
+  notifyStayConfirmed(visit.id).catch(console.error);
 
-  return NextResponse.json({ invitation_id: invitationId, booking, preApproved: true });
+  return NextResponse.json({ invitation_id: invitationId, visit, preApproved: true });
 }
 
 export async function PATCH(request: NextRequest) {

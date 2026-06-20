@@ -91,7 +91,7 @@ const LEXICON: { use: string; never: string }[] = [
 const VOICE_SAMPLES = [
   { good: true, text: 'Your invitation is waiting. The house notes are inside.' },
   { good: true, text: 'The Calloways arrive Friday and stay through Sunday.' },
-  { good: false, text: 'Manage your bookings and availability in one dashboard.' },
+  { good: false, text: 'Manage your visits and availability in one dashboard.' },
   { good: false, text: 'Sign up now to unlock unlimited listings!' },
 ];
 
@@ -397,7 +397,7 @@ export function StyleGuide() {
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
                   The product exists to give stays away. Never borrow language
-                  from rental marketplaces — no listings, bookings, or
+                  from rental marketplaces — no listings, visits, or
                   availability management.
                 </CardContent>
               </Card>

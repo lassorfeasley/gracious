@@ -130,9 +130,9 @@ export function DashboardTopNav({
           </DropdownMenu>
 
           <Link
-            href={`${base}/bookings`}
+            href={`${base}/visits`}
             aria-label="Visits"
-            className={navLinkClass(isActive('bookings'))}
+            className={navLinkClass(isActive('visits'))}
           >
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Visits</span>

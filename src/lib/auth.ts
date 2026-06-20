@@ -25,7 +25,7 @@ export async function getCurrentUser(): Promise<User | null> {
     .single();
 
   if (data) {
-    await linkOfflineBookingsToUser(authUser.id, authUser.email!);
+    await linkOfflineVisitsToUser(authUser.id, authUser.email!);
     return data as User;
   }
 
@@ -46,7 +46,7 @@ export async function getCurrentUser(): Promise<User | null> {
     .select()
     .single();
 
-  await linkOfflineBookingsToUser(authUser.id, authUser.email!);
+  await linkOfflineVisitsToUser(authUser.id, authUser.email!);
 
   return created as User | null;
 }
@@ -160,13 +160,13 @@ export async function upsertUserProfile(
 
   await admin.from('users').upsert(profile, { onConflict: 'id' });
 
-  await linkOfflineBookingsToUser(userId, email);
+  await linkOfflineVisitsToUser(userId, email);
 }
 
-async function linkOfflineBookingsToUser(userId: string, email: string) {
+async function linkOfflineVisitsToUser(userId: string, email: string) {
   const admin = createAdminClient();
   await admin
-    .from('bookings')
+    .from('visits')
     .update({ guest_user_id: userId })
     .eq('guest_email', email.toLowerCase())
     .is('guest_user_id', null);

@@ -4,7 +4,7 @@ import type { Property, Room } from '@/types/database';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { TimelineRow, TimelineStay } from '@/components/stay-timeline';
 
-export interface PortfolioCalendarBooking {
+export interface PortfolioCalendarVisit {
   id: string;
   guestName: string;
   checkIn: string;
@@ -30,13 +30,13 @@ export interface PortfolioHouse {
 export interface PortfolioData {
   houses: PortfolioHouse[];
   timelineRows: TimelineRow[];
-  calendarBookings: PortfolioCalendarBooking[];
+  calendarVisits: PortfolioCalendarVisit[];
   calendarBlocks: PortfolioCalendarBlock[];
 }
 
 /**
  * Aggregates a host's whole portfolio for the multi-home overview: per-house
- * stats + rooms/availability (for the booking sidebar), a home-grouped timeline
+ * stats + rooms/availability (for the visit sidebar), a home-grouped timeline
  * with a row per room, and a combined occupancy calendar across every home.
  */
 export async function getPortfolioData(
@@ -68,7 +68,7 @@ export async function getPortfolioData(
 
   const houses: PortfolioHouse[] = [];
   const timelineRows: TimelineRow[] = [];
-  const calendarBookings: PortfolioCalendarBooking[] = [];
+  const calendarVisits: PortfolioCalendarVisit[] = [];
   const calendarBlocks: PortfolioCalendarBlock[] = [];
 
   for (const property of properties) {
@@ -77,19 +77,19 @@ export async function getPortfolioData(
     const houseAvailability: Record<string, RoomAvailability> = {};
     for (const room of propertyRooms) {
       houseAvailability[room.id] = availability[room.id] ?? {
-        bookings: [],
+        visits: [],
         blocks: [],
       };
     }
 
     // A booking can span several rooms in the same home; collapse to one band
     // for the calendar + stats.
-    const bookingsById = new Map<string, PortfolioCalendarBooking>();
+    const visitsById = new Map<string, PortfolioCalendarVisit>();
     for (const room of propertyRooms) {
       const avail = houseAvailability[room.id];
-      for (const b of avail.bookings) {
-        if (!bookingsById.has(b.id)) {
-          bookingsById.set(b.id, {
+      for (const b of avail.visits) {
+        if (!visitsById.has(b.id)) {
+          visitsById.set(b.id, {
             id: b.id,
             guestName: b.guestName,
             checkIn: b.checkIn,
@@ -107,18 +107,18 @@ export async function getPortfolioData(
       }
     }
 
-    const houseBookings = Array.from(bookingsById.values());
+    const houseVisits = Array.from(visitsById.values());
 
     // Combined calendar: tag the guest with the home for the day tooltip.
-    for (const b of houseBookings) {
-      calendarBookings.push({
+    for (const b of houseVisits) {
+      calendarVisits.push({
         ...b,
         guestName: `${b.guestName} · ${property.name}`,
       });
     }
 
     // Timeline: grouped by home, one row per room (every room shows, even when
-    // empty), with bookings and owner blocks as bands.
+    // empty), with visits and owner blocks as bands.
     if (propertyRooms.length === 0) {
       timelineRows.push({
         id: `${property.id}-empty`,
@@ -130,13 +130,13 @@ export async function getPortfolioData(
       for (const room of propertyRooms) {
         const avail = houseAvailability[room.id];
         const stays: TimelineStay[] = [
-          ...avail.bookings.map((b) => ({
-            id: `booking-${room.id}-${b.id}`,
+          ...avail.visits.map((b) => ({
+            id: `visit-${room.id}-${b.id}`,
             label: b.guestName,
             checkIn: b.checkIn,
             checkOut: b.checkOut,
             variant: (b.pending ? 'pending' : 'confirmed') as TimelineStay['variant'],
-            href: `/dashboard/${property.slug}/bookings/${b.id}`,
+            href: `/dashboard/${property.slug}/visits/${b.id}`,
           })),
           ...avail.blocks.map((bl) => ({
             id: `block-${room.id}-${bl.id}`,
@@ -155,7 +155,7 @@ export async function getPortfolioData(
       }
     }
 
-    const upcoming = houseBookings
+    const upcoming = houseVisits
       .filter((b) => !b.pending && b.checkOut >= today)
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
 
@@ -175,5 +175,5 @@ export async function getPortfolioData(
     });
   }
 
-  return { houses, timelineRows, calendarBookings, calendarBlocks };
+  return { houses, timelineRows, calendarVisits, calendarBlocks };
 }

@@ -15,7 +15,7 @@ export default async function AdminOverviewPage() {
     { data: owners },
     { data: managers },
     { count: propertyCount },
-    { count: bookingCount },
+    { count: visitCount },
     { count: pendingRequests },
     { count: invitationCount },
   ] = await Promise.all([
@@ -27,9 +27,9 @@ export default async function AdminOverviewPage() {
     admin.from('properties').select('owner_id'),
     admin.from('property_managers').select('user_id'),
     admin.from('properties').select('*', { count: 'exact', head: true }),
-    admin.from('bookings').select('*', { count: 'exact', head: true }),
+    admin.from('visits').select('*', { count: 'exact', head: true }),
     admin
-      .from('bookings')
+      .from('visits')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'requested'),
     admin.from('invitations').select('*', { count: 'exact', head: true }),
@@ -46,13 +46,13 @@ export default async function AdminOverviewPage() {
     { label: 'Hosts', value: hostCount, href: '/admin/users' },
     { label: 'Admins', value: adminCount ?? 0, href: '/admin/users' },
     { label: 'Properties', value: propertyCount ?? 0, href: '/admin/properties' },
-    { label: 'Bookings', value: bookingCount ?? 0, href: '/admin/bookings' },
+    { label: 'Visits', value: visitCount ?? 0, href: '/admin/visits' },
     {
       label: 'Pending requests',
       value: pendingRequests ?? 0,
-      href: '/admin/bookings',
+      href: '/admin/visits',
     },
-    { label: 'Invitations', value: invitationCount ?? 0, href: '/admin/bookings' },
+    { label: 'Invitations', value: invitationCount ?? 0, href: '/admin/visits' },
     {
       label: 'Automated messages',
       value: AUTOMATED_MESSAGES.length,

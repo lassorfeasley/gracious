@@ -32,7 +32,7 @@ const LINKS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/properties', label: 'Properties', icon: Home },
-  { href: '/admin/bookings', label: 'Bookings', icon: CalendarDays },
+  { href: '/admin/visits', label: 'Visits', icon: CalendarDays },
   { href: '/admin/messaging', label: 'Messaging', icon: Mail },
   { href: '/admin/email-queue', label: 'Email queue', icon: Inbox },
   { href: '/admin/legal', label: 'Legal', icon: FileText },

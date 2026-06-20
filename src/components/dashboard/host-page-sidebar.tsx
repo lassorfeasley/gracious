@@ -6,7 +6,8 @@ import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 import type { Room } from '@/types/database';
-import { useBooking } from '@/components/guest/booking-context';
+import { useVisit } from '@/components/guest/visit-context';
+import { useBareCard } from '@/components/card-chrome';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { Button } from '@/components/ui/button';
@@ -72,9 +73,10 @@ export function HostPageSidebar({
     setActiveField,
     clear,
     maxGuests,
-  } = useBooking();
+  } = useVisit();
 
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const bare = useBareCard();
 
   const nights =
     checkIn && checkOut
@@ -90,7 +92,12 @@ export function HostPageSidebar({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+      <div
+        className={cn(
+          'p-6',
+          !bare && 'rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)]'
+        )}
+      >
         {headerSlot && <div className="mb-5">{headerSlot}</div>}
         <div className="flex items-baseline justify-between">
           <p className="text-xl font-semibold">
@@ -195,11 +202,11 @@ export function HostPageSidebar({
           propertyId={propertyId}
           rooms={rooms}
           roomAvailability={roomAvailability}
-          useParentBookingContext
+          useParentVisitContext
           preselectedRoomIds={preselectedRoomIds}
           trigger={
             <Button className="mt-4 w-full" size="lg" disabled={disabled}>
-              Book a guest
+              Invite a guest
             </Button>
           }
         />

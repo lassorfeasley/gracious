@@ -1,9 +1,9 @@
 'use client';
 
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
-import { useBooking } from './booking-context';
+import { useVisit } from './visit-context';
 
-interface CalendarBooking {
+interface CalendarVisit {
   id: string;
   guestName: string;
   checkIn: string;
@@ -22,24 +22,24 @@ interface DateRange {
 }
 
 export function SelectableRoomCalendar({
-  bookings,
+  visits,
   blocks,
   allowedRanges,
   disabled,
   monthsToShow,
 }: {
-  bookings: CalendarBooking[];
+  visits: CalendarVisit[];
   blocks: CalendarBlock[];
   allowedRanges?: DateRange[];
   disabled?: boolean;
   monthsToShow?: number;
 }) {
   const { checkIn, checkOut, activeField, setRange, setActiveField } =
-    useBooking();
+    useVisit();
 
   return (
     <AvailabilityCalendar
-      bookings={bookings}
+      visits={visits}
       blocks={blocks}
       monthsToShow={monthsToShow}
       selectable={!disabled}

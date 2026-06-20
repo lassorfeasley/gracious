@@ -5,7 +5,7 @@ import {
 } from '@/components/dashboard/stay-compose';
 import type { Room } from '@/types/database';
 
-/** Wraps page content in a two-column grid with a sticky host booking sidebar. */
+/** Wraps page content in a two-column grid with a sticky host visit sidebar. */
 export async function HostBookingShell({
   propertyId,
   slug,

@@ -11,7 +11,7 @@ import { Calendar, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddToCalendarButtonProps {
-  bookingId: string;
+  visitId: string;
   /** Visual size of the trigger button. */
   size?: 'sm' | 'default';
   className?: string;
@@ -23,11 +23,11 @@ interface AddToCalendarButtonProps {
  * All three go through the authenticated booking ical endpoint.
  */
 export function AddToCalendarButton({
-  bookingId,
+  visitId,
   size = 'sm',
   className,
 }: AddToCalendarButtonProps) {
-  const base = `/api/bookings/${bookingId}/ical`;
+  const base = `/api/visits/${visitId}/ical`;
 
   return (
     <DropdownMenu>

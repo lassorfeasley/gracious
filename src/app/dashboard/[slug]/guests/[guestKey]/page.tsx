@@ -25,14 +25,14 @@ export default async function GuestProfilePage({
     .select('*')
     .eq('property_id', property.id);
 
-  const { data: bookings } = await supabase
-    .from('bookings')
+  const { data: visits } = await supabase
+    .from('visits')
     .select(
       `
       id, status, invitation_id, guest_name, guest_email, guest_phone, party_size, notes,
       guest:users!guest_user_id(name, email),
-      dates:booking_dates(check_in, check_out),
-      booking_rooms(room:rooms(name)),
+      dates:visit_dates(check_in, check_out),
+      visit_rooms(room:rooms(name)),
       invitation:invitations(*)
     `
     )
@@ -41,7 +41,7 @@ export default async function GuestProfilePage({
 
   const roster = buildGuestRoster(
     (invitations ?? []) as Invitation[],
-    bookings ?? [],
+    visits ?? [],
     today
   );
   const guest = findRosterEntry(roster, guestKey);

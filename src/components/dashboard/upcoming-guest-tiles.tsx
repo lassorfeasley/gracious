@@ -59,7 +59,7 @@ export function UpcomingGuestTiles({
         return (
           <Link
             key={guest.key}
-            href={`/dashboard/${slug}/bookings/${stay.bookingId}`}
+            href={`/dashboard/${slug}/visits/${stay.visitId}`}
             className="group block"
           >
             <article className="flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/20">

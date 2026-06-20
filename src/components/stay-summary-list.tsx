@@ -5,10 +5,10 @@ const LABEL = 'text-[11px] font-semibold uppercase tracking-wide text-muted-fore
 
 /**
  * Shared stay summary (dates · nights, rooms, guests) used by both the guest
- * manage-stay card and the host manage-booking sidebar.
+ * manage-stay card and the host manage-visit sidebar.
  *
  * `boxed` renders the fields inside a bordered, divided container to match the
- * booking sidebar's boxed data on other pages; the default is a plain list.
+ * visit sidebar's boxed data on other pages; the default is a plain list.
  */
 export function StaySummaryList({
   checkIn,

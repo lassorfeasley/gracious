@@ -1,20 +1,20 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { datesOverlap } from '@/lib/dates';
 import type {
-  BookingGuest,
-  BookingWithDetails,
+  VisitGuest,
+  VisitWithDetails,
   InvitationWithDetails,
   Room,
   User,
 } from '@/types/database';
 
-function normalizeBookingGuest(
+function normalizeVisitGuest(
   data: {
     guest_name: string | null;
     guest_email: string | null;
     guest: User | User[] | null;
   }
-): BookingGuest {
+): VisitGuest {
   const userGuest = data.guest
     ? (Array.isArray(data.guest) ? data.guest[0] : data.guest)
     : null;
@@ -34,23 +34,23 @@ function normalizeBookingGuest(
   };
 }
 
-export async function getBookingWithDetails(
-  bookingId: string
-): Promise<BookingWithDetails | null> {
+export async function getVisitWithDetails(
+  visitId: string
+): Promise<VisitWithDetails | null> {
   const admin = createAdminClient();
   const { data } = await admin
-    .from('bookings')
+    .from('visits')
     .select(
       `
       *,
       guest:users!guest_user_id(*),
-      dates:booking_dates(*),
-      booking_rooms(room:rooms(*)),
+      dates:visit_dates(*),
+      visit_rooms(room:rooms(*)),
       property:properties(*, property_notes(*)),
       invitation:invitations(*)
     `
     )
-    .eq('id', bookingId)
+    .eq('id', visitId)
     .single();
 
   if (!data) return null;
@@ -63,12 +63,12 @@ export async function getBookingWithDetails(
 
   return {
     ...data,
-    guest: normalizeBookingGuest(data),
+    guest: normalizeVisitGuest(data),
     dates: Array.isArray(data.dates) ? data.dates[0] : data.dates,
-    rooms: data.booking_rooms?.map((br: { room: Room }) => br.room) ?? [],
+    rooms: data.visit_rooms?.map((br: { room: Room }) => br.room) ?? [],
     property: Array.isArray(data.property) ? data.property[0] : data.property,
     invitation,
-  } as BookingWithDetails;
+  } as VisitWithDetails;
 }
 
 /** Minimal stay info for showing a guest their own booking on invite pages. */
@@ -84,7 +84,7 @@ export interface GuestStaySummary {
 /**
  * The guest's current stay for an invitation, if any: an active (requested or
  * approved) booking that hasn't ended yet. Used so invite pages keep showing
- * the confirmed stay — with add-to-calendar — instead of the booking widget.
+ * the confirmed stay — with add-to-calendar — instead of the visit widget.
  */
 export async function getGuestStayForInvitation(
   invitationId: string,
@@ -94,14 +94,14 @@ export async function getGuestStayForInvitation(
   const today = new Date().toISOString().slice(0, 10);
 
   const { data } = await admin
-    .from('bookings')
+    .from('visits')
     .select(
       `
       id,
       status,
       party_size,
-      dates:booking_dates(check_in, check_out),
-      booking_rooms(room:rooms(name))
+      dates:visit_dates(check_in, check_out),
+      visit_rooms(room:rooms(name))
     `
     )
     .eq('invitation_id', invitationId)
@@ -118,7 +118,7 @@ export async function getGuestStayForInvitation(
       checkIn: dates.check_in,
       checkOut: dates.check_out,
       roomNames:
-        b.booking_rooms?.map((br: { room: { name: string } | { name: string }[] }) => {
+        b.visit_rooms?.map((br: { room: { name: string } | { name: string }[] }) => {
           const room = Array.isArray(br.room) ? br.room[0] : br.room;
           return room.name;
         }) ?? [],
@@ -134,7 +134,7 @@ export async function checkRoomConflicts(
   roomIds: string[],
   checkIn: string,
   checkOut: string,
-  excludeBookingId?: string
+  excludeVisitId?: string
 ): Promise<{ hasConflict: boolean; conflictRoom?: string }> {
   const admin = createAdminClient();
 
@@ -152,29 +152,29 @@ export async function checkRoomConflicts(
       }
     }
 
-    // Check approved bookings
-    const { data: bookingRooms } = await admin
-      .from('booking_rooms')
+    // Check approved visits
+    const { data: visitRooms } = await admin
+      .from('visit_rooms')
       .select(
         `
-        booking_id,
-        booking:bookings(status, dates:booking_dates(check_in, check_out))
+        visit_id,
+        visit:visits(status, dates:visit_dates(check_in, check_out))
       `
       )
       .eq('room_id', roomId);
 
-    for (const br of bookingRooms ?? []) {
-      const booking = (Array.isArray(br.booking) ? br.booking[0] : br.booking) as {
+    for (const br of visitRooms ?? []) {
+      const stay = (Array.isArray(br.visit) ? br.visit[0] : br.visit) as {
         status: string;
         dates: { check_in: string; check_out: string } | { check_in: string; check_out: string }[];
       };
-      if (excludeBookingId && br.booking_id === excludeBookingId) continue;
-      if (booking.status !== 'approved' && booking.status !== 'requested')
+      if (excludeVisitId && br.visit_id === excludeVisitId) continue;
+      if (stay.status !== 'approved' && stay.status !== 'requested')
         continue;
 
-      const dates = Array.isArray(booking.dates)
-        ? booking.dates[0]
-        : booking.dates;
+      const dates = Array.isArray(stay.dates)
+        ? stay.dates[0]
+        : stay.dates;
       if (!dates) continue;
 
       if (
@@ -188,7 +188,7 @@ export async function checkRoomConflicts(
   return { hasConflict: false };
 }
 
-export function validateBookingAgainstInvitation(
+export function validateVisitAgainstInvitation(
   invitation: InvitationWithDetails,
   checkIn: string,
   checkOut: string,
@@ -202,15 +202,15 @@ export function validateBookingAgainstInvitation(
     }
   }
 
-  // Entire-home invitations can only be booked as the whole place.
+  // Entire-home invitations can only be requested as the whole place.
   if (invitation.whole_home) {
-    const bookingAllRooms =
+    const visitAllRooms =
       roomIds.length === offeredRoomIds.length &&
       offeredRoomIds.every((id) => roomIds.includes(id));
-    if (!bookingAllRooms) {
+    if (!visitAllRooms) {
       return {
         valid: false,
-        error: 'This home is offered as a whole — your booking must include every room',
+        error: 'This home is offered as a whole — your visit must include every room every room',
       };
     }
   }

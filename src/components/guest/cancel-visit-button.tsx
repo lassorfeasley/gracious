@@ -16,23 +16,23 @@ import {
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
-export function CancelBookingButton({ bookingId }: { bookingId: string }) {
+export function CancelVisitButton({ visitId }: { visitId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function cancel() {
     setLoading(true);
-    const res = await fetch(`/api/bookings/${bookingId}`, {
+    const res = await fetch(`/api/visits/${visitId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'cancel' }),
     });
     setLoading(false);
     if (!res.ok) {
-      toast.error('Failed to cancel booking');
+      toast.error('Failed to cancel visit');
       return;
     }
-    toast.success('Booking cancelled');
+    toast.success('Visit cancelled');
     router.refresh();
   }
 
@@ -51,7 +51,7 @@ export function CancelBookingButton({ bookingId }: { bookingId: string }) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Keep booking</AlertDialogCancel>
+          <AlertDialogCancel>Keep visit</AlertDialogCancel>
           <AlertDialogAction onClick={cancel} disabled={loading}>
             {loading ? 'Cancelling...' : 'Cancel stay'}
           </AlertDialogAction>

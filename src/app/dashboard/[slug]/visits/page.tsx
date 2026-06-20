@@ -4,12 +4,12 @@ import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
 import { DashboardContainer } from '@/components/dashboard/dashboard-container';
 import {
-  BookingsHub,
+  VisitsHub,
   type VisitTab,
   type VisitItem,
   type InviteItem,
-} from '@/components/dashboard/bookings-hub';
-import type { BookingStatus, Invitation } from '@/types/database';
+} from '@/components/dashboard/visits-hub';
+import type { VisitStatus, Invitation } from '@/types/database';
 
 export const metadata = { title: 'Visits' };
 
@@ -22,7 +22,7 @@ const VALID_TABS: VisitTab[] = [
   'invited',
 ];
 
-export default async function BookingsPage({
+export default async function VisitsPage({
   params,
   searchParams,
 }: {
@@ -48,21 +48,21 @@ export default async function BookingsPage({
     .eq('property_id', property.id)
     .order('created_at', { ascending: false });
 
-  const { data: bookings } = await supabase
-    .from('bookings')
+  const { data: visitRows } = await supabase
+    .from('visits')
     .select(
       `
       id, status, invitation_id, guest_name, guest_email, party_size, notes,
       guest:users!guest_user_id(name, email),
-      dates:booking_dates(check_in, check_out),
-      booking_rooms(room:rooms(name)),
+      dates:visit_dates(check_in, check_out),
+      visit_rooms(room:rooms(name)),
       invitation:invitations(token)
     `
     )
     .eq('property_id', property.id)
     .order('created_at', { ascending: false });
 
-  const visits: VisitItem[] = (bookings ?? [])
+  const visits: VisitItem[] = (visitRows ?? [])
     .map((b): VisitItem | null => {
       const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
       if (!dates?.check_in || !dates?.check_out) return null;
@@ -76,7 +76,7 @@ export default async function BookingsPage({
         b.guest_email?.split('@')[0] ??
         'Guest';
       const rooms =
-        b.booking_rooms?.map((br) => {
+        b.visit_rooms?.map((br) => {
           const room = Array.isArray(br.room) ? br.room[0] : br.room;
           return room?.name ?? 'Room';
         }) ?? [];
@@ -85,7 +85,7 @@ export default async function BookingsPage({
         id: b.id,
         guestName,
         email: guest?.email ?? b.guest_email ?? null,
-        status: b.status as BookingStatus,
+        status: b.status as VisitStatus,
         checkIn: dates.check_in,
         checkOut: dates.check_out,
         partySize: b.party_size,
@@ -171,7 +171,7 @@ export default async function BookingsPage({
         </div>
       )}
 
-      <BookingsHub
+      <VisitsHub
         slug={slug}
         today={today}
         initialTab={initialTab}

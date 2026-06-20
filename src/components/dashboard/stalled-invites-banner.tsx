@@ -14,11 +14,11 @@ export function StalledInvitesBanner({
   stalledCount,
 }: StalledInvitesBannerProps) {
   const pathname = usePathname();
-  const bookingsHref = `/dashboard/${slug}/bookings`;
-  const invitedHref = `${bookingsHref}?status=invited`;
+  const visitsHref = `/dashboard/${slug}/visits`;
+  const invitedHref = `${visitsHref}?status=invited`;
 
-  // Nothing waiting, or already on the bookings hub (where the links live).
-  if (stalledCount < 1 || pathname.startsWith(bookingsHref)) return null;
+  // Nothing waiting, or already on the visits hub (where the links live).
+  if (stalledCount < 1 || pathname.startsWith(visitsHref)) return null;
 
   const isPlural = stalledCount > 1;
 

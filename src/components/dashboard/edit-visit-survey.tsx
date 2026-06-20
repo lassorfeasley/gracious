@@ -6,7 +6,7 @@ import { ArrowLeft, X, Plus, Minus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatDateRange } from '@/lib/dates';
-import { useBooking } from '@/components/guest/booking-context';
+import { useVisit } from '@/components/guest/visit-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { BookingWithDetails } from '@/types/database';
+import type { VisitWithDetails } from '@/types/database';
 
 type StepKey = 'dates' | 'rooms' | 'details' | 'review';
 
@@ -31,14 +31,14 @@ const STEP_TITLES: Record<StepKey, string> = {
   review: 'Review changes',
 };
 
-export function EditBookingSurvey({
+export function EditVisitSurvey({
   open,
   onOpenChange,
-  booking,
+  visit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  booking: BookingWithDetails;
+  visit: VisitWithDetails;
 }) {
   const router = useRouter();
   const {
@@ -50,10 +50,10 @@ export function EditBookingSurvey({
     rooms,
     selectedRoomIds,
     toggleRoom,
-  } = useBooking();
+  } = useVisit();
 
   const [step, setStep] = useState(0);
-  const [notes, setNotes] = useState(booking.notes ?? '');
+  const [notes, setNotes] = useState(visit.notes ?? '');
   const [loading, setLoading] = useState(false);
 
   const current = Math.min(step, STEPS.length - 1);
@@ -95,7 +95,7 @@ export function EditBookingSurvey({
       return;
     }
     setLoading(true);
-    const res = await fetch(`/api/bookings/${booking.id}`, {
+    const res = await fetch(`/api/visits/${visit.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -111,27 +111,27 @@ export function EditBookingSurvey({
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       toast.error(
-        typeof data.error === 'string' ? data.error : 'Could not update booking'
+        typeof data.error === 'string' ? data.error : 'Could not update visit'
       );
       return;
     }
-    toast.success('Booking updated');
+    toast.success('Visit updated');
     onOpenChange(false);
     setStep(0);
     router.refresh();
   }
 
   const notifies =
-    booking.status === 'approved' &&
-    booking.notify_guest &&
-    !!booking.guest.email;
+    visit.status === 'approved' &&
+    visit.notify_guest &&
+    !!visit.guest.email;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[min(90vh,820px)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <div className="shrink-0 border-b px-8 pb-5 pt-8">
           <DialogHeader>
-            <DialogTitle>Edit booking</DialogTitle>
+            <DialogTitle>Edit visit</DialogTitle>
           </DialogHeader>
           <div className="mt-5">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">

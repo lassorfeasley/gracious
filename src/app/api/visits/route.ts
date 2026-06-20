@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { bookingRequestSchema } from '@/lib/validations';
+import { visitRequestSchema } from '@/lib/validations';
 import {
   getInvitationByToken,
   guestMatchesInvitation,
@@ -9,13 +9,13 @@ import {
 } from '@/lib/invitations';
 import {
   checkRoomConflicts,
-  validateBookingAgainstInvitation,
-} from '@/lib/bookings';
-import { invitationRequiresApproval } from '@/lib/invitation-booking';
+  validateVisitAgainstInvitation,
+} from '@/lib/visits';
+import { invitationRequiresApproval } from '@/lib/invitation-visit';
 import {
-  notifyBookingApproved,
+  notifyVisitApproved,
   notifyRequestReceived,
-  notifyStayBooked,
+  notifyStayConfirmed,
   notifyStayRequested,
 } from '@/lib/email/notifications';
 import { upsertUserProfile } from '@/lib/auth';
@@ -23,7 +23,7 @@ import { upsertUserProfile } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = bookingRequestSchema.safeParse(body);
+    const parsed = visitRequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.flatten().fieldErrors },
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 400 });
     }
 
-    const validation = validateBookingAgainstInvitation(
+    const validation = validateVisitAgainstInvitation(
       invitation,
       data.check_in,
       data.check_out,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     );
     if (conflicts.hasConflict) {
       return NextResponse.json(
-        { error: 'Selected dates conflict with an existing booking or block' },
+        { error: 'Selected dates conflict with an existing visit or block' },
         { status: 400 }
       );
     }
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
     const needsApproval = invitationRequiresApproval(invitation);
     const initialStatus = needsApproval ? 'requested' : 'approved';
 
-    const { data: booking, error: bookingError } = await admin
-      .from('bookings')
+    const { data: visit, error: visitError } = await admin
+      .from('visits')
       .insert({
         invitation_id: invitation.id,
         property_id: invitation.property_id,
@@ -111,19 +111,19 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (bookingError || !booking) {
-      return NextResponse.json({ error: bookingError?.message }, { status: 500 });
+    if (visitError || !visit) {
+      return NextResponse.json({ error: visitError?.message }, { status: 500 });
     }
 
-    await admin.from('booking_dates').insert({
-      booking_id: booking.id,
+    await admin.from('visit_dates').insert({
+      visit_id: visit.id,
       check_in: data.check_in,
       check_out: data.check_out,
     });
 
-    await admin.from('booking_rooms').insert(
+    await admin.from('visit_rooms').insert(
       data.room_ids.map((room_id) => ({
-        booking_id: booking.id,
+        visit_id: visit.id,
         room_id,
       }))
     );
@@ -135,14 +135,14 @@ export async function POST(request: NextRequest) {
       .eq('status', 'pending');
 
     if (needsApproval) {
-      notifyStayRequested(booking.id).catch(console.error);
-      notifyRequestReceived(booking.id).catch(console.error);
+      notifyStayRequested(visit.id).catch(console.error);
+      notifyRequestReceived(visit.id).catch(console.error);
     } else {
-      notifyBookingApproved(booking.id).catch(console.error);
-      notifyStayBooked(booking.id).catch(console.error);
+      notifyVisitApproved(visit.id).catch(console.error);
+      notifyStayConfirmed(visit.id).catch(console.error);
     }
 
-    return NextResponse.json({ booking, status: initialStatus });
+    return NextResponse.json({ visit, status: initialStatus });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

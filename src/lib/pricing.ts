@@ -60,7 +60,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       'Unlimited hosted stays',
       'Unlimited homes & rooms',
       'Co-managers per property',
-      'One flat price · no per-booking fees',
+      'One flat price · no per-visit fees',
     ],
     cta: {
       label: 'Upgrade to Pro',

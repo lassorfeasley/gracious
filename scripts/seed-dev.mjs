@@ -1,5 +1,5 @@
 // Dev seed: creates stable dev accounts (owner/admin/guest) plus a sample
-// property, rooms, invitation and booking so every authed screen has content
+// property, rooms, invitation and visit so every authed screen has content
 // to style. Idempotent — safe to re-run.
 //
 // Run against your dev Supabase project:
@@ -33,8 +33,8 @@ const IDS = {
     'd0d0d0d0-0000-4000-8000-000000000012',
   ],
   invitation: dev.inviteToken, // also used as the invitation id for simplicity
-  booking: 'd0d0d0d0-0000-4000-8000-000000000031',
-  bookingDates: 'd0d0d0d0-0000-4000-8000-000000000041',
+  visit: 'd0d0d0d0-0000-4000-8000-000000000031',
+  visitDates: 'd0d0d0d0-0000-4000-8000-000000000041',
 };
 
 function isoDate(daysFromNow) {
@@ -187,9 +187,9 @@ async function main() {
   if (invRoomsErr) throw invRoomsErr;
   console.log(`  • invitation (token ${dev.inviteToken}) with ${IDS.rooms.length} rooms`);
 
-  const { error: bookingErr } = await supabase.from('bookings').upsert(
+  const { error: visitErr } = await supabase.from('visits').upsert(
     {
-      id: IDS.booking,
+      id: IDS.visit,
       invitation_id: IDS.invitation,
       property_id: dev.property.id,
       guest_user_id: guestId,
@@ -201,12 +201,12 @@ async function main() {
     },
     { onConflict: 'id' }
   );
-  if (bookingErr) throw bookingErr;
+  if (visitErr) throw visitErr;
 
-  const { error: datesErr } = await supabase.from('booking_dates').upsert(
+  const { error: datesErr } = await supabase.from('visit_dates').upsert(
     {
-      id: IDS.bookingDates,
-      booking_id: IDS.booking,
+      id: IDS.visitDates,
+      visit_id: IDS.visit,
       check_in: isoDate(21),
       check_out: isoDate(24),
     },
@@ -214,15 +214,15 @@ async function main() {
   );
   if (datesErr) throw datesErr;
 
-  const { error: bRoomErr } = await supabase.from('booking_rooms').upsert(
+  const { error: bRoomErr } = await supabase.from('visit_rooms').upsert(
     {
-      booking_id: IDS.booking,
+      visit_id: IDS.visit,
       room_id: IDS.rooms[0],
     },
-    { onConflict: 'booking_id,room_id' }
+    { onConflict: 'visit_id,room_id' }
   );
   if (bRoomErr) throw bRoomErr;
-  console.log('  • sample booking request (pending approval)');
+  console.log('  • sample visit request (pending approval)');
 
   console.log('\n✓ Done. Dev sign-in password for all accounts: ' + dev.password);
   console.log('  Use the "Sign in as" buttons in the dev toolbar.\n');

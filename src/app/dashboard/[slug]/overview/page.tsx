@@ -66,15 +66,15 @@ export default async function OverviewPage({
 
   const notes = (propertyNotes ?? []) as PropertyNote[];
 
-  const { data: bookings } = await supabase
-    .from('bookings')
+  const { data: visits } = await supabase
+    .from('visits')
     .select(
-      `id, status, invitation_id, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out)`
+      `id, status, invitation_id, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:visit_dates(check_in, check_out)`
     )
     .eq('property_id', property.id)
     .in('status', ['approved', 'requested']);
 
-  const normalized = (bookings ?? []).map((b) => {
+  const normalized = (visits ?? []).map((b) => {
     const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
     const guest = (Array.isArray(b.guest) ? b.guest[0] : b.guest) as
       | { name: string | null; email: string }
@@ -371,19 +371,19 @@ export default async function OverviewPage({
           </p>
         ) : (
           <ul className="mt-6 space-y-3">
-            {upcoming.map((booking) => (
-              <li key={booking.id}>
+            {upcoming.map((visit) => (
+              <li key={visit.id}>
                 <div className="flex items-center justify-between gap-4 rounded-2xl border bg-card p-5 shadow-sm">
                   <div>
-                    <p className="text-lg font-medium">{booking.guestName}</p>
-                    {booking.checkIn && booking.checkOut && (
+                    <p className="text-lg font-medium">{visit.guestName}</p>
+                    {visit.checkIn && visit.checkOut && (
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {formatDateRange(booking.checkIn, booking.checkOut)}
+                        {formatDateRange(visit.checkIn, visit.checkOut)}
                       </p>
                     )}
                   </div>
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/dashboard/${slug}/bookings/${booking.id}`}>
+                    <Link href={`/dashboard/${slug}/visits/${visit.id}`}>
                       Manage
                     </Link>
                   </Button>

@@ -12,11 +12,11 @@ interface Props {
   rooms: string;
   partySize: number;
   notes?: string;
-  bookingUrl: string;
+  visitUrl: string;
   unsubscribeUrl?: string;
 }
 
-export default function StayBookedEmail({
+export default function StayConfirmedEmail({
   guestName,
   propertyName,
   checkInDate,
@@ -24,19 +24,19 @@ export default function StayBookedEmail({
   rooms,
   partySize,
   notes,
-  bookingUrl,
+  visitUrl,
   unsubscribeUrl,
 }: Props) {
   return (
     <EmailLayout
-      preview={`${guestName} booked a stay at ${propertyName}`}
-      heading="New stay booked"
+      preview={`${guestName} confirmed a visit at ${propertyName}`}
+      heading="New visit confirmed"
       unsubscribeUrl={unsubscribeUrl}
     >
       <Text>
-        <strong>{guestName}</strong> just booked a stay at{' '}
+        <strong>{guestName}</strong> just confirmed a visit at{' '}
         <strong>{propertyName}</strong>. Their invitation didn&apos;t require
-        approval, so the booking is confirmed and on your calendar.
+        approval, so the visit is confirmed and on your calendar.
       </Text>
 
       <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
@@ -53,8 +53,8 @@ export default function StayBookedEmail({
 
       {notes && <QuoteCard attribution={guestName}>{notes}</QuoteCard>}
 
-      <Button style={buttonStyle} href={bookingUrl}>
-        View booking
+      <Button style={buttonStyle} href={visitUrl}>
+        View visit
       </Button>
     </EmailLayout>
   );

@@ -1,13 +1,13 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 
-interface BookingGuestRow {
+interface VisitGuestRow {
   guest_name: string | null;
   guest_email: string | null;
   guest: { name: string | null; email: string | null } | { name: string | null; email: string | null }[] | null;
 }
 
-function resolveGuestName(b: BookingGuestRow): string {
+function resolveGuestName(b: VisitGuestRow): string {
   const user = Array.isArray(b.guest) ? b.guest[0] : b.guest;
   return (
     user?.name ??
@@ -26,40 +26,40 @@ export async function getInvitationRoomAvailability(
   const { includeGuestNames = false } = options;
   const map: Record<string, RoomAvailability> = {};
   for (const id of roomIds) {
-    map[id] = { bookings: [], blocks: [] };
+    map[id] = { visits: [], blocks: [] };
   }
   if (roomIds.length === 0) return map;
 
   const admin = createAdminClient();
 
   const { data: bookingRows } = await admin
-    .from('booking_rooms')
+    .from('visit_rooms')
     .select(
       `room_id,
-      booking:bookings(id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out))`
+      visit:visits(id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:visit_dates(check_in, check_out))`
     )
     .in('room_id', roomIds);
 
   for (const row of bookingRows ?? []) {
-    const booking = Array.isArray(row.booking) ? row.booking[0] : row.booking;
+    const visit = Array.isArray(row.visit) ? row.visit[0] : row.visit;
     if (
-      !booking ||
-      (booking.status !== 'approved' && booking.status !== 'requested')
+      !visit ||
+      (visit.status !== 'approved' && visit.status !== 'requested')
     ) {
       continue;
     }
-    const dates = Array.isArray(booking.dates) ? booking.dates[0] : booking.dates;
+    const dates = Array.isArray(visit.dates) ? visit.dates[0] : visit.dates;
     if (!dates?.check_in || !dates?.check_out) continue;
     const entry = map[row.room_id as string];
     if (entry) {
-      entry.bookings.push({
-        id: booking.id,
+      entry.visits.push({
+        id: visit.id,
         guestName: includeGuestNames
-          ? resolveGuestName(booking as BookingGuestRow)
-          : 'Booked',
+          ? resolveGuestName(visit as VisitGuestRow)
+          : 'Reserved',
         checkIn: dates.check_in,
         checkOut: dates.check_out,
-        pending: booking.status === 'requested',
+        pending: visit.status === 'requested',
       });
     }
   }

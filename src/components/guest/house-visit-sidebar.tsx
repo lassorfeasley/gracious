@@ -16,34 +16,35 @@ import {
 import { MagicLinkForm } from '@/components/guest/magic-link-form';
 import { GuestManageStayCard } from '@/components/guest/guest-manage-stay-card';
 import { HouseCalendar } from '@/components/guest/house-calendar';
+import { useBareCard } from '@/components/card-chrome';
 import {
   resolveGuestPreviewUi,
   type GuestPreviewAs,
-  type GuestPreviewBookingStatus,
+  type GuestPreviewVisitStatus,
 } from '@/lib/guest-preview';
 import {
-  guestBookingCtaLabel,
-  guestBookingSidebarNote,
-  guestBookingSuccessMessage,
-} from '@/lib/invitation-booking';
-import { useBooking } from './booking-context';
+  guestVisitCtaLabel,
+  guestVisitSidebarNote,
+  guestVisitSuccessMessage,
+} from '@/lib/invitation-visit';
+import { useVisit } from './visit-context';
 import type { InvitationWithDetails } from '@/types/database';
-import type { GuestStaySummary } from '@/lib/bookings';
+import type { GuestStaySummary } from '@/lib/visits';
 
 interface DateRange {
   start: string;
   end: string;
 }
 
-interface HouseBookingSidebarProps {
+interface HouseVisitSidebarProps {
   invitation: InvitationWithDetails;
   propertyName: string;
   isAuthenticated: boolean;
-  /** The guest's active booking for this invitation, when one exists. */
+  /** The guest's active visit for this invitation, when one exists. */
   existingStay?: GuestStaySummary | null;
   previewMode?: boolean;
   guestPreviewAs?: GuestPreviewAs;
-  guestPreviewBookingStatus?: GuestPreviewBookingStatus;
+  guestPreviewVisitStatus?: GuestPreviewVisitStatus;
   isPrixFixe?: boolean;
   allowedRanges?: DateRange[];
 }
@@ -93,23 +94,28 @@ function DateBox({
   );
 }
 
-export function HouseBookingSidebar({
+export function HouseVisitSidebar({
   invitation,
   propertyName,
   isAuthenticated,
   existingStay,
   previewMode = false,
-  guestPreviewAs = 'booking',
-  guestPreviewBookingStatus = 'requested',
+  guestPreviewAs = 'visit',
+  guestPreviewVisitStatus = 'requested',
   isPrixFixe = false,
   allowedRanges,
-}: HouseBookingSidebarProps) {
+}: HouseVisitSidebarProps) {
   const previewUi = resolveGuestPreviewUi(
     previewMode,
     guestPreviewAs,
     isAuthenticated
   );
   const router = useRouter();
+  const bare = useBareCard();
+  const cardClass = cn(
+    'p-6',
+    !bare && 'rounded-2xl shadow-[0_6px_16px_rgba(0,0,0,0.12)]'
+  );
   const {
     checkIn,
     checkOut,
@@ -124,7 +130,7 @@ export function HouseBookingSidebar({
     selectAllRooms,
     lockRoomSelection,
     maxGuests,
-  } = useBooking();
+  } = useVisit();
 
   const [loading, setLoading] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -148,7 +154,7 @@ export function HouseBookingSidebar({
     checkIn && checkOut
       ? differenceInCalendarDays(parseISO(checkOut), parseISO(checkIn))
       : 0;
-  const ctaLabel = guestBookingCtaLabel(invitation);
+  const ctaLabel = guestVisitCtaLabel(invitation);
 
   async function handleReserve() {
     if (!checkIn || !checkOut) {
@@ -172,7 +178,7 @@ export function HouseBookingSidebar({
     };
 
     if (previewMode) {
-      toast.info('Preview mode — no booking was submitted', {
+      toast.info('Preview mode — no visit was requested', {
         description: `${formatBox(checkIn)} → ${formatBox(checkOut)} · ${selectedRoomIds.length} room(s) · party of ${guests}`,
       });
       return;
@@ -185,7 +191,7 @@ export function HouseBookingSidebar({
 
     setLoading(true);
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await fetch('/api/visits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -201,7 +207,7 @@ export function HouseBookingSidebar({
         toast.error(err || 'Failed to submit request');
         return;
       }
-      toast.success(guestBookingSuccessMessage(invitation));
+      toast.success(guestVisitSuccessMessage(invitation));
       router.push('/my-trips');
       router.refresh();
     } catch {
@@ -220,7 +226,7 @@ export function HouseBookingSidebar({
     .map((r) => r.name);
 
   // A real booked guest revisiting the invite page sees their stay — with
-  // add-to-calendar — instead of the booking widget.
+  // add-to-calendar — instead of the visit widget.
   if (!previewMode && existingStay) {
     return (
       <GuestManageStayCard
@@ -229,8 +235,8 @@ export function HouseBookingSidebar({
         checkOut={existingStay.checkOut}
         roomNames={existingStay.roomNames}
         partySize={existingStay.partySize}
-        bookingStatus={existingStay.status}
-        bookingId={existingStay.id}
+        visitStatus={existingStay.status}
+        visitId={existingStay.id}
       />
     );
   }
@@ -247,7 +253,7 @@ export function HouseBookingSidebar({
             : invitation.rooms.map((r) => r.name)
         }
         partySize={guests}
-        bookingStatus={guestPreviewBookingStatus}
+        visitStatus={guestPreviewVisitStatus}
         previewMode={previewMode}
       />
     );
@@ -255,8 +261,8 @@ export function HouseBookingSidebar({
 
   if (previewUi.showSignIn) {
     return (
-      <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
-        <p className="text-lg font-semibold">Sign in to book</p>
+      <div className={cardClass}>
+        <p className="text-lg font-semibold">Sign in to request a visit</p>
         <p className="mt-1 text-sm text-muted-foreground">
           We&apos;ll send a magic link to your invited email.
         </p>
@@ -271,7 +277,7 @@ export function HouseBookingSidebar({
   }
 
   return (
-    <div className="rounded-2xl p-6 shadow-[0_6px_16px_rgba(0,0,0,0.12)]">
+    <div className={cardClass}>
       <div className="flex items-baseline justify-between">
         <p className="text-xl font-semibold">
           {nights > 0
@@ -460,7 +466,7 @@ export function HouseBookingSidebar({
       </Button>
 
       <p className="mt-3 text-center text-sm text-muted-foreground">
-        {guestBookingSidebarNote(invitation)}
+        {guestVisitSidebarNote(invitation)}
       </p>
 
       {!isPrixFixe && (checkIn || checkOut) && (

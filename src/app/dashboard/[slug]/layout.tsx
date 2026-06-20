@@ -26,7 +26,7 @@ export default async function PropertyDashboardLayout({
 
   const supabase = await createClient();
   const { count: requestCount } = await supabase
-    .from('bookings')
+    .from('visits')
     .select('*', { count: 'exact', head: true })
     .eq('property_id', currentProperty.id)
     .eq('status', 'requested');

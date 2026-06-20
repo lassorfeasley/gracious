@@ -1,8 +1,8 @@
-import { guestKeyFromEmail, guestKeyFromManualBooking } from '@/lib/guest-keys';
+import { guestKeyFromEmail, guestKeyFromManualVisit } from '@/lib/guest-keys';
 import type { Invitation, InvitationStatus, InvitationType } from '@/types/database';
 
 export interface GuestStay {
-  bookingId: string;
+  visitId: string;
   checkIn: string;
   checkOut: string;
   status: string;
@@ -48,7 +48,7 @@ type BookingRow = {
     | { check_in: string; check_out: string }
     | { check_in: string; check_out: string }[]
     | null;
-  booking_rooms: { room: { name: string } | { name: string }[] }[];
+  visit_rooms: { room: { name: string } | { name: string }[] }[];
   invitation: Invitation | Invitation[] | null;
 };
 
@@ -77,12 +77,12 @@ function toStay(b: BookingRow): GuestStay | null {
   const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
   if (!dates?.check_in || !dates?.check_out) return null;
   const roomNames =
-    b.booking_rooms?.map((br) => {
+    b.visit_rooms?.map((br) => {
       const room = Array.isArray(br.room) ? br.room[0] : br.room;
       return room?.name ?? 'Room';
     }) ?? [];
   return {
-    bookingId: b.id,
+    visitId: b.id,
     checkIn: dates.check_in,
     checkOut: dates.check_out,
     status: b.status,
@@ -115,7 +115,7 @@ function pickUpcoming(stays: GuestStay[], today: string): GuestStay | null {
 
 export function buildGuestRoster(
   invitations: Invitation[],
-  bookings: BookingRow[],
+  visits: BookingRow[],
   today = new Date().toISOString().split('T')[0]
 ): GuestRosterEntry[] {
   const map = new Map<string, GuestRosterEntry>();
@@ -162,11 +162,11 @@ export function buildGuestRoster(
     }
   }
 
-  for (const b of bookings) {
+  for (const b of visits) {
     const email = guestEmailFromBooking(b);
     const key = email
       ? guestKeyFromEmail(email)
-      : guestKeyFromManualBooking(b.id);
+      : guestKeyFromManualVisit(b.id);
     const entry = ensure(key, {
       name: guestNameFromBooking(b),
       email,
@@ -183,7 +183,7 @@ export function buildGuestRoster(
     }
 
     const stay = toStay(b);
-    if (stay && !entry.stays.some((s) => s.bookingId === stay.bookingId)) {
+    if (stay && !entry.stays.some((s) => s.visitId === stay.visitId)) {
       entry.stays.push(stay);
     }
   }

@@ -73,7 +73,7 @@ export function DeleteRoomConfirm({
         <p className="text-sm font-medium">Delete this room?</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Permanently remove {roomName}. This can&apos;t be undone and may
-          affect existing bookings.
+          affect existing visits.
         </p>
       </div>
       <div className="space-y-2">

@@ -21,14 +21,14 @@ export default async function MyTripsPage() {
   // Guests can't read rooms/properties under RLS, so their trips would render
   // with null joins (and crash). Query as admin, scoped to the signed-in user.
   const admin = createAdminClient();
-  const { data: bookings } = await admin
-    .from('bookings')
+  const { data: visits } = await admin
+    .from('visits')
     .select(
       `
       *,
       property:properties(name, slug, checkout_time, property_notes(*)),
-      dates:booking_dates(check_in, check_out),
-      booking_rooms(room:rooms(name)),
+      dates:visit_dates(check_in, check_out),
+      visit_rooms(room:rooms(name)),
       invitation:invitations(token)
     `
     )
@@ -69,7 +69,7 @@ export default async function MyTripsPage() {
         <h1 className="text-2xl font-semibold">My trips</h1>
         <p className="mt-1 text-muted-foreground">Your stays and requests</p>
 
-        <TripsView bookings={bookings ?? []} />
+        <TripsView visits={visits ?? []} />
       </main>
 
       <SiteFooter />

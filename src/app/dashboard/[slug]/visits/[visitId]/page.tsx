@@ -4,24 +4,24 @@ import { PlaceholderImage } from '@/components/placeholder-image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getDashboardProperty } from '@/lib/dashboard-property';
-import { getBookingWithDetails } from '@/lib/bookings';
+import { getVisitWithDetails } from '@/lib/visits';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
-import { guestKeyFromEmail, guestKeyFromManualBooking } from '@/lib/guest-keys';
+import { guestKeyFromEmail, guestKeyFromManualVisit } from '@/lib/guest-keys';
 import { formatDateRange } from '@/lib/dates';
 import { createClient } from '@/lib/supabase/server';
 import { PropertySections } from '@/components/property-sections';
-import { BookingManageView } from '@/components/dashboard/booking-manage-view';
+import { VisitManageView } from '@/components/dashboard/visit-manage-view';
 import { DashboardContainer } from '@/components/dashboard/dashboard-container';
 import type { RoomAvailability } from '@/lib/guest-calendar';
 
-function excludeBooking(
+function excludeVisit(
   map: Record<string, RoomAvailability>,
-  bookingId: string
+  visitId: string
 ): Record<string, RoomAvailability> {
   const out: Record<string, RoomAvailability> = {};
   for (const [roomId, avail] of Object.entries(map)) {
     out[roomId] = {
-      bookings: avail.bookings.filter((b) => b.id !== bookingId),
+      visits: avail.visits.filter((b) => b.id !== visitId),
       blocks: avail.blocks,
     };
   }
@@ -30,16 +30,16 @@ function excludeBooking(
 
 export const metadata = { title: 'Visit' };
 
-export default async function ManageBookingPage({
+export default async function ManageVisitPage({
   params,
 }: {
-  params: Promise<{ slug: string; bookingId: string }>;
+  params: Promise<{ slug: string; visitId: string }>;
 }) {
-  const { slug, bookingId } = await params;
+  const { slug, visitId } = await params;
   const property = await getDashboardProperty(slug);
-  const booking = await getBookingWithDetails(bookingId);
+  const visit = await getVisitWithDetails(visitId);
 
-  if (!booking || booking.property_id !== property.id) notFound();
+  if (!visit || visit.property_id !== property.id) notFound();
 
   const supabase = await createClient();
   const { data: roomRows } = await supabase
@@ -48,26 +48,26 @@ export default async function ManageBookingPage({
     .eq('property_id', property.id)
     .order('display_order');
 
-  const bookableRooms = (roomRows ?? []).map((r) => ({
+  const requestableRooms = (roomRows ?? []).map((r) => ({
     id: r.id,
     name: r.name,
     max_occupancy: r.max_occupancy,
   }));
 
-  const allRoomIds = bookableRooms.map((r) => r.id);
+  const allRoomIds = requestableRooms.map((r) => r.id);
   const fullAvailability = await getInvitationRoomAvailability(allRoomIds, {
     includeGuestNames: true,
   });
-  const roomAvailability = excludeBooking(fullAvailability, booking.id);
+  const roomAvailability = excludeVisit(fullAvailability, visit.id);
 
-  const guestProfileHref = booking.guest.email
-    ? `/dashboard/${slug}/guests/${guestKeyFromEmail(booking.guest.email)}`
-    : `/dashboard/${slug}/guests/${guestKeyFromManualBooking(booking.id)}`;
+  const guestProfileHref = visit.guest.email
+    ? `/dashboard/${slug}/guests/${guestKeyFromEmail(visit.guest.email)}`
+    : `/dashboard/${slug}/guests/${guestKeyFromManualVisit(visit.id)}`;
 
-  const guestName = booking.guest.name ?? 'Guest';
-  const roomNames = booking.rooms.map((r) => r.name).join(', ');
+  const guestName = visit.guest.name ?? 'Guest';
+  const roomNames = visit.rooms.map((r) => r.name).join(', ');
   const heroSubtitle = [
-    formatDateRange(booking.dates.check_in, booking.dates.check_out),
+    formatDateRange(visit.dates.check_in, visit.dates.check_out),
     property.name,
     roomNames,
   ]
@@ -77,7 +77,7 @@ export default async function ManageBookingPage({
   return (
     <DashboardContainer>
       <Link
-        href={`/dashboard/${slug}/bookings`}
+        href={`/dashboard/${slug}/visits`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -114,18 +114,18 @@ export default async function ManageBookingPage({
         </div>
       </div>
 
-      <BookingManageView
-        booking={booking}
-        rooms={bookableRooms}
+      <VisitManageView
+        visit={visit}
+        rooms={requestableRooms}
         roomAvailability={roomAvailability}
         guestProfileHref={guestProfileHref}
-        bookingHrefBase={`/dashboard/${slug}/bookings`}
+        visitHrefBase={`/dashboard/${slug}/visits`}
       >
         <PropertySections
           property={property}
           noteCategories={['house', 'checkin', 'checkout']}
         />
-      </BookingManageView>
+      </VisitManageView>
     </DashboardContainer>
   );
 }

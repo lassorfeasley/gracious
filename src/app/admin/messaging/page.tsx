@@ -55,7 +55,7 @@ const FLOWS: {
     label: 'Account',
     journeyTitle: 'Account & access',
     journeySubtitle:
-      'Authentication emails sent by Supabase through our Send Email hook. These fire on auth events, not on a booking timeline.',
+      'Authentication emails sent by Supabase through our Send Email hook. These fire on auth events, not on a visit timeline.',
     steps: ACCOUNT_JOURNEY,
   },
 ];

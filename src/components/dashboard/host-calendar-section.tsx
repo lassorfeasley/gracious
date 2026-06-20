@@ -24,7 +24,7 @@ export function HostCalendarSection({
   footer?: ReactNode;
   className?: string;
 }) {
-  const bookingHrefBase = `/dashboard/${slug}/bookings`;
+  const visitHrefBase = `/dashboard/${slug}/visits`;
   const timelineStart = toISODate(startOfMonth(new Date()));
 
   return (
@@ -41,13 +41,13 @@ export function HostCalendarSection({
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
         <TabsContent value="calendar" className="mt-6">
-          <HouseCalendar monthsToShow={2} bookingHrefBase={bookingHrefBase} />
+          <HouseCalendar monthsToShow={2} visitHrefBase={visitHrefBase} />
         </TabsContent>
         <TabsContent value="timeline" className="mt-6">
           <HostStayTimeline
             windowStart={timelineStart}
             windowDays={TIMELINE_DAYS}
-            bookingHrefBase={bookingHrefBase}
+            visitHrefBase={visitHrefBase}
           />
         </TabsContent>
       </Tabs>

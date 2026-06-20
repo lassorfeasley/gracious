@@ -36,7 +36,7 @@ interface Props {
   hostOnboardingUrl?: string;
 }
 
-export default function BookingApprovedEmail(props: Props) {
+export default function VisitApprovedEmail(props: Props) {
   return (
     <EmailLayout
       preview={`Your stay at ${props.propertyName} is confirmed`}

@@ -9,7 +9,7 @@ interface Props {
   inviteUrl: string;
 }
 
-export default function BookingDeclinedEmail({
+export default function VisitDeclinedEmail({
   guestName,
   propertyName,
   dates,

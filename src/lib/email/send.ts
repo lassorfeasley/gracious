@@ -195,33 +195,33 @@ export async function sendEmail({
 
 export async function logNotification({
   userId,
-  bookingId,
+  visitId,
   invitationId,
   type,
 }: {
   userId?: string;
-  bookingId?: string;
+  visitId?: string;
   invitationId?: string;
   type: string;
 }) {
   const admin = createAdminClient();
   await admin.from('notifications_log').insert({
     user_id: userId ?? null,
-    booking_id: bookingId ?? null,
+    visit_id: visitId ?? null,
     invitation_id: invitationId ?? null,
     type,
   });
 }
 
 export async function wasNotificationSent(
-  bookingId: string,
+  visitId: string,
   type: string
 ): Promise<boolean> {
   const admin = createAdminClient();
   const { data } = await admin
     .from('notifications_log')
     .select('id')
-    .eq('booking_id', bookingId)
+    .eq('visit_id', visitId)
     .eq('type', type)
     .limit(1);
   return (data?.length ?? 0) > 0;

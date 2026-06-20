@@ -1,15 +1,15 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { canManageProperty } from '@/lib/auth';
-import { getBookingWithDetails } from '@/lib/bookings';
+import { getVisitWithDetails } from '@/lib/visits';
 import {
-  notifyBookingApproved,
-  notifyBookingDeclined,
-  notifyBookingCancelled,
+  notifyVisitApproved,
+  notifyVisitDeclined,
+  notifyVisitCancelled,
 } from '@/lib/email/notifications';
 
 /**
  * Single source of truth for the approve / decline / cancel transitions on a
- * stay. Both callers — the `PATCH /api/bookings/[id]` API route and the
+ * stay. Both callers — the `PATCH /api/visits/[id]` API route and the
  * one-click email links handled in the requests page — go through here so the
  * authorization, idempotency, and notification behavior can't drift apart
  * between the two entry points.
@@ -21,14 +21,14 @@ import {
  * duplicate guest email.
  */
 
-export type BookingActionFailureReason =
+export type VisitActionFailureReason =
   | 'not_found'
   | 'forbidden'
   | 'not_pending';
 
-export type BookingActionResult =
+export type VisitActionResult =
   | { ok: true; status: 'approved' | 'declined' | 'cancelled' }
-  | { ok: false; reason: BookingActionFailureReason };
+  | { ok: false; reason: VisitActionFailureReason };
 
 interface ActionOptions {
   /**
@@ -39,27 +39,27 @@ interface ActionOptions {
   propertyId?: string;
 }
 
-export async function approveBooking(
-  bookingId: string,
+export async function approveVisit(
+  visitId: string,
   actorUserId: string,
   options: ActionOptions = {}
-): Promise<BookingActionResult> {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking || (options.propertyId && booking.property_id !== options.propertyId)) {
+): Promise<VisitActionResult> {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit || (options.propertyId && visit.property_id !== options.propertyId)) {
     return { ok: false, reason: 'not_found' };
   }
-  if (!(await canManageProperty(booking.property_id, actorUserId))) {
+  if (!(await canManageProperty(visit.property_id, actorUserId))) {
     return { ok: false, reason: 'forbidden' };
   }
-  if (booking.status !== 'requested') {
+  if (visit.status !== 'requested') {
     return { ok: false, reason: 'not_pending' };
   }
 
   const admin = createAdminClient();
   const { data: updated } = await admin
-    .from('bookings')
+    .from('visits')
     .update({ status: 'approved' })
-    .eq('id', bookingId)
+    .eq('id', visitId)
     .eq('status', 'requested')
     .select('id')
     .maybeSingle();
@@ -68,78 +68,78 @@ export async function approveBooking(
   // re-send the confirmation.
   if (!updated) return { ok: false, reason: 'not_pending' };
 
-  notifyBookingApproved(bookingId).catch(console.error);
+  notifyVisitApproved(visitId).catch(console.error);
   return { ok: true, status: 'approved' };
 }
 
-export async function declineBooking(
-  bookingId: string,
+export async function declineVisit(
+  visitId: string,
   actorUserId: string,
   options: ActionOptions & { declineMessage?: string } = {}
-): Promise<BookingActionResult> {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking || (options.propertyId && booking.property_id !== options.propertyId)) {
+): Promise<VisitActionResult> {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit || (options.propertyId && visit.property_id !== options.propertyId)) {
     return { ok: false, reason: 'not_found' };
   }
-  if (!(await canManageProperty(booking.property_id, actorUserId))) {
+  if (!(await canManageProperty(visit.property_id, actorUserId))) {
     return { ok: false, reason: 'forbidden' };
   }
-  if (booking.status !== 'requested') {
+  if (visit.status !== 'requested') {
     return { ok: false, reason: 'not_pending' };
   }
 
   const admin = createAdminClient();
   const { data: updated } = await admin
-    .from('bookings')
+    .from('visits')
     .update({
       status: 'declined',
       decline_message: options.declineMessage ?? null,
     })
-    .eq('id', bookingId)
+    .eq('id', visitId)
     .eq('status', 'requested')
     .select('id')
     .maybeSingle();
 
   if (!updated) return { ok: false, reason: 'not_pending' };
 
-  notifyBookingDeclined(bookingId, options.declineMessage).catch(console.error);
+  notifyVisitDeclined(visitId, options.declineMessage).catch(console.error);
   return { ok: true, status: 'declined' };
 }
 
-export async function cancelBooking(
-  bookingId: string,
+export async function cancelVisit(
+  visitId: string,
   actorUserId: string,
   options: ActionOptions = {}
-): Promise<BookingActionResult> {
-  const booking = await getBookingWithDetails(bookingId);
-  if (!booking || (options.propertyId && booking.property_id !== options.propertyId)) {
+): Promise<VisitActionResult> {
+  const visit = await getVisitWithDetails(visitId);
+  if (!visit || (options.propertyId && visit.property_id !== options.propertyId)) {
     return { ok: false, reason: 'not_found' };
   }
 
-  const isOwner = await canManageProperty(booking.property_id, actorUserId);
-  const isGuest = booking.guest_user_id === actorUserId;
+  const isOwner = await canManageProperty(visit.property_id, actorUserId);
+  const isGuest = visit.guest_user_id === actorUserId;
   if (!isOwner && !isGuest) {
     return { ok: false, reason: 'forbidden' };
   }
 
   // Only an active stay can be cancelled; re-cancelling a settled booking is a
   // no-op so the other party isn't emailed twice.
-  if (booking.status !== 'requested' && booking.status !== 'approved') {
+  if (visit.status !== 'requested' && visit.status !== 'approved') {
     return { ok: false, reason: 'not_pending' };
   }
 
   const admin = createAdminClient();
   const { data: updated } = await admin
-    .from('bookings')
+    .from('visits')
     .update({ status: 'cancelled' })
-    .eq('id', bookingId)
+    .eq('id', visitId)
     .in('status', ['requested', 'approved'])
     .select('id')
     .maybeSingle();
 
   if (!updated) return { ok: false, reason: 'not_pending' };
 
-  notifyBookingCancelled(bookingId, isGuest ? 'guest' : 'owner').catch(
+  notifyVisitCancelled(visitId, isGuest ? 'guest' : 'owner').catch(
     console.error
   );
   return { ok: true, status: 'cancelled' };

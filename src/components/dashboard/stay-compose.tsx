@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Room } from '@/types/database';
 import type { RoomAvailability } from '@/lib/guest-calendar';
-import { BookingProvider, useBooking } from '@/components/guest/booking-context';
+import { VisitProvider, useVisit } from '@/components/guest/visit-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import {
   HostStaySidebar,
@@ -73,7 +73,7 @@ function HostComposeForm({
   }, [readModeFromUrl, urlMode]);
 
   const { checkIn, checkOut, setRange, setActiveField, selectedRoomIds, guests } =
-    useBooking();
+    useVisit();
 
   const [inviteType, setInviteType] = useState<HostInviteType>('date_offer');
   const [windows, setWindows] = useState<
@@ -188,7 +188,7 @@ function HostComposeForm({
     }
 
     if (data.preApproved) {
-      toast.success('Stay booked — your guest has been notified.');
+      toast.success('Visit confirmed — your guest has been notified.');
       router.push(`/dashboard/${slug}/overview`);
       router.refresh();
       return;
@@ -228,7 +228,7 @@ function HostComposeForm({
     }
 
     setLoading(true);
-    const res = await fetch('/api/bookings/host', {
+    const res = await fetch('/api/visits/host', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -343,7 +343,7 @@ function HostComposeForm({
         <HouseCalendar
           monthsToShow={2}
           disabled={false}
-          bookingHrefBase={`/dashboard/${slug}/bookings`}
+          visitHrefBase={`/dashboard/${slug}/visits`}
         />
       </div>
       {actionType === 'invite' && inviteType === 'date_offer' && (
@@ -421,7 +421,7 @@ function HostComposeForm({
       <div className="mx-auto w-full max-w-6xl">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Book a guest stay
+            Invite a guest for a visit
           </h1>
           <p className="mt-1 text-muted-foreground">
             Pick dates on the calendar, then finish the details in the survey.
@@ -461,13 +461,13 @@ export function HostComposePanel({
   readModeFromUrl?: boolean;
   children?: ReactNode;
 }) {
-  const bookableRooms = rooms.map((r) => ({
+  const requestableRooms = rooms.map((r) => ({
     id: r.id,
     name: r.name,
     max_occupancy: r.max_occupancy,
   }));
 
-  const allRoomIds = bookableRooms.map((r) => r.id);
+  const allRoomIds = requestableRooms.map((r) => r.id);
   const selectedIds =
     defaultSelectedRoomIds?.filter((id) => allRoomIds.includes(id)) ??
     allRoomIds;
@@ -488,8 +488,8 @@ export function HostComposePanel({
   }
 
   return (
-    <BookingProvider
-      rooms={bookableRooms}
+    <VisitProvider
+      rooms={requestableRooms}
       roomAvailability={roomAvailability}
       defaultGuests={1}
       defaultSelectedRoomIds={selectedIds}
@@ -505,7 +505,7 @@ export function HostComposePanel({
       >
         {children}
       </HostComposeForm>
-    </BookingProvider>
+    </VisitProvider>
   );
 }
 

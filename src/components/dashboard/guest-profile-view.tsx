@@ -72,16 +72,16 @@ export function GuestProfileView({
 }) {
   const headline = guestHeadline(guest, today);
   const upcomingManualId =
-    guest.upcomingStay?.isManual ? guest.upcomingStay.bookingId : null;
+    guest.upcomingStay?.isManual ? guest.upcomingStay.visitId : null;
 
   const pastStays = guest.stays.filter(
-    (s) => s.bookingId !== guest.upcomingStay?.bookingId
+    (s) => s.visitId !== guest.upcomingStay?.visitId
   );
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <Link
-        href={`/dashboard/${slug}/bookings`}
+        href={`/dashboard/${slug}/visits`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -152,7 +152,7 @@ export function GuestProfileView({
               invitationToken={guest.invitation?.token}
               invitationId={guest.invitation?.id}
               invitationStatus={guest.invitation?.status}
-              manualBookingId={upcomingManualId}
+              manualVisitId={upcomingManualId}
               invitePageHref={
                 guest.invitation?.token
                   ? `/invite/${guest.invitation.token}`
@@ -197,9 +197,9 @@ export function GuestProfileView({
               )}
               <Button asChild>
                 <Link
-                  href={`/dashboard/${slug}/bookings/${guest.upcomingStay.bookingId}`}
+                  href={`/dashboard/${slug}/visits/${guest.upcomingStay.visitId}`}
                 >
-                  Manage booking
+                  Manage visit
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
@@ -266,16 +266,16 @@ export function GuestProfileView({
           <div className="rounded-2xl border bg-muted/20 px-6 py-12 text-center">
             <p className="text-sm text-muted-foreground">
               {guest.invitation?.status === 'pending'
-                ? 'No bookings yet — waiting for them to book.'
+                ? 'No visits yet — waiting for them to request a visit.'
                 : 'No past stays on record.'}
             </p>
           </div>
         ) : (
           <ul className="space-y-3">
             {pastStays.map((stay) => (
-              <li key={stay.bookingId}>
+              <li key={stay.visitId}>
                 <Link
-                  href={`/dashboard/${slug}/bookings/${stay.bookingId}`}
+                  href={`/dashboard/${slug}/visits/${stay.visitId}`}
                   className="group flex items-center justify-between gap-4 rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:border-foreground/20 hover:bg-muted/30"
                 >
                   <div className="min-w-0 space-y-2">

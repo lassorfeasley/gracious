@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { mapPropertyBookingsToCalendar } from '@/lib/calendar-bookings';
+import { mapPropertyVisitsToCalendar } from '@/lib/calendar-visits';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
 
 export async function PropertyCalendarSection({
@@ -21,14 +21,14 @@ export async function PropertyCalendarSection({
 }) {
   const supabase = await createClient();
   const { data: calendarRows } = await supabase
-    .from('bookings')
+    .from('visits')
     .select(
-      `id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:booking_dates(check_in, check_out)`
+      `id, status, guest_name, guest_email, guest:users!guest_user_id(name, email), dates:visit_dates(check_in, check_out)`
     )
     .eq('property_id', propertyId)
     .in('status', ['approved', 'requested']);
 
-  const calendarBookings = mapPropertyBookingsToCalendar(calendarRows ?? [], {
+  const calendarVisits = mapPropertyVisitsToCalendar(calendarRows ?? [], {
     includeRequested: true,
   });
 
@@ -42,9 +42,9 @@ export async function PropertyCalendarSection({
       )}
       <div className={title ? 'mt-6' : undefined}>
         <AvailabilityCalendar
-          bookings={calendarBookings}
+          visits={calendarVisits}
           monthsToShow={monthsToShow}
-          bookingHrefBase={`/dashboard/${slug}/bookings`}
+          visitHrefBase={`/dashboard/${slug}/visits`}
         />
       </div>
       {footer}

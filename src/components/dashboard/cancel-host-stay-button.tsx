@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-export function CancelHostStayButton({ bookingId }: { bookingId: string }) {
+export function CancelHostStayButton({ visitId }: { visitId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +19,7 @@ export function CancelHostStayButton({ bookingId }: { bookingId: string }) {
     }
 
     setLoading(true);
-    const res = await fetch(`/api/bookings/${bookingId}`, {
+    const res = await fetch(`/api/visits/${visitId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'cancel' }),

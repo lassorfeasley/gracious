@@ -6,19 +6,19 @@ import { parseISO, format } from 'date-fns';
 import { Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { EditBookingSurvey } from '@/components/dashboard/edit-booking-survey';
+import { EditVisitSurvey } from '@/components/dashboard/edit-visit-survey';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
 import { isLimitReachedResponse } from '@/lib/billing-client';
-import type { BookingWithDetails } from '@/types/database';
+import type { VisitWithDetails } from '@/types/database';
 
 function formatBox(date: string): string {
   return format(parseISO(date), 'EEE, MMM d');
 }
 
 export function HostManageStayCard({
-  booking,
+  visit,
 }: {
-  booking: BookingWithDetails;
+  visit: VisitWithDetails;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -29,13 +29,13 @@ export function HostManageStayCard({
     limit: number;
   } | null>(null);
 
-  const { check_in: checkIn, check_out: checkOut } = booking.dates;
-  const roomsLabel = booking.rooms.map((r) => r.name).join(', ') || '—';
-  const canEdit = booking.status === 'requested' || booking.status === 'approved';
+  const { check_in: checkIn, check_out: checkOut } = visit.dates;
+  const roomsLabel = visit.rooms.map((r) => r.name).join(', ') || '—';
+  const canEdit = visit.status === 'requested' || visit.status === 'approved';
 
   async function patch(body: Record<string, unknown>, successMsg: string) {
     setLoading(true);
-    const res = await fetch(`/api/bookings/${booking.id}`, {
+    const res = await fetch(`/api/visits/${visit.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -88,17 +88,17 @@ export function HostManageStayCard({
             Guests
           </p>
           <p className="mt-0.5 text-sm">
-            {booking.party_size} {booking.party_size === 1 ? 'guest' : 'guests'}
+            {visit.party_size} {visit.party_size === 1 ? 'guest' : 'guests'}
           </p>
         </div>
       </div>
 
-      {booking.status === 'requested' && (
+      {visit.status === 'requested' && (
         <Button
           size="lg"
           className="mt-6 w-full"
           disabled={loading}
-          onClick={() => patch({ action: 'approve' }, 'Booking approved')}
+          onClick={() => patch({ action: 'approve' }, 'Visit approved')}
         >
           Approve request
         </Button>
@@ -106,18 +106,18 @@ export function HostManageStayCard({
 
       {canEdit && (
         <Button
-          variant={booking.status === 'requested' ? 'outline' : 'default'}
+          variant={visit.status === 'requested' ? 'outline' : 'default'}
           size="lg"
-          className={booking.status === 'requested' ? 'mt-2 w-full' : 'mt-6 w-full'}
+          className={visit.status === 'requested' ? 'mt-2 w-full' : 'mt-6 w-full'}
           disabled={loading}
           onClick={() => setEditOpen(true)}
         >
           <Pencil className="mr-2 h-4 w-4" />
-          Edit booking
+          Edit visit
         </Button>
       )}
 
-      {booking.status === 'requested' && (
+      {visit.status === 'requested' && (
         <Button
           variant="ghost"
           className="mt-2 w-full"
@@ -133,10 +133,10 @@ export function HostManageStayCard({
       )}
 
       {canEdit && (
-        <EditBookingSurvey
+        <EditVisitSurvey
           open={editOpen}
           onOpenChange={setEditOpen}
-          booking={booking}
+          visit={visit}
         />
       )}
 
@@ -145,7 +145,7 @@ export function HostManageStayCard({
         onOpenChange={setUpgradeOpen}
         used={limitPayload?.used}
         limit={limitPayload?.limit}
-        returnPath={`/dashboard/${booking.property.slug}/bookings/${booking.id}`}
+        returnPath={`/dashboard/${visit.property.slug}/visits/${visit.id}`}
       />
     </div>
   );

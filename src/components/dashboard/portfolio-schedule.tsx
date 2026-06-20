@@ -6,7 +6,7 @@ import { StayTimeline, type TimelineRow } from '@/components/stay-timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toISODate } from '@/lib/dates';
 import type {
-  PortfolioCalendarBooking,
+  PortfolioCalendarVisit,
   PortfolioCalendarBlock,
 } from '@/lib/portfolio';
 
@@ -15,11 +15,11 @@ const TIMELINE_DAYS = 92;
 
 export function PortfolioSchedule({
   timelineRows,
-  calendarBookings,
+  calendarVisits,
   calendarBlocks,
 }: {
   timelineRows: TimelineRow[];
-  calendarBookings: PortfolioCalendarBooking[];
+  calendarVisits: PortfolioCalendarVisit[];
   calendarBlocks: PortfolioCalendarBlock[];
 }) {
   const timelineStart = toISODate(startOfMonth(new Date()));
@@ -32,7 +32,7 @@ export function PortfolioSchedule({
       </TabsList>
       <TabsContent value="calendar" className="mt-6">
         <AvailabilityCalendar
-          bookings={calendarBookings}
+          visits={calendarVisits}
           blocks={calendarBlocks}
           monthsToShow={3}
         />

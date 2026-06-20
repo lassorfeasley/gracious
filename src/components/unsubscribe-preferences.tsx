@@ -79,7 +79,7 @@ export function UnsubscribePreferences({ rows }: { rows: PreferenceRow[] }) {
 
       <p className="text-xs text-muted-foreground">
         Changes save automatically. Essential emails — sign-in, invitations, and
-        booking confirmations — are always sent and can&apos;t be turned off.
+        visit confirmations — are always sent and can&apos;t be turned off.
       </p>
     </div>
   );

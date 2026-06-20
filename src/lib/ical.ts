@@ -1,5 +1,5 @@
 import { createEvent } from 'ics';
-import type { BookingWithDetails } from '@/types/database';
+import type { VisitWithDetails } from '@/types/database';
 import { formatDateRange } from '@/lib/dates';
 
 /** Default event times used when a property has no explicit schedule. */
@@ -21,33 +21,33 @@ export interface StayEvent {
   checkOut: string;
 }
 
-export function buildStayEvent(booking: BookingWithDetails): StayEvent {
-  const roomNames = booking.rooms.map((r) => r.name).join(', ');
+export function buildStayEvent(visit: VisitWithDetails): StayEvent {
+  const roomNames = visit.rooms.map((r) => r.name).join(', ');
 
   return {
-    title: `Stay at ${booking.property.name}`,
+    title: `Stay at ${visit.property.name}`,
     description: [
-      `Property: ${booking.property.name}`,
-      booking.property.address ? `Address: ${booking.property.address}` : '',
+      `Property: ${visit.property.name}`,
+      visit.property.address ? `Address: ${visit.property.address}` : '',
       `Rooms: ${roomNames}`,
-      `Dates: ${formatDateRange(booking.dates.check_in, booking.dates.check_out)}`,
-      booking.property.wifi_name
-        ? `WiFi: ${booking.property.wifi_name}${booking.property.wifi_password ? ` / ${booking.property.wifi_password}` : ''}`
+      `Dates: ${formatDateRange(visit.dates.check_in, visit.dates.check_out)}`,
+      visit.property.wifi_name
+        ? `WiFi: ${visit.property.wifi_name}${visit.property.wifi_password ? ` / ${visit.property.wifi_password}` : ''}`
         : '',
-      booking.property.check_in_instructions
-        ? `Check-in: ${booking.property.check_in_instructions}`
+      visit.property.check_in_instructions
+        ? `Check-in: ${visit.property.check_in_instructions}`
         : '',
     ]
       .filter(Boolean)
       .join('\n'),
-    location: booking.property.address ?? booking.property.name,
-    checkIn: booking.dates.check_in,
-    checkOut: booking.dates.check_out,
+    location: visit.property.address ?? visit.property.name,
+    checkIn: visit.dates.check_in,
+    checkOut: visit.dates.check_out,
   };
 }
 
-export function generateIcs(booking: BookingWithDetails): string {
-  const event = buildStayEvent(booking);
+export function generateIcs(visit: VisitWithDetails): string {
+  const event = buildStayEvent(visit);
   const checkIn = new Date(`${event.checkIn}T15:00:00`);
   const checkOut = new Date(`${event.checkOut}T11:00:00`);
 

@@ -36,9 +36,10 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { format, parseISO } from 'date-fns';
 import { getInviteUrl } from '@/lib/invite-url';
+import { guestProfileHref } from '@/lib/guest-keys';
 import { isLimitReachedResponse } from '@/lib/billing-client';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
-import type { BookingStatus, InvitationStatus } from '@/types/database';
+import type { VisitStatus, InvitationStatus } from '@/types/database';
 
 export type VisitTab =
   | 'all'
@@ -52,7 +53,7 @@ export interface VisitItem {
   id: string;
   guestName: string;
   email: string | null;
-  status: BookingStatus;
+  status: VisitStatus;
   checkIn: string;
   checkOut: string;
   partySize: number;
@@ -74,7 +75,7 @@ export interface InviteItem {
   windows: { start: string; end: string }[];
 }
 
-interface BookingsHubProps {
+interface VisitsHubProps {
   slug: string;
   today: string;
   initialTab: VisitTab;
@@ -193,13 +194,13 @@ function formatStayDate(date: string): string {
   return format(parseISO(date), 'EEE, MMM d');
 }
 
-export function BookingsHub({
+export function VisitsHub({
   slug,
   today,
   initialTab,
   visits,
   invites,
-}: BookingsHubProps) {
+}: VisitsHubProps) {
   const router = useRouter();
   const [tab, setTab] = useState<VisitTab>(initialTab);
   const [query, setQuery] = useState('');
@@ -273,12 +274,12 @@ export function BookingsHub({
   }
 
   async function handleAction(
-    bookingId: string,
+    visitId: string,
     action: 'approve' | 'decline' | 'cancel',
     message?: string
   ) {
-    setLoading(bookingId);
-    const res = await fetch(`/api/bookings/${bookingId}`, {
+    setLoading(visitId);
+    const res = await fetch(`/api/visits/${visitId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, decline_message: message }),
@@ -392,6 +393,7 @@ export function BookingsHub({
             {visibleInvites.map((inv) => (
               <InviteCard
                 key={inv.id}
+                slug={slug}
                 invite={inv}
                 onRevoke={revokeInvite}
               />
@@ -419,7 +421,7 @@ export function BookingsHub({
         onOpenChange={setUpgradeOpen}
         used={limitPayload?.used}
         limit={limitPayload?.limit}
-        returnPath={`/dashboard/${slug}/bookings`}
+        returnPath={`/dashboard/${slug}/visits`}
       />
 
       <Dialog open={!!declineId} onOpenChange={() => setDeclineId(null)}>
@@ -690,7 +692,7 @@ function VisitCard({
   onCancel: () => void;
 }) {
   const badge = visitStatusMeta(visit, today);
-  const href = `/dashboard/${slug}/bookings/${visit.id}`;
+  const href = `/dashboard/${slug}/visits/${visit.id}`;
   const firstName = visit.guestName.split(/\s+/)[0] || visit.guestName;
   const state = visitStateMeta(visit, today);
   const canCancel = visit.status === 'approved' && visit.checkOut >= today;
@@ -796,9 +798,11 @@ function VisitCard({
 }
 
 function InviteCard({
+  slug,
   invite,
   onRevoke,
 }: {
+  slug: string;
   invite: InviteItem;
   onRevoke: (id: string) => void;
 }) {
@@ -808,6 +812,7 @@ function InviteCard({
   // in that case skip the possessive since the email shows right below.
   const hasName = invite.guestName !== invite.email;
   const firstName = invite.guestName.split(/\s+/)[0] || invite.guestName;
+  const href = guestProfileHref(slug, invite.email);
 
   const actions = (
     <>
@@ -857,6 +862,8 @@ function InviteCard({
       token={invite.token}
       name={invite.guestName}
       email={invite.email}
+      href={href}
+      cardLabel={`View ${firstName}'s invitation`}
       bare
       actionBar={actions}
       bottomBleed={
@@ -880,7 +887,7 @@ function InviteCard({
           {initials(invite.guestName)}
         </div>
         <div className="min-w-0">
-          <p className="truncate font-semibold tracking-tight">
+          <p className="truncate font-semibold tracking-tight group-hover:underline">
             {hasName && <>{firstName}&apos;s </>}
             <span className={cn(state.className, !hasName && 'capitalize')}>
               {state.word}

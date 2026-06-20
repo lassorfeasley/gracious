@@ -10,10 +10,10 @@ import { cn } from '@/lib/utils';
 import devAccounts from '@/lib/dev-accounts.json';
 import {
   type GuestPreviewAs,
-  type GuestPreviewBookingStatus,
+  type GuestPreviewVisitStatus,
   isGuestPreviewEnabled,
   parseGuestPreviewAs,
-  parseGuestPreviewBookingStatus,
+  parseGuestPreviewVisitStatus,
 } from '@/lib/guest-preview';
 import {
   type AppView,
@@ -47,11 +47,11 @@ const APP_VIEWS: { id: AppView; label: string }[] = [
 
 const GUEST_STATES: { id: GuestPreviewAs; label: string }[] = [
   { id: 'signed-out', label: 'Before sign-in' },
-  { id: 'booking', label: 'Booking' },
-  { id: 'booked', label: 'Manage stay' },
+  { id: 'visit', label: 'Visit' },
+  { id: 'confirmed', label: 'Manage stay' },
 ];
 
-const BOOKING_STATUSES: { id: GuestPreviewBookingStatus; label: string }[] = [
+const BOOKING_STATUSES: { id: GuestPreviewVisitStatus; label: string }[] = [
   { id: 'requested', label: 'Requested' },
   { id: 'approved', label: 'Approved' },
 ];
@@ -167,7 +167,7 @@ export function DevToolbar() {
   const currentView = detectAppView(pathname);
   const guestPreview = isGuestPreviewEnabled(searchParams.get('preview') ?? undefined);
   const guestAs = parseGuestPreviewAs(searchParams.get('as') ?? undefined);
-  const guestStatus = parseGuestPreviewBookingStatus(
+  const guestStatus = parseGuestPreviewVisitStatus(
     searchParams.get('status') ?? undefined
   );
   const showGuestSubControls =
@@ -324,16 +324,16 @@ export function DevToolbar() {
                 ariaLabel="Guest preview state"
                 activeClassName="bg-amber-400 text-amber-950 shadow-sm"
               />
-              {guestAs === 'booked' && (
+              {guestAs === 'confirmed' && (
                 <SegmentTabs
                   items={BOOKING_STATUSES}
                   value={guestStatus}
                   getHref={(status) =>
                     inviteToken
-                      ? buildGuestDevPath(inviteToken, 'booked', status)
+                      ? buildGuestDevPath(inviteToken, 'confirmed', status)
                       : '/my-trips'
                   }
-                  ariaLabel="Booking status preview"
+                  ariaLabel="Visit status preview"
                   activeClassName="bg-amber-300 text-amber-950 shadow-sm"
                 />
               )}
@@ -351,7 +351,7 @@ export function DevToolbar() {
                 <Link
                   href={
                     inviteToken
-                      ? buildGuestDevPath(inviteToken, 'booking')
+                      ? buildGuestDevPath(inviteToken, 'visit')
                       : '/my-trips'
                   }
                   className="font-medium text-amber-400 underline underline-offset-2"

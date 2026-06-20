@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { addDays, parseISO, differenceInCalendarDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { getBookingWithDetails } from '@/lib/bookings';
+import { getVisitWithDetails } from '@/lib/visits';
 import {
   notifyTripReminder,
   notifyArrivalWelcome,
@@ -46,18 +46,18 @@ export async function GET(request: NextRequest) {
 
   // Lifecycle emails — evaluated per booking against the property's local time
   // so each one lands in the guest's morning, not a fixed UTC hour.
-  const { data: approvedBookings } = await admin
-    .from('bookings')
+  const { data: approvedVisits } = await admin
+    .from('visits')
     .select('id')
     .eq('status', 'approved');
 
   let lifecycleSends = 0;
 
-  for (const { id } of approvedBookings ?? []) {
-    const booking = await getBookingWithDetails(id);
-    if (!booking?.dates) continue;
+  for (const { id } of approvedVisits ?? []) {
+    const visit = await getVisitWithDetails(id);
+    if (!visit?.dates) continue;
 
-    const tz = booking.property.timezone || DEFAULT_TIMEZONE;
+    const tz = visit.property.timezone || DEFAULT_TIMEZONE;
     const localHour = Number(formatInTimeZone(now, tz, 'H'));
     // Only act during the property's local send hour. Combined with the
     // notifications_log dedup, this means at most one send per booking per day.
@@ -65,26 +65,26 @@ export async function GET(request: NextRequest) {
 
     const localToday = formatInTimeZone(now, tz, 'yyyy-MM-dd');
     const today = parseISO(localToday);
-    const checkIn = parseISO(booking.dates.check_in);
-    const checkOut = parseISO(booking.dates.check_out);
+    const checkIn = parseISO(visit.dates.check_in);
+    const checkOut = parseISO(visit.dates.check_out);
 
     const daysUntilCheckIn = differenceInCalendarDays(checkIn, today);
     const daysSinceCheckOut = differenceInCalendarDays(today, checkOut);
 
     if (daysUntilCheckIn === 7) {
       if (!(await wasNotificationSent(id, 'reminder_7d'))) {
-        await notifyTripReminder(booking, 7);
+        await notifyTripReminder(visit, 7);
         lifecycleSends++;
       }
     } else if (daysUntilCheckIn === 1) {
       if (!(await wasNotificationSent(id, 'reminder_1d'))) {
-        await notifyTripReminder(booking, 1);
+        await notifyTripReminder(visit, 1);
         lifecycleSends++;
       }
     } else if (daysUntilCheckIn === 0) {
       // Morning of arrival: welcome + how to get in.
       if (!(await wasNotificationSent(id, 'arrival_welcome'))) {
-        await notifyArrivalWelcome(booking);
+        await notifyArrivalWelcome(visit);
         lifecycleSends++;
       }
     }
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     // Morning of departure: send checkout instructions.
     if (daysSinceCheckOut === 0) {
       if (!(await wasNotificationSent(id, 'checkout_instructions'))) {
-        await notifyCheckoutInstructions(booking);
+        await notifyCheckoutInstructions(visit);
         lifecycleSends++;
       }
     }
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     // Morning after departure: send the post-stay thank-you.
     if (daysSinceCheckOut === 1) {
       if (!(await wasNotificationSent(id, 'post_stay'))) {
-        await notifyPostStay(booking);
+        await notifyPostStay(visit);
         lifecycleSends++;
       }
     }
@@ -297,7 +297,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    processed: approvedBookings?.length ?? 0,
+    processed: approvedVisits?.length ?? 0,
     lifecycleSends,
     inviteReminderSends,
     inviteStalled,

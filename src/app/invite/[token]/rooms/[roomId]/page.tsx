@@ -5,21 +5,24 @@ import {
   isInvitationActive,
 } from '@/lib/invitations';
 import { getAuthUser } from '@/lib/auth';
-import { getGuestStayForInvitation } from '@/lib/bookings';
+import { getGuestStayForInvitation } from '@/lib/visits';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds } from '@/lib/validations';
 import { SectionNav } from '@/components/dashboard/section-nav';
 import { SiteFooter } from '@/components/site-footer';
-import { BookingProvider } from '@/components/guest/booking-context';
+import { VisitProvider } from '@/components/guest/visit-context';
 import { SelectableRoomCalendar } from '@/components/guest/selectable-room-calendar';
-import { BookingSidebar } from '@/components/guest/booking-sidebar';
+import { VisitSidebar } from '@/components/guest/visit-sidebar';
+import { MobileDockedCard } from '@/components/mobile-docked-card';
 import {
   appendGuestPreviewToPath,
   isGuestPreviewEnabled,
   parseGuestPreviewAs,
-  parseGuestPreviewBookingStatus,
+  parseGuestPreviewVisitStatus,
+  resolveGuestPreviewUi,
 } from '@/lib/guest-preview';
+import { guestVisitCtaLabel } from '@/lib/invitation-visit';
 import { PhotoMosaic } from '@/components/photo-gallery';
 import { PlaceholderImage } from '@/components/placeholder-image';
 import {
@@ -68,9 +71,9 @@ export default async function GuestRoomPage({
 
   const previewMode = isGuestPreviewEnabled(preview);
   const guestPreviewAs = parseGuestPreviewAs(as);
-  const guestPreviewBookingStatus = parseGuestPreviewBookingStatus(status);
-  const showBookingCalendar =
-    !previewMode || guestPreviewAs !== 'booked';
+  const guestPreviewVisitStatus = parseGuestPreviewVisitStatus(status);
+  const showVisitRequestCalendar =
+    !previewMode || guestPreviewAs !== 'confirmed';
   const active = isInvitationActive(invitation);
   const authUser = await getAuthUser();
   const isAuthenticated =
@@ -81,7 +84,7 @@ export default async function GuestRoomPage({
     ? appendGuestPreviewToPath(
         `/invite/${invitation.token}`,
         guestPreviewAs,
-        guestPreviewBookingStatus
+        guestPreviewVisitStatus
       )
     : `/invite/${invitation.token}`;
 
@@ -105,15 +108,15 @@ export default async function GuestRoomPage({
 
   const admin = createAdminClient();
   const { data: bookingRows } = await admin
-    .from('booking_rooms')
+    .from('visit_rooms')
     .select(
-      `booking:bookings(id, status, dates:booking_dates(check_in, check_out))`
+      `visit:visits(id, status, dates:visit_dates(check_in, check_out))`
     )
     .eq('room_id', roomId);
 
-  const roomBookings = assignColors(
+  const roomVisits = assignColors(
     (bookingRows ?? [])
-      .map((row) => (Array.isArray(row.booking) ? row.booking[0] : row.booking))
+      .map((row) => (Array.isArray(row.visit) ? row.visit[0] : row.visit))
       .filter(
         (b): b is NonNullable<typeof b> =>
           !!b && (b.status === 'approved' || b.status === 'requested')
@@ -136,13 +139,70 @@ export default async function GuestRoomPage({
     .eq('room_id', roomId)
     .eq('is_blocked', true);
 
+  const showSidebar = active || previewMode || !!existingStay;
+  const previewUi = resolveGuestPreviewUi(
+    previewMode,
+    guestPreviewAs,
+    isAuthenticated
+  );
+  const isManageStay =
+    (!previewMode && !!existingStay) || previewUi.showManageStay;
+  const dock = isManageStay
+    ? {
+        ctaLabel: 'View stay',
+        idleTitle: 'Your stay',
+        idleSubtitle: property.name,
+        trackDates: false,
+      }
+    : previewUi.showSignIn
+      ? {
+          ctaLabel: 'Sign in',
+          idleTitle: 'Sign in to request a visit',
+          idleSubtitle: 'Magic link to your invited email',
+          trackDates: false,
+        }
+      : invitation.whole_home
+        ? {
+            ctaLabel: 'Book home',
+            idleTitle: 'Booked as a whole home',
+            idleSubtitle: 'Reserve the entire place',
+            trackDates: false,
+          }
+        : {
+            ctaLabel: guestVisitCtaLabel(invitation),
+            idleTitle: 'Add your dates',
+            idleSubtitle: isPrixFixe
+              ? 'Fixed-date stay'
+              : 'Choose when you’ll arrive',
+            trackDates: true,
+          };
+  const bookingSidebar = (
+    <VisitSidebar
+      invitation={invitation}
+      propertyName={property.name}
+      room={room}
+      isAuthenticated={isAuthenticated}
+      existingStay={existingStay}
+      previewMode={previewMode}
+      guestPreviewAs={guestPreviewAs}
+      guestPreviewVisitStatus={guestPreviewVisitStatus}
+      isPrixFixe={isPrixFixe}
+      maxGuests={room.max_occupancy}
+      visits={roomVisits}
+      blocks={blocks ?? []}
+      allowedRanges={allowedRanges}
+      wholeHome={invitation.whole_home}
+      houseHref={houseHref}
+    />
+  );
+
   const navSections = [
     ...(room.description ? [{ id: 'about', label: 'About' }] : []),
     ...(room.beds.length > 0 ? [{ id: 'sleeping', label: 'Beds' }] : []),
     ...(room.amenities && room.amenities.length > 0
       ? [{ id: 'amenities', label: 'Amenities' }]
       : []),
-    ...(showBookingCalendar
+    ...(showVisitRequestCalendar
       ? [{ id: 'availability', label: 'Availability' }]
       : []),
   ];
@@ -160,7 +220,7 @@ export default async function GuestRoomPage({
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-24">
-        <BookingProvider
+        <VisitProvider
           defaultRange={defaultRange}
           defaultGuests={1}
           maxGuestsCap={room.max_occupancy}
@@ -204,7 +264,7 @@ export default async function GuestRoomPage({
               <RoomBedsSection room={room} />
               <RoomAmenitiesSection room={room} />
 
-              {showBookingCalendar && (
+              {showVisitRequestCalendar && (
                 <section
                   id="availability"
                   className="scroll-mt-24 py-10 first:pt-0"
@@ -219,7 +279,7 @@ export default async function GuestRoomPage({
                   </p>
                   <div className="mt-6">
                     <SelectableRoomCalendar
-                      bookings={roomBookings}
+                      visits={roomVisits}
                       blocks={blocks ?? []}
                       allowedRanges={allowedRanges}
                     />
@@ -229,26 +289,11 @@ export default async function GuestRoomPage({
               </div>
             </div>
 
-            {/* Right column — booking sidebar */}
-            <aside className="lg:sticky lg:top-20 lg:self-start">
-              {active || previewMode || existingStay ? (
-                <BookingSidebar
-                  invitation={invitation}
-                  propertyName={property.name}
-                  room={room}
-                  isAuthenticated={isAuthenticated}
-                  existingStay={existingStay}
-                  previewMode={previewMode}
-                  guestPreviewAs={guestPreviewAs}
-                  guestPreviewBookingStatus={guestPreviewBookingStatus}
-                  isPrixFixe={isPrixFixe}
-                  maxGuests={room.max_occupancy}
-                  bookings={roomBookings}
-                  blocks={blocks ?? []}
-                  allowedRanges={allowedRanges}
-                  wholeHome={invitation.whole_home}
-                  houseHref={houseHref}
-                />
+            {/* Right column — visit sidebar (desktop only; mobile uses the
+                persistent bottom bar below). */}
+            <aside className="hidden lg:sticky lg:top-20 lg:block lg:self-start">
+              {showSidebar ? (
+                bookingSidebar
               ) : (
                 <div className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">
                   This invitation is no longer active.
@@ -256,7 +301,18 @@ export default async function GuestRoomPage({
               )}
             </aside>
           </div>
-        </BookingProvider>
+
+          {showSidebar && (
+            <MobileDockedCard
+              ctaLabel={dock.ctaLabel}
+              idleTitle={dock.idleTitle}
+              idleSubtitle={dock.idleSubtitle}
+              trackDates={dock.trackDates}
+            >
+              {bookingSidebar}
+            </MobileDockedCard>
+          )}
+        </VisitProvider>
       </div>
 
       <SiteFooter name={property.name} />

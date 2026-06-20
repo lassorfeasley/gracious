@@ -11,16 +11,16 @@ export function invitationRequiresApproval(
   return invitation.requires_approval ?? true;
 }
 
-export function guestBookingCtaLabel(invitation: InvitationBookingPolicy): string {
+export function guestVisitCtaLabel(invitation: InvitationBookingPolicy): string {
   if (invitation.type === 'prix_fixe') {
     return invitationRequiresApproval(invitation) ? 'Accept stay' : 'Confirm stay';
   }
   return invitationRequiresApproval(invitation)
-    ? 'Request to book'
-    : 'Book stay';
+    ? 'Request to request a visit'
+    : 'Confirm visit';
 }
 
-export function guestBookingSuccessMessage(
+export function guestVisitSuccessMessage(
   invitation: InvitationBookingPolicy
 ): string {
   if (invitation.type === 'prix_fixe') {
@@ -33,10 +33,10 @@ export function guestBookingSuccessMessage(
     : 'Your stay is confirmed!';
 }
 
-export function guestBookingSidebarNote(
+export function guestVisitSidebarNote(
   invitation: InvitationBookingPolicy
 ): string {
   return invitationRequiresApproval(invitation)
     ? "You won't be charged — your host reviews each request."
-    : "Your booking is confirmed — no host approval needed.";
+    : "Your visit is confirmed — no host approval needed.";
 }

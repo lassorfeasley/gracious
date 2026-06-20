@@ -14,11 +14,11 @@ export function RequestsAlertBanner({
   requestCount,
 }: RequestsAlertBannerProps) {
   const pathname = usePathname();
-  const bookingsHref = `/dashboard/${slug}/bookings`;
-  const requestsHref = `${bookingsHref}?status=requested`;
+  const visitsHref = `/dashboard/${slug}/visits`;
+  const requestsHref = `${visitsHref}?status=requested`;
 
-  // Nothing to act on, or already on the bookings hub — stay quiet.
-  if (requestCount < 1 || pathname.startsWith(bookingsHref)) return null;
+  // Nothing to act on, or already on the visits hub — stay quiet.
+  if (requestCount < 1 || pathname.startsWith(visitsHref)) return null;
 
   const isPlural = requestCount > 1;
   const guestNoun = isPlural ? 'guests are' : 'guest is';

@@ -64,7 +64,7 @@ export default async function HomePage({
           </h1>
           <p className="mx-auto mt-8 max-w-lg text-lg leading-relaxed text-muted-foreground">
             See who&apos;s staying across all your homes at a glance. We take care
-            of inviting, booking, and coordinating graciously — so you can be a
+            of inviting, visiting, and coordinating graciously — so you can be a
             great host while we do the rest.
           </p>
           <div className="mt-10 flex justify-center gap-4">

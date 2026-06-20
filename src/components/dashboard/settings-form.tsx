@@ -137,7 +137,7 @@ export function SettingsForm({
         <div className="mt-6 space-y-8">
           <PrefGroup
             title="Guest emails"
-            description="For stays you're a guest on — trip reminders, checkout details, and post-stay notes. Essential emails like booking confirmations are always sent."
+            description="For stays you're a guest on — trip reminders, checkout details, and post-stay notes. Essential emails like visit confirmations are always sent."
           >
             <PrefToggle
               prefs={prefs}
@@ -155,8 +155,8 @@ export function SettingsForm({
               >
                 {(
                   [
-                    ['booking_requests', 'New booking requests'],
-                    ['booking_cancelled', 'Booking cancellations'],
+                    ['visit_requests', 'New visit requests'],
+                    ['visit_cancelled', 'Visit cancellations'],
                     ['invitation_expiring', 'Invitations expiring soon'],
                     ['invitation_stalled', 'Invites that went quiet'],
                     ['host_tips', 'Hosting tips & suggestions'],

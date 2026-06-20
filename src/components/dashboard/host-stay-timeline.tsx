@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useBooking } from '@/components/guest/booking-context';
+import { useVisit } from '@/components/guest/visit-context';
 import {
   StayTimeline,
   type TimelineRow,
@@ -9,35 +9,35 @@ import {
 } from '@/components/stay-timeline';
 
 /**
- * Host-dashboard view of the stay timeline. Reads the live booking context
- * (all property rooms + their bookings and owner blocks) and feeds it into the
- * shared {@link StayTimeline}. One row per room; confirmed/pending bookings and
+ * Host-dashboard view of the stay timeline. Reads the live visit context
+ * (all property rooms + their visits and owner blocks) and feeds it into the
+ * shared {@link StayTimeline}. One row per room; confirmed/pending visits and
  * owner blocks render as bands across a scrollable date window.
  */
 export function HostStayTimeline({
   windowStart,
   windowDays,
-  bookingHrefBase,
+  visitHrefBase,
 }: {
   windowStart: string;
   windowDays: number;
-  /** If set, booking bands link to `${bookingHrefBase}/${bookingId}`. */
-  bookingHrefBase?: string;
+  /** If set, visit bands link to `${visitHrefBase}/${visitId}`. */
+  visitHrefBase?: string;
 }) {
-  const { rooms, roomAvailability } = useBooking();
+  const { rooms, roomAvailability } = useVisit();
 
   const rows = useMemo<TimelineRow[]>(
     () =>
       rooms.map((room) => {
         const avail = roomAvailability[room.id];
         const stays: TimelineStay[] = [
-          ...(avail?.bookings ?? []).map((b) => ({
-            id: `booking-${b.id}`,
+          ...(avail?.visits ?? []).map((b) => ({
+            id: `visit-${b.id}`,
             label: b.guestName,
             checkIn: b.checkIn,
             checkOut: b.checkOut,
             variant: (b.pending ? 'pending' : 'confirmed') as TimelineStay['variant'],
-            href: bookingHrefBase ? `${bookingHrefBase}/${b.id}` : undefined,
+            href: visitHrefBase ? `${visitHrefBase}/${b.id}` : undefined,
           })),
           ...(avail?.blocks ?? []).map((bl) => ({
             id: `block-${bl.id}`,
@@ -49,7 +49,7 @@ export function HostStayTimeline({
         ];
         return { id: room.id, label: room.name, stays };
       }),
-    [rooms, roomAvailability, bookingHrefBase]
+    [rooms, roomAvailability, visitHrefBase]
   );
 
   return (
