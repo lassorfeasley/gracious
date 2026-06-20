@@ -111,3 +111,33 @@ UPDATE public.notifications_log SET type = 'visit_approved' WHERE type = 'bookin
 UPDATE public.notifications_log SET type = 'visit_declined' WHERE type = 'booking_declined';
 UPDATE public.notifications_log SET type = 'visit_cancelled' WHERE type = 'booking_cancelled';
 UPDATE public.notifications_log SET type = 'visit_request' WHERE type = 'booking_request';
+
+-- Cosmetic: rename auto-generated FK constraint names that Postgres left on the
+-- old booking* naming after the table/column renames. Guarded so re-runs are safe.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_invitation_id_fkey') THEN
+    ALTER TABLE public.visits RENAME CONSTRAINT bookings_invitation_id_fkey TO visits_invitation_id_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_property_id_fkey') THEN
+    ALTER TABLE public.visits RENAME CONSTRAINT bookings_property_id_fkey TO visits_property_id_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_guest_user_id_fkey') THEN
+    ALTER TABLE public.visits RENAME CONSTRAINT bookings_guest_user_id_fkey TO visits_guest_user_id_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bookings_created_by_fkey') THEN
+    ALTER TABLE public.visits RENAME CONSTRAINT bookings_created_by_fkey TO visits_created_by_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'booking_rooms_booking_id_fkey') THEN
+    ALTER TABLE public.visit_rooms RENAME CONSTRAINT booking_rooms_booking_id_fkey TO visit_rooms_visit_id_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'booking_rooms_room_id_fkey') THEN
+    ALTER TABLE public.visit_rooms RENAME CONSTRAINT booking_rooms_room_id_fkey TO visit_rooms_room_id_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'booking_dates_booking_id_fkey') THEN
+    ALTER TABLE public.visit_dates RENAME CONSTRAINT booking_dates_booking_id_fkey TO visit_dates_visit_id_fkey;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'notifications_log_booking_id_fkey') THEN
+    ALTER TABLE public.notifications_log RENAME CONSTRAINT notifications_log_booking_id_fkey TO notifications_log_visit_id_fkey;
+  END IF;
+END $$;
