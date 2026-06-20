@@ -44,7 +44,7 @@ export default async function BookingsPage({
 
   const { data: invitations } = await supabase
     .from('invitations')
-    .select('*')
+    .select('*, invitation_windows(start_date, end_date)')
     .eq('property_id', property.id)
     .order('created_at', { ascending: false });
 
@@ -97,17 +97,22 @@ export default async function BookingsPage({
     })
     .filter((v): v is VisitItem => v !== null);
 
-  const invites: InviteItem[] = ((invitations ?? []) as Invitation[]).map(
-    (inv) => ({
-      id: inv.id,
-      guestName: inv.guest_name ?? inv.guest_email,
-      email: inv.guest_email,
-      status: inv.status,
-      type: inv.type,
-      token: inv.token,
-      expiresAt: inv.expires_at,
-    })
-  );
+  const invites: InviteItem[] = (
+    (invitations ?? []) as (Invitation & {
+      invitation_windows?: { start_date: string; end_date: string }[];
+    })[]
+  ).map((inv) => ({
+    id: inv.id,
+    guestName: inv.guest_name ?? inv.guest_email,
+    email: inv.guest_email,
+    status: inv.status,
+    type: inv.type,
+    token: inv.token,
+    expiresAt: inv.expires_at,
+    windows: (inv.invitation_windows ?? [])
+      .map((w) => ({ start: w.start_date, end: w.end_date }))
+      .sort((a, b) => a.start.localeCompare(b.start)),
+  }));
 
   const roomAvailability = await getInvitationRoomAvailability(
     (rooms ?? []).map((r) => r.id),

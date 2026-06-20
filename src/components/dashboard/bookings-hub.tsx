@@ -4,11 +4,12 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  BedDouble,
-  Copy,
-  Eye,
+  Check,
   Link2,
   Search,
+  Share2,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -21,11 +22,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { formatDate, nightsBetween } from '@/lib/dates';
 import { format, parseISO } from 'date-fns';
 import { getInviteUrl } from '@/lib/invite-url';
-import { guestPreviewQuery } from '@/lib/guest-preview';
 import { isLimitReachedResponse } from '@/lib/billing-client';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
 import type { BookingStatus, InvitationStatus } from '@/types/database';
@@ -60,6 +70,8 @@ export interface InviteItem {
   type: string;
   token: string;
   expiresAt: string | null;
+  /** Offered/fixed date ranges, sorted by start. Empty for open invitations. */
+  windows: { start: string; end: string }[];
 }
 
 interface BookingsHubProps {
@@ -127,17 +139,54 @@ function visitStatusMeta(visit: VisitItem, today: string): StatusMeta {
   }
 }
 
+/** The state word + accent color used in the "[Name]'s [state] visit" title. */
+function visitStateMeta(
+  visit: VisitItem,
+  today: string
+): { word: string; className: string } {
+  switch (visit.status) {
+    case 'requested':
+      return { word: 'requested', className: 'text-amber-600 dark:text-amber-500' };
+    case 'declined':
+      return { word: 'declined', className: 'text-destructive' };
+    case 'cancelled':
+      return { word: 'cancelled', className: 'text-destructive' };
+    case 'approved':
+    default:
+      if (visit.checkOut < today)
+        return { word: 'past', className: 'text-muted-foreground' };
+      if (visit.checkIn <= today && visit.checkOut >= today)
+        return { word: 'current', className: 'text-emerald-600 dark:text-emerald-500' };
+      return { word: 'scheduled', className: 'text-emerald-600 dark:text-emerald-500' };
+  }
+}
+
+/** State word + accent color for the "[Name]'s [state] invitation" title. */
+function inviteStateMeta(status: InvitationStatus): {
+  word: string;
+  className: string;
+} {
+  switch (status) {
+    case 'pending':
+      return { word: 'pending', className: 'text-amber-600 dark:text-amber-500' };
+    case 'accepted':
+      return {
+        word: 'accepted',
+        className: 'text-emerald-600 dark:text-emerald-500',
+      };
+    case 'expired':
+      return { word: 'expired', className: 'text-muted-foreground' };
+    case 'revoked':
+    default:
+      return { word: 'cancelled', className: 'text-destructive' };
+  }
+}
+
 const INVITE_STATUS_META: Record<InvitationStatus, StatusMeta> = {
   pending: { label: 'Invited', variant: 'outline' },
   accepted: { label: 'Accepted', variant: 'default' },
   expired: { label: 'Expired', variant: 'secondary' },
   revoked: { label: 'Revoked', variant: 'destructive' },
-};
-
-const INVITE_TYPE_LABEL: Record<string, string> = {
-  standing: 'Open invitation',
-  date_offer: 'Date offer',
-  prix_fixe: 'Fixed dates',
 };
 
 function formatStayDate(date: string): string {
@@ -225,7 +274,7 @@ export function BookingsHub({
 
   async function handleAction(
     bookingId: string,
-    action: 'approve' | 'decline',
+    action: 'approve' | 'decline' | 'cancel',
     message?: string
   ) {
     setLoading(bookingId);
@@ -248,7 +297,13 @@ export function BookingsHub({
       return;
     }
 
-    toast.success(action === 'approve' ? 'Visit approved' : 'Visit declined');
+    toast.success(
+      action === 'approve'
+        ? 'Visit approved'
+        : action === 'cancel'
+          ? 'Visit cancelled'
+          : 'Visit declined'
+    );
     router.refresh();
   }
 
@@ -353,6 +408,7 @@ export function BookingsHub({
                 loading={loading === visit.id}
                 onApprove={() => handleAction(visit.id, 'approve')}
                 onDecline={() => setDeclineId(visit.id)}
+                onCancel={() => handleAction(visit.id, 'cancel')}
               />
             ))}
           </div>
@@ -427,6 +483,50 @@ function CopyLinkButton({ token }: { token: string }) {
   );
 }
 
+/**
+ * Primary CTA that opens the OS share sheet (macOS/iOS/Android share, Windows
+ * share dialog) via the Web Share API, falling back to copy-to-clipboard on
+ * browsers that don't support it (e.g. desktop Firefox).
+ */
+function ShareLinkButton({
+  token,
+  guestName,
+  propertyName,
+}: {
+  token: string;
+  guestName?: string | null;
+  propertyName?: string | null;
+}) {
+  async function share() {
+    const url = getInviteUrl(token);
+    const greeting = guestName ? `Hi ${guestName.split(/\s+/)[0]}, ` : '';
+    const text = propertyName
+      ? `${greeting}you're invited to stay at ${propertyName}. Tap to plan your visit.`
+      : `${greeting}you're invited. Tap to plan your visit.`;
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: 'Your invitation', text, url });
+        return;
+      } catch (err) {
+        // Swallow user-cancelled shares; fall back to copy on real failures.
+        if ((err as Error)?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Copied to clipboard');
+    } catch {
+      toast.error('Could not share or copy the link');
+    }
+  }
+  return (
+    <Button onClick={share} size="sm" className="h-9 flex-1 shadow-sm">
+      <Share2 />
+      Share visit link
+    </Button>
+  );
+}
+
 /** Shared card chrome so every category looks identical. */
 function CardShell({
   badge,
@@ -434,57 +534,108 @@ function CardShell({
   name,
   email,
   href,
+  headerActions,
+  cardLabel,
+  bare = false,
   children,
+  actionBar,
+  bottomBleed,
   footer,
 }: {
   badge: StatusMeta;
   token: string | null;
   name: string;
   email: string | null;
+  /** When set, the entire card becomes a link to this destination. */
   href?: string;
+  /** Top-right action cluster; replaces the copy-link slot when provided. */
+  headerActions?: React.ReactNode;
+  /** Accessible label for the whole-card link (e.g. "View Jordan's visit"). */
+  cardLabel?: string;
+  /**
+   * Skip the built-in status-strip header and avatar/name/email block so the
+   * card can compose its own top content via `children`.
+   */
+  bare?: boolean;
   children: React.ReactNode;
+  /** Full-width action band (divider above the bottom strip). */
+  actionBar?: React.ReactNode;
+  /** Edge-to-edge section pinned to the bottom of the card (no inner padding). */
+  bottomBleed?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-4 py-2.5">
-        <Badge variant={badge.variant} className="text-[11px]">
-          {badge.label}
-        </Badge>
-        {token ? (
-          <CopyLinkButton token={token} />
-        ) : (
-          <span className="text-[11px] text-muted-foreground">No link</span>
-        )}
-      </div>
+    <article
+      className={cn(
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-150',
+        href && 'hover:border-foreground/20 hover:shadow-md'
+      )}
+    >
+      {/* Stretched link: makes the whole card clickable while leaving the
+          z-10 controls (actions, copy link) independently interactive. */}
+      {href && (
+        <Link
+          href={href}
+          className="absolute inset-0 z-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        >
+          <span className="sr-only">{cardLabel ?? `View ${name}`}</span>
+        </Link>
+      )}
+
+      {!bare && (
+        <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-4 py-2.5">
+          <Badge variant={badge.variant} className="text-[11px]">
+            {badge.label}
+          </Badge>
+          {headerActions ? (
+            <div className="relative z-10 flex items-center gap-1.5">
+              {headerActions}
+            </div>
+          ) : href ? null : token ? (
+            <div className="relative z-10">
+              <CopyLinkButton token={token} />
+            </div>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">No link</span>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-            {initials(name)}
-          </div>
-          <div className="min-w-0">
-            {href ? (
-              <Link
-                href={href}
-                className="truncate font-semibold tracking-tight hover:underline"
+        {!bare && (
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+              {initials(name)}
+            </div>
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  'truncate font-semibold tracking-tight',
+                  href && 'group-hover:underline'
+                )}
               >
                 {name}
-              </Link>
-            ) : (
-              <p className="truncate font-semibold tracking-tight">{name}</p>
-            )}
-            <p className="truncate text-sm text-muted-foreground">
-              {email ?? 'No email on file'}
-            </p>
+              </p>
+              <p className="truncate text-sm text-muted-foreground">
+                {email ?? 'No email on file'}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {children}
       </div>
 
+      {actionBar && (
+        <div className="relative z-10 flex flex-wrap items-center gap-2 border-t px-4 py-3">
+          {actionBar}
+        </div>
+      )}
+
+      {bottomBleed}
+
       {footer && (
-        <div className="flex flex-wrap gap-2 border-t bg-muted/10 px-4 py-3">
+        <div className="relative z-10 flex flex-wrap gap-2 border-t bg-muted/10 px-4 py-3">
           {footer}
         </div>
       )}
@@ -495,23 +646,20 @@ function CardShell({
 function DateBox({
   checkIn,
   checkOut,
-  partySize,
 }: {
   checkIn: string;
   checkOut: string;
-  partySize: number;
 }) {
-  const nights = nightsBetween(checkIn, checkOut);
   return (
-    <div className="mt-4 overflow-hidden rounded-xl border">
+    <div className="border-t">
       <div className="grid grid-cols-2 divide-x">
-        <div className="p-3">
+        <div className="px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Check-in
           </p>
           <p className="mt-0.5 text-sm font-medium">{formatStayDate(checkIn)}</p>
         </div>
-        <div className="p-3">
+        <div className="px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Checkout
           </p>
@@ -519,14 +667,6 @@ function DateBox({
             {formatStayDate(checkOut)}
           </p>
         </div>
-      </div>
-      <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-        <span className="font-medium text-foreground">
-          {nights} {nights === 1 ? 'night' : 'nights'}
-        </span>
-        <span className="truncate">
-          {partySize} {partySize === 1 ? 'guest' : 'guests'}
-        </span>
       </div>
     </div>
   );
@@ -539,6 +679,7 @@ function VisitCard({
   loading,
   onApprove,
   onDecline,
+  onCancel,
 }: {
   slug: string;
   visit: VisitItem;
@@ -546,9 +687,80 @@ function VisitCard({
   loading: boolean;
   onApprove: () => void;
   onDecline: () => void;
+  onCancel: () => void;
 }) {
   const badge = visitStatusMeta(visit, today);
   const href = `/dashboard/${slug}/bookings/${visit.id}`;
+  const firstName = visit.guestName.split(/\s+/)[0] || visit.guestName;
+  const state = visitStateMeta(visit, today);
+  const canCancel = visit.status === 'approved' && visit.checkOut >= today;
+
+  const actions =
+    visit.status === 'requested' ? (
+      <>
+        <Button
+          size="sm"
+          className="h-9 flex-1 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+          onClick={onApprove}
+          disabled={loading}
+        >
+          <Check />
+          Approve visit
+        </Button>
+        <Button
+          size="icon"
+          variant="outline"
+          className="h-9 w-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={onDecline}
+          disabled={loading}
+          aria-label="Decline visit"
+          title="Decline visit"
+        >
+          <X />
+        </Button>
+      </>
+    ) : canCancel ? (
+      <>
+        <Button asChild size="sm" className="h-9 flex-1 shadow-sm">
+          <Link href={href}>
+            <SlidersHorizontal />
+            View visit
+          </Link>
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-9 w-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={loading}
+              aria-label="Cancel visit"
+              title="Cancel visit"
+            >
+              <X />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this visit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {firstName}&apos;s visit will be cancelled and they&apos;ll be
+              notified. This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep visit</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={onCancel}
+            >
+              Cancel visit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+        </AlertDialog>
+      </>
+    ) : null;
 
   return (
     <CardShell
@@ -557,43 +769,28 @@ function VisitCard({
       name={visit.guestName}
       email={visit.email}
       href={href}
-      footer={
-        visit.status === 'requested' ? (
-          <>
-            <Button size="sm" onClick={onApprove} disabled={loading}>
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onDecline}
-              disabled={loading}
-            >
-              Decline
-            </Button>
-            <Button size="sm" variant="ghost" asChild>
-              <Link href={href}>Manage</Link>
-            </Button>
-          </>
-        ) : undefined
+      cardLabel={`View ${firstName}'s visit`}
+      bare
+      actionBar={actions}
+      bottomBleed={
+        <DateBox checkIn={visit.checkIn} checkOut={visit.checkOut} />
       }
     >
-      <DateBox
-        checkIn={visit.checkIn}
-        checkOut={visit.checkOut}
-        partySize={visit.partySize}
-      />
-      {visit.rooms.length > 0 && (
-        <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
-          <BedDouble className="mt-0.5 h-4 w-4 shrink-0" />
-          <span className="line-clamp-2">{visit.rooms.join(', ')}</span>
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+          {initials(visit.guestName)}
         </div>
-      )}
-      {visit.notes && (
-        <p className="mt-3 line-clamp-2 text-sm italic text-muted-foreground">
-          &ldquo;{visit.notes}&rdquo;
-        </p>
-      )}
+        <div className="min-w-0">
+          <p className="truncate font-semibold tracking-tight group-hover:underline">
+            {firstName}&apos;s{' '}
+            <span className={state.className}>{state.word}</span> visit
+          </p>
+          <p className="truncate text-sm text-muted-foreground">
+            {visit.email ?? 'No email on file'}
+          </p>
+        </div>
+      </div>
+
     </CardShell>
   );
 }
@@ -606,14 +803,53 @@ function InviteCard({
   onRevoke: (id: string) => void;
 }) {
   const badge = INVITE_STATUS_META[invite.status];
-  const isDev = process.env.NODE_ENV !== 'production';
+  const state = inviteStateMeta(invite.status);
+  // guestName falls back to the email when there's no real name on the invite;
+  // in that case skip the possessive since the email shows right below.
+  const hasName = invite.guestName !== invite.email;
+  const firstName = invite.guestName.split(/\s+/)[0] || invite.guestName;
 
-  function previewBooking() {
-    window.open(
-      `${getInviteUrl(invite.token)}?${guestPreviewQuery('booking')}`,
-      '_blank'
-    );
-  }
+  const actions = (
+    <>
+      <ShareLinkButton
+        token={invite.token}
+        guestName={hasName ? invite.guestName : undefined}
+      />
+      {invite.status !== 'revoked' && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              aria-label="Cancel invitation"
+              title="Cancel invitation"
+            >
+              <X />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel this invitation?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {firstName}&apos;s invite link will stop working and they
+                won&apos;t be able to request a stay. This can&apos;t be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep invitation</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => onRevoke(invite.id)}
+              >
+                Cancel invitation
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
+  );
 
   return (
     <CardShell
@@ -621,37 +857,40 @@ function InviteCard({
       token={invite.token}
       name={invite.guestName}
       email={invite.email}
-      footer={
-        <>
-          {isDev && (
-            <Button variant="ghost" size="sm" onClick={previewBooking}>
-              <Eye className="mr-1 h-3 w-3" />
-              Preview
-            </Button>
-          )}
-          {invite.status !== 'revoked' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive"
-              onClick={() => onRevoke(invite.id)}
-            >
-              Revoke
-            </Button>
-          )}
-        </>
+      bare
+      actionBar={actions}
+      bottomBleed={
+        invite.windows.length > 0 ? (
+          <DateBox
+            checkIn={invite.windows[0].start}
+            checkOut={invite.windows[0].end}
+          />
+        ) : (
+          <div className="border-t px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Dates
+            </p>
+            <p className="mt-0.5 text-sm font-medium">Open — guest picks dates</p>
+          </div>
+        )
       }
     >
-      <div className="mt-4 space-y-1.5 rounded-xl border bg-muted/10 p-3 text-sm">
-        <div className="flex items-center gap-2 font-medium">
-          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-          {INVITE_TYPE_LABEL[invite.type] ?? invite.type.replace('_', ' ')}
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+          {initials(invite.guestName)}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {invite.expiresAt
-            ? `Expires ${formatDate(invite.expiresAt)}`
-            : 'No expiry'}
-        </p>
+        <div className="min-w-0">
+          <p className="truncate font-semibold tracking-tight">
+            {hasName && <>{firstName}&apos;s </>}
+            <span className={cn(state.className, !hasName && 'capitalize')}>
+              {state.word}
+            </span>{' '}
+            invitation
+          </p>
+          <p className="truncate text-sm text-muted-foreground">
+            {invite.email ?? 'No email on file'}
+          </p>
+        </div>
       </div>
     </CardShell>
   );
