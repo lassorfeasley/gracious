@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getAuthenticatedHomePath, getCurrentUser } from '@/lib/auth';
@@ -10,6 +11,68 @@ import { FounderNote } from '@/components/landing/founder-note';
 import { GuestExperience } from '@/components/landing/guest-experience';
 import { StayShowcase } from '@/components/landing/stay-showcase';
 import { PricingCards } from '@/components/pricing-cards';
+import { appUrl } from '@/lib/env';
+
+const title = 'Gracious — Every room, every guest, on one calendar';
+const description =
+  'A warm, private way to have friends and family to stay. See who\u2019s staying across all your homes at a glance, and handle inviting, visiting, and coordinating graciously.';
+
+export const metadata: Metadata = {
+  title: {
+    absolute: title,
+  },
+  description,
+  alternates: {
+    canonical: '/',
+  },
+  // The landing page is the public face of the product, so it opts back into
+  // indexing (the root layout defaults every route to noindex for the app).
+  robots: { index: true, follow: true },
+  openGraph: {
+    title,
+    description,
+    url: '/',
+    type: 'website',
+  },
+};
+
+function StructuredData() {
+  const base = appUrl();
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${base}/#organization`,
+        name: 'Gracious',
+        url: base,
+        description,
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: 'Gracious',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+        url: base,
+        description,
+        publisher: { '@id': `${base}/#organization` },
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          description: 'Your first two stays are free.',
+        },
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
 
 export default async function HomePage({
   searchParams,
@@ -31,6 +94,7 @@ export default async function HomePage({
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
+      <StructuredData />
       <header className="border-b border-border/60">
         <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4 sm:h-20 sm:px-6">
           <Link href="/" className="min-w-0 shrink" aria-label="Gracious home">

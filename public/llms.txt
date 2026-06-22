@@ -1,0 +1,22 @@
+# Gracious
+
+> A warm, private way to have friends and family to stay. Gracious lets hosts see who's staying across all their guest homes and guest rooms on one calendar, and handles inviting, visiting, and coordinating guests graciously.
+
+Gracious is a web app for people who host friends and family. Hosts add their homes and rooms, invite guests, and manage visits and requests in one place. Guests get a private, beautiful way to see their stay details. The first two stays are free.
+
+## Pages
+
+- [Home](https://gracious.host/): What Gracious is, how it works, the guest experience, and pricing.
+- [Pricing](https://gracious.host/#pricing): Plans and pricing — the first two stays are free.
+- [How it works](https://gracious.host/#how-it-works): Setting up a home and coordinating guests.
+- [Guest experience](https://gracious.host/#guest-experience): What guests see when they're invited to stay.
+
+## Legal
+
+- [Terms of Service](https://gracious.host/terms): The terms governing use of Gracious.
+- [Privacy Policy](https://gracious.host/privacy): How Gracious handles personal data.
+
+## Notes
+
+- The host dashboard, guest invites, and account areas are private and require authentication; they are intentionally excluded from crawling.
+- Contact: hello@gracious.host

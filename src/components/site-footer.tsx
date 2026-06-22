@@ -23,7 +23,15 @@ export function SiteFooter({ name }: { name?: string }) {
           </Link>
         )}
         <LegalFooterLinks />
-        <p className="text-xs text-muted-foreground">© {year} Gracious</p>
+        <p className="text-xs text-muted-foreground">
+          © {year} Gracious ·{' '}
+          <a
+            href="/llms.txt"
+            className="transition-colors hover:text-foreground hover:underline underline-offset-4"
+          >
+            llms.txt
+          </a>
+        </p>
       </div>
     </footer>
   );
