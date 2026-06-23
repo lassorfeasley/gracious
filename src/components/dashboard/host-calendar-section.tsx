@@ -5,6 +5,7 @@ import { startOfMonth } from 'date-fns';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import { HostStayTimeline } from '@/components/dashboard/host-stay-timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CalendarSyncButton } from '@/components/dashboard/calendar-sync-button';
 import { toISODate } from '@/lib/dates';
 
 /* Timeline window: from the start of the current month, spanning ~two months
@@ -17,12 +18,15 @@ export function HostCalendarSection({
   title,
   footer,
   className,
+  calendarFeedUrl,
 }: {
   slug: string;
   sectionId?: string;
   title?: string;
   footer?: ReactNode;
   className?: string;
+  /** When set, shows a "Add to calendar" sync control beside the tabs. */
+  calendarFeedUrl?: string;
 }) {
   const visitHrefBase = `/dashboard/${slug}/visits`;
   const timelineStart = toISODate(startOfMonth(new Date()));
@@ -36,10 +40,13 @@ export function HostCalendarSection({
         <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
       )}
       <Tabs defaultValue="calendar" className={title ? 'mt-6' : 'mt-4'}>
-        <TabsList>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          </TabsList>
+          {calendarFeedUrl && <CalendarSyncButton feedUrl={calendarFeedUrl} />}
+        </div>
         <TabsContent value="calendar" className="mt-6">
           <HouseCalendar monthsToShow={2} visitHrefBase={visitHrefBase} />
         </TabsContent>

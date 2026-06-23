@@ -432,6 +432,7 @@ export default async function InvitePage({
               .filter(Boolean)
               .join(' ') || undefined
           }
+          hasDates={invitation.windows.length > 0}
         />
       )}
     </div>

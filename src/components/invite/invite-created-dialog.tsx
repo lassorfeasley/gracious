@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getInviteUrl } from '@/lib/invite-url';
+import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 
 interface InviteCreatedDialogProps {
   token: string;
@@ -20,6 +21,8 @@ interface InviteCreatedDialogProps {
   propertyName: string;
   guestEmail: string;
   guestName?: string;
+  /** Whether the invitation has concrete dates; hides the calendar CTA if not. */
+  hasDates?: boolean;
 }
 
 export function InviteCreatedDialog({
@@ -28,6 +31,7 @@ export function InviteCreatedDialog({
   propertyName,
   guestEmail,
   guestName,
+  hasDates = false,
 }: InviteCreatedDialogProps) {
   const [open, setOpen] = useState(true);
   const [url, setUrl] = useState(initialUrl);
@@ -119,6 +123,17 @@ export function InviteCreatedDialog({
               </a>
             </Button>
           </div>
+
+          {hasDates && (
+            <div className="mt-3 border-t pt-3">
+              <p className="mb-2 text-sm font-medium">For your calendar</p>
+              <AddToCalendarButton
+                baseUrl={`/api/invitations/${token}/ical`}
+                size="default"
+                className="w-full"
+              />
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

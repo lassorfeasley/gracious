@@ -105,14 +105,14 @@ const BAND =
   'relative flex h-full w-full items-center justify-center text-sm transition-colors';
 
 const BAND_STATE_CLASS: Record<DayBandState, string> = {
-  confirmed: 'bg-primary/10 font-medium text-primary',
-  pending: 'bg-brass/15 font-medium text-brass',
+  confirmed: 'bg-primary/20 font-medium text-primary',
+  pending: 'bg-warning/25 font-medium text-warning-foreground',
   blocked: 'bg-muted/70 font-medium text-muted-foreground',
 };
 
 const BAND_HOVER_CLASS: Record<DayBandState, string> = {
-  confirmed: 'hover:bg-primary/20',
-  pending: 'hover:bg-brass/25',
+  confirmed: 'hover:bg-primary/30',
+  pending: 'hover:bg-warning/40',
   blocked: 'hover:bg-muted',
 };
 
@@ -280,16 +280,19 @@ function MonthGrid({
    * else bands from the flat booking/block lists.
    */
   function bandStateForDay(day: Date): DayBandState | null {
+    // Pending takes visual priority everywhere: a pending request needs the
+    // host's action, so it should read as amber even when other rooms on the
+    // same day are already confirmed.
     if (selectable && roomMode && rooms && roomAvailability) {
       const taken = takenRoomsForDay(day, rooms, roomAvailability);
       if (rooms.length === 0 || taken.length < rooms.length) return null;
-      if (taken.some((t) => !t.pending && !t.blocked)) return 'confirmed';
       if (taken.some((t) => t.pending)) return 'pending';
+      if (taken.some((t) => !t.pending && !t.blocked)) return 'confirmed';
       return 'blocked';
     }
     const booked = visits.filter((b) => coversDay(day, b.checkIn, b.checkOut));
-    if (booked.some((b) => !b.pending)) return 'confirmed';
-    if (booked.length > 0) return 'pending';
+    if (booked.some((b) => b.pending)) return 'pending';
+    if (booked.length > 0) return 'confirmed';
     if (blocks.some((bl) => coversDay(day, bl.start_date, bl.end_date))) {
       return 'blocked';
     }
@@ -337,11 +340,6 @@ function MonthGrid({
           const hasPending = roomMode
             ? taken.some((t) => t.pending)
             : booked.some((b) => b.pending);
-          const hasConfirmed = booked.some((b) => !b.pending);
-          const hasConfirmedTaken = roomMode
-            ? taken.some((t) => !t.pending && !t.blocked)
-            : hasConfirmed;
-          const pendingOnly = hasPending && !hasConfirmedTaken;
           const unavailable = fullyBooked;
 
           const representativeBookingId = roomMode
@@ -377,14 +375,6 @@ function MonthGrid({
             bandStart && 'rounded-l-full',
             bandEnd && 'rounded-r-full'
           );
-          // A confirmed band that also has a pending request gets a brass dot.
-          const mixedDot =
-            bandState === 'confirmed' && hasPending ? (
-              <span
-                className="pointer-events-none absolute bottom-1 left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-brass"
-                aria-hidden
-              />
-            ) : null;
 
           if (selectable) {
             const dateStr = format(day, 'yyyy-MM-dd');
@@ -403,31 +393,28 @@ function MonthGrid({
               : booked.length > 0 || isBlocked;
             const hasFullRange = !!value?.checkIn && !!value?.checkOut;
 
-            const partialDot = partial ? (
-              <span
-                className={cn(
-                  'pointer-events-none absolute bottom-0.5 left-1/2 size-[5px] -translate-x-1/2 rounded-full',
-                  pendingOnly ? 'bg-brass' : 'bg-foreground/70',
-                  endpoint && 'bg-primary-foreground/80'
-                )}
-                aria-hidden
-              />
-            ) : null;
+            // Some-rooms-booked days stay selectable but carry a soft fill:
+            // amber when a pending request needs action, light green otherwise.
+            const partialTint = partial
+              ? hasPending
+                ? 'bg-warning/20 font-medium hover:bg-warning/30'
+                : 'bg-primary/10 font-medium hover:bg-primary/20'
+              : 'hover:bg-primary/10';
 
             if (isPast) {
               // Past days aren't actionable — render like an empty day, but
-              // keep a faded dot (and hover) to show a stay was there.
+              // keep a faint fill (and hover) to show a stay was there.
               return (
                 <DayCell key={day.toISOString()}>
                   <DayTooltip label={anyTaken ? title : undefined}>
-                    <span className={cn(INNER, 'relative text-muted-foreground/40')}>
-                      {format(day, 'd')}
-                      {anyTaken && (
-                        <span
-                          className="pointer-events-none absolute bottom-0.5 left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-foreground/25"
-                          aria-hidden
-                        />
+                    <span
+                      className={cn(
+                        INNER,
+                        'text-muted-foreground/40',
+                        anyTaken && 'bg-muted/50'
                       )}
+                    >
+                      {format(day, 'd')}
                     </span>
                   </DayTooltip>
                 </DayCell>
@@ -456,7 +443,6 @@ function MonthGrid({
                         className="relative flex aspect-square h-full items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition-colors"
                       >
                         {format(day, 'd')}
-                        {partialDot}
                       </button>
                     </span>
                   </DayTooltip>
@@ -477,7 +463,6 @@ function MonthGrid({
                       )}
                     >
                       {format(day, 'd')}
-                      {partialDot}
                     </button>
                   </DayTooltip>
                 </DayCell>
@@ -493,12 +478,12 @@ function MonthGrid({
                       onClick={() => onSelect(dateStr)}
                       className={cn(
                         INNER,
-                        'relative text-foreground hover:bg-primary/10',
+                        'text-foreground',
+                        partialTint,
                         isToday && 'ring-1 ring-inset ring-foreground'
                       )}
                     >
                       {format(day, 'd')}
-                      {partialDot}
                     </button>
                   </DayTooltip>
                 </DayCell>
@@ -521,7 +506,6 @@ function MonthGrid({
                       )}
                     >
                       {format(day, 'd')}
-                      {mixedDot}
                     </Link>
                   </DayTooltip>
                 </DayCell>
@@ -563,14 +547,12 @@ function MonthGrid({
                       )}
                     >
                       {format(day, 'd')}
-                      {mixedDot}
                     </Link>
                   ) : (
                     <span
                       className={cn(BAND, BAND_STATE_CLASS[bandState], bandRounding)}
                     >
                       {format(day, 'd')}
-                      {mixedDot}
                     </span>
                   )}
                 </DayTooltip>
@@ -851,24 +833,23 @@ export function AvailabilityCalendar({
       </div>
       {selectable && visitHrefBase && visits.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-flex size-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
-              1
-            </span>
-            Fully booked
-          </span>
           {roomMode && rooms!.length > 1 && (
             <span className="flex items-center gap-1.5">
-              <span className="relative inline-flex size-5 items-center justify-center rounded-full text-[10px] font-medium text-foreground">
+              <span className="inline-flex size-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
                 1
-                <span className="absolute bottom-0 left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-foreground/70" />
               </span>
               Some rooms booked
             </span>
           )}
+          <span className="flex items-center gap-1.5">
+            <span className="inline-flex size-5 items-center justify-center rounded-md bg-primary/20 text-[10px] font-medium text-primary">
+              1
+            </span>
+            Fully booked
+          </span>
           {visits.some((b) => b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex size-5 items-center justify-center rounded-md bg-brass/15 text-[10px] font-medium text-brass">
+              <span className="inline-flex size-5 items-center justify-center rounded-md bg-warning/25 text-[10px] font-medium text-warning-foreground">
                 1
               </span>
               Pending request
@@ -892,7 +873,7 @@ export function AvailabilityCalendar({
           )}
           {visits.some((b) => !b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-[10px] font-medium text-primary">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/20 text-[10px] font-medium text-primary">
                 1
               </span>
               Confirmed stay
@@ -900,7 +881,7 @@ export function AvailabilityCalendar({
           )}
           {visits.some((b) => b.pending) && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-brass/15 text-[10px] font-medium text-brass">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-warning/25 text-[10px] font-medium text-warning-foreground">
                 1
               </span>
               Pending request

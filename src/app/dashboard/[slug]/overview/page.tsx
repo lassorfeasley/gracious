@@ -9,6 +9,7 @@ import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
 import { HostPageShell } from '@/components/dashboard/host-page-shell';
 import { HostCalendarSection } from '@/components/dashboard/host-calendar-section';
+import { propertyCalendarFeedUrl } from '@/lib/calendar-feed';
 import { DashboardContainer } from '@/components/dashboard/dashboard-container';
 import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog';
@@ -191,6 +192,7 @@ export default async function OverviewPage({
           slug={slug}
           sectionId="calendar"
           title="What days am I hosting?"
+          calendarFeedUrl={propertyCalendarFeedUrl(property.id)}
         />
 
       {/* Rooms */}

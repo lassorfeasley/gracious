@@ -132,6 +132,69 @@ export async function getGuestStayForInvitation(
   return stays[0] ?? null;
 }
 
+/**
+ * Every approved (confirmed) stay at a property, shaped for the calendar feed.
+ * Past stays are kept so subscribers retain history; calendar apps cope fine.
+ */
+export async function getApprovedVisitsForFeed(
+  propertyId: string
+): Promise<
+  {
+    id: string;
+    guestName: string;
+    checkIn: string;
+    checkOut: string;
+    roomNames: string[];
+    partySize: number;
+  }[]
+> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('visits')
+    .select(
+      `
+      id,
+      party_size,
+      guest_name,
+      guest_email,
+      guest:users!guest_user_id(name, email),
+      dates:visit_dates(check_in, check_out),
+      visit_rooms(room:rooms(name))
+    `
+    )
+    .eq('property_id', propertyId)
+    .eq('status', 'approved');
+
+  const visits = [];
+  for (const v of data ?? []) {
+    const dates = Array.isArray(v.dates) ? v.dates[0] : v.dates;
+    if (!dates) continue;
+    const guest = (Array.isArray(v.guest) ? v.guest[0] : v.guest) as
+      | { name: string | null; email: string | null }
+      | null;
+    const guestName =
+      guest?.name ??
+      guest?.email?.split('@')[0] ??
+      v.guest_name ??
+      v.guest_email?.split('@')[0] ??
+      'Guest';
+    const roomNames =
+      v.visit_rooms?.map((br: { room: { name: string } | { name: string }[] }) => {
+        const room = Array.isArray(br.room) ? br.room[0] : br.room;
+        return room.name;
+      }) ?? [];
+    visits.push({
+      id: v.id as string,
+      guestName,
+      checkIn: dates.check_in,
+      checkOut: dates.check_out,
+      roomNames,
+      partySize: v.party_size as number,
+    });
+  }
+  return visits;
+}
+
 export async function checkRoomConflicts(
   roomIds: string[],
   checkIn: string,
