@@ -2,7 +2,7 @@
 
 import { startOfMonth } from 'date-fns';
 import { AvailabilityCalendar } from '@/components/dashboard/availability-calendar';
-import { StayTimeline, type TimelineRow } from '@/components/stay-timeline';
+import { VisitTimeline, type TimelineRow } from '@/components/visit-timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toISODate } from '@/lib/dates';
 import type {
@@ -38,7 +38,7 @@ export function PortfolioSchedule({
         />
       </TabsContent>
       <TabsContent value="timeline" className="mt-6">
-        <StayTimeline
+        <VisitTimeline
           rows={timelineRows}
           windowStart={timelineStart}
           windowDays={TIMELINE_DAYS}
@@ -46,7 +46,7 @@ export function PortfolioSchedule({
           showMonths
           startAtToday
           showLegend
-          emptyLabel="No stays scheduled yet."
+          emptyLabel="No visits scheduled yet."
         />
       </TabsContent>
     </Tabs>

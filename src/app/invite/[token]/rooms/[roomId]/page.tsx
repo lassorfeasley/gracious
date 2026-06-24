@@ -5,7 +5,7 @@ import {
   isInvitationActive,
 } from '@/lib/invitations';
 import { getAuthUser } from '@/lib/auth';
-import { getGuestStayForInvitation } from '@/lib/visits';
+import { getGuestVisitForInvitation } from '@/lib/visits';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { assignColors } from '@/lib/calendar-colors';
 import { summarizeBeds } from '@/lib/validations';
@@ -88,9 +88,9 @@ export default async function GuestRoomPage({
       )
     : `/invite/${invitation.token}`;
 
-  const existingStay =
+  const existingVisit =
     isAuthenticated && authUser
-      ? await getGuestStayForInvitation(invitation.id, authUser.id)
+      ? await getGuestVisitForInvitation(invitation.id, authUser.id)
       : null;
 
   const isPrixFixe = invitation.type === 'prix_fixe';
@@ -107,7 +107,7 @@ export default async function GuestRoomPage({
       : undefined;
 
   const admin = createAdminClient();
-  const { data: bookingRows } = await admin
+  const { data: visitRows } = await admin
     .from('visit_rooms')
     .select(
       `visit:visits(id, status, dates:visit_dates(check_in, check_out))`
@@ -115,7 +115,7 @@ export default async function GuestRoomPage({
     .eq('room_id', roomId);
 
   const roomVisits = assignColors(
-    (bookingRows ?? [])
+    (visitRows ?? [])
       .map((row) => (Array.isArray(row.visit) ? row.visit[0] : row.visit))
       .filter(
         (b): b is NonNullable<typeof b> =>
@@ -139,18 +139,18 @@ export default async function GuestRoomPage({
     .eq('room_id', roomId)
     .eq('is_blocked', true);
 
-  const showSidebar = active || previewMode || !!existingStay;
+  const showSidebar = active || previewMode || !!existingVisit;
   const previewUi = resolveGuestPreviewUi(
     previewMode,
     guestPreviewAs,
     isAuthenticated
   );
-  const isManageStay =
-    (!previewMode && !!existingStay) || previewUi.showManageStay;
-  const dock = isManageStay
+  const isManageVisit =
+    (!previewMode && !!existingVisit) || previewUi.showManageVisit;
+  const dock = isManageVisit
     ? {
-        ctaLabel: 'View stay',
-        idleTitle: 'Your stay',
+        ctaLabel: 'View visit',
+        idleTitle: 'Your visit',
         idleSubtitle: property.name,
         trackDates: false,
       }
@@ -172,17 +172,17 @@ export default async function GuestRoomPage({
             ctaLabel: guestVisitCtaLabel(invitation),
             idleTitle: 'Add your dates',
             idleSubtitle: isPrixFixe
-              ? 'Fixed-date stay'
+              ? 'Fixed-date visit'
               : 'Choose when you’ll arrive',
             trackDates: true,
           };
-  const bookingSidebar = (
+  const visitSidebar = (
     <VisitSidebar
       invitation={invitation}
       propertyName={property.name}
       room={room}
       isAuthenticated={isAuthenticated}
-      existingStay={existingStay}
+      existingVisit={existingVisit}
       previewMode={previewMode}
       guestPreviewAs={guestPreviewAs}
       guestPreviewVisitStatus={guestPreviewVisitStatus}
@@ -274,7 +274,7 @@ export default async function GuestRoomPage({
                   </h2>
                   <p className="mt-2 text-base text-muted-foreground">
                     {isPrixFixe
-                      ? 'This is a fixed-date stay.'
+                      ? 'This is a fixed-date visit.'
                       : 'Select your dates — crossed-out days are unavailable.'}
                   </p>
                   <div className="mt-6">
@@ -293,7 +293,7 @@ export default async function GuestRoomPage({
                 persistent bottom bar below). */}
             <aside className="hidden lg:sticky lg:top-20 lg:block lg:self-start">
               {showSidebar ? (
-                bookingSidebar
+                visitSidebar
               ) : (
                 <div className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">
                   This invitation is no longer active.
@@ -309,7 +309,7 @@ export default async function GuestRoomPage({
               idleSubtitle={dock.idleSubtitle}
               trackDates={dock.trackDates}
             >
-              {bookingSidebar}
+              {visitSidebar}
             </MobileDockedCard>
           )}
         </VisitProvider>

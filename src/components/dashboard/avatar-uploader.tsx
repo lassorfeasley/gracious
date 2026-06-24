@@ -148,7 +148,7 @@ export function AvatarUploader({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          PNG or JPG. Shown to your guests on invitations and stays.
+          PNG or JPG. Shown to your guests on invitations and visits.
         </p>
       </div>
     </div>

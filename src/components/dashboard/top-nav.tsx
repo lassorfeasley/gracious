@@ -160,9 +160,9 @@ export function DashboardTopNav({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/my-trips">
+                <Link href="/my-visits">
                   <Luggage className="mr-2 h-4 w-4" />
-                  My trips
+                  My visits
                 </Link>
               </DropdownMenuItem>
               {showAdminLink && (

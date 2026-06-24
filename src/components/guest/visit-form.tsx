@@ -142,7 +142,7 @@ export function VisitForm({
       }
       toast.success(guestVisitSuccessMessage(invitation));
       setOpen(false);
-      router.push('/my-trips');
+      router.push('/my-visits');
       router.refresh();
     } catch {
       toast.error('Something went wrong');

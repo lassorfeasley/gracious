@@ -15,7 +15,7 @@ function formatBox(date: string): string {
   return format(parseISO(date), 'EEE, MMM d');
 }
 
-export function HostManageStayCard({
+export function HostManageVisitCard({
   visit,
 }: {
   visit: VisitWithDetails;
@@ -123,7 +123,7 @@ export function HostManageStayCard({
           className="mt-2 w-full"
           disabled={loading}
           onClick={() => {
-            if (confirm('Decline this stay request?')) {
+            if (confirm('Decline this visit request?')) {
               patch({ action: 'decline' }, 'Request declined');
             }
           }}

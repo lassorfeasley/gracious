@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { startOfMonth } from 'date-fns';
 import { HouseCalendar } from '@/components/guest/house-calendar';
-import { HostStayTimeline } from '@/components/dashboard/host-stay-timeline';
+import { HostVisitTimeline } from '@/components/dashboard/host-visit-timeline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarSyncButton } from '@/components/dashboard/calendar-sync-button';
 import { toISODate } from '@/lib/dates';
@@ -51,7 +51,7 @@ export function HostCalendarSection({
           <HouseCalendar monthsToShow={2} visitHrefBase={visitHrefBase} />
         </TabsContent>
         <TabsContent value="timeline" className="mt-6">
-          <HostStayTimeline
+          <HostVisitTimeline
             windowStart={timelineStart}
             windowDays={TIMELINE_DAYS}
             visitHrefBase={visitHrefBase}

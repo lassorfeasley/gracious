@@ -69,7 +69,7 @@ async function getUserPrefs(
 }
 
 /**
- * Resolves whether a guest stay-reminder may send, plus the unsubscribe link
+ * Resolves whether a guest visit-reminder may send, plus the unsubscribe link
  * and one-click headers to attach. Guests without an account can't set prefs,
  * so they always receive (and get no unsubscribe link).
  */
@@ -312,7 +312,7 @@ export async function notifyStayRequested(visitId: string) {
   for (const recipient of recipients.values()) {
     await enqueueEmail({
       to: recipient.email,
-      subject: `Stay request from ${guestLabel}`,
+      subject: `Visit request from ${guestLabel}`,
       react: StayRequestedEmail({
         guestName: guestLabel,
         propertyName: visit.property.name,
@@ -335,7 +335,7 @@ export async function notifyStayRequested(visitId: string) {
 }
 
 /**
- * Tells hosts a booking was created on the auto-approve path (no request to
+ * Tells hosts a visit was created on the auto-approve path (no request to
  * act on — purely informational so visits never appear silently).
  */
 export async function notifyStayConfirmed(visitId: string) {
@@ -384,7 +384,7 @@ export async function notifyStayConfirmed(visitId: string) {
   for (const recipient of recipients.values()) {
     await enqueueEmail({
       to: recipient.email,
-      subject: `${guestLabel} booked a stay at ${visit.property.name}`,
+      subject: `${guestLabel} booked a visit at ${visit.property.name}`,
       react: StayConfirmedEmail({
         guestName: guestLabel,
         propertyName: visit.property.name,
@@ -437,7 +437,7 @@ export async function notifyVisitApproved(visitId: string) {
   if (!visit || !visit.notify_guest || !visit.guest.email) return;
 
   const icsContent = generateIcs(visit);
-  const stayEvent = buildStayEvent(visit);
+  const visitEvent = buildStayEvent(visit);
   const rooms = visit.rooms.map((r) => r.name).join(', ');
 
   const { getCoGuestsForDates } = await import('@/lib/coguests');
@@ -458,7 +458,7 @@ export async function notifyVisitApproved(visitId: string) {
 
   await enqueueEmail({
     to: visit.guest.email,
-    subject: `Your stay at ${visit.property.name} is confirmed`,
+    subject: `Your visit at ${visit.property.name} is confirmed`,
     react: VisitApprovedEmail({
       guestName: visit.guest.name ?? 'there',
       propertyName: visit.property.name,
@@ -478,14 +478,14 @@ export async function notifyVisitApproved(visitId: string) {
         ? inviteUrl(visit.invitation.token)
         : undefined,
       heroImageUrl: visit.property.hero_image_url ?? undefined,
-      googleCalendarUrl: googleCalendarUrl(stayEvent),
-      outlookCalendarUrl: outlookCalendarUrl(stayEvent),
+      googleCalendarUrl: googleCalendarUrl(visitEvent),
+      outlookCalendarUrl: outlookCalendarUrl(visitEvent),
       recipientIsHost: hostFooter.recipientIsHost,
       hostOnboardingUrl: hostFooter.hostOnboardingUrl,
     }),
     attachments: [
       {
-        filename: 'stay.ics',
+        filename: 'visit.ics',
         content: Buffer.from(icsContent),
       },
     ],
@@ -507,7 +507,7 @@ export async function notifyVisitDeclined(
 
   await enqueueEmail({
     to: visit.guest.email,
-    subject: `Stay request declined — ${visit.property.name}`,
+    subject: `Visit request declined — ${visit.property.name}`,
     react: VisitDeclinedEmail({
       guestName: visit.guest.name ?? 'there',
       propertyName: visit.property.name,
@@ -556,7 +556,7 @@ export async function notifyVisitCancelled(
     if (wantsEmail(owner.notification_prefs, 'visit_cancelled')) {
       await enqueueEmail({
         to: owner.email,
-        subject: `${guestName} cancelled their stay`,
+        subject: `${guestName} cancelled their visit`,
         react: VisitCancelledEmail({
           recipientName: owner.name ?? 'there',
           guestName,
@@ -569,10 +569,10 @@ export async function notifyVisitCancelled(
       });
     }
   } else if (visit.notify_guest && visit.guest.email) {
-    // Guest copy is mandatory — they must know their stay was cancelled.
+    // Guest copy is mandatory — they must know their visit was cancelled.
     await enqueueEmail({
       to: visit.guest.email,
-      subject: `Your stay at ${visit.property.name} was cancelled`,
+      subject: `Your visit at ${visit.property.name} was cancelled`,
       react: VisitCancelledEmail({
         recipientName: visit.guest.name ?? 'there',
         guestName,
@@ -596,14 +596,14 @@ export async function notifyTripReminder(
   if (!delivery.ok) return;
 
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
-  const stayEvent = buildStayEvent(visit);
+  const visitEvent = buildStayEvent(visit);
 
   await enqueueEmail({
     to: visit.guest.email,
     subject:
       daysUntil <= 1
-        ? `Tomorrow: your stay at ${visit.property.name}`
-        : `One week until your stay at ${visit.property.name}`,
+        ? `Tomorrow: your visit at ${visit.property.name}`
+        : `One week until your visit at ${visit.property.name}`,
     react: TripReminderEmail({
       guestName: visit.guest.name ?? 'there',
       propertyName: visit.property.name,
@@ -619,8 +619,8 @@ export async function notifyTripReminder(
         : undefined,
       unsubscribeUrl: delivery.unsubscribeUrl,
       heroImageUrl: visit.property.hero_image_url ?? undefined,
-      googleCalendarUrl: googleCalendarUrl(stayEvent),
-      outlookCalendarUrl: outlookCalendarUrl(stayEvent),
+      googleCalendarUrl: googleCalendarUrl(visitEvent),
+      outlookCalendarUrl: outlookCalendarUrl(visitEvent),
     }),
     headers: delivery.headers,
   });

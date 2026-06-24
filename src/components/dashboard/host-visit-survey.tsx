@@ -37,7 +37,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import type { HostActionType, HostInviteType } from '@/components/dashboard/host-stay-sidebar';
+import type { HostActionType, HostInviteType } from '@/components/dashboard/host-visit-sidebar';
 
 type StepKey = 'kind' | 'rooms' | 'guest' | 'details' | 'review';
 
@@ -348,7 +348,7 @@ export function HostVisitSurvey({
     }
     if (inviteType === 'prix_fixe') {
       if (windows.length === 0 && (!checkIn || !checkOut)) {
-        toast.error('Select the fixed stay dates on the calendar');
+        toast.error('Select the fixed visit dates on the calendar');
         return false;
       }
       return true;
@@ -417,7 +417,7 @@ export function HostVisitSurvey({
                 {actionType === 'manual' ? (
                   <div className="flex items-center justify-between gap-4 rounded-xl border border-foreground p-5 ring-1 ring-foreground">
                     <div>
-                      <p className="font-medium">Manual stay</p>
+                      <p className="font-medium">Manual visit</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Block the calendar for someone who won&apos;t use the app.
                       </p>
@@ -466,7 +466,7 @@ export function HostVisitSurvey({
                       <div>
                         <p className="font-medium">Already confirmed</p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          You confirmed this stay outside Gracious — confirm it now
+                          You confirmed this visit outside Gracious — confirm it now
                           and notify the guest. No acceptance needed.
                         </p>
                       </div>
@@ -504,7 +504,7 @@ export function HostVisitSurvey({
                         className="flex h-full w-full items-center justify-between gap-4 rounded-xl border p-5 text-left transition-colors hover:bg-muted/50"
                       >
                         <div>
-                          <p className="font-medium">Manual stay</p>
+                          <p className="font-medium">Manual visit</p>
                           <p className="mt-1 text-sm text-muted-foreground">
                             Block the calendar for someone who won&apos;t use the
                             app.
@@ -632,15 +632,15 @@ export function HostVisitSurvey({
                 </div>
                 {preApproved ? (
                   <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                    This stay is booked immediately. Your guest gets a
-                    confirmation email and trip reminders — no acceptance step.
+                    This visit is booked immediately. Your guest gets a
+                    confirmation email and visit reminders — no acceptance step.
                   </p>
                 ) : (
                   <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
                     <div>
                       <p className="font-medium">Require approval</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Guest requests need your OK before the stay is confirmed.
+                        Guest requests need your OK before the visit is confirmed.
                       </p>
                     </div>
                     <Switch
@@ -658,7 +658,7 @@ export function HostVisitSurvey({
                   <Label htmlFor="survey-notes">Notes (optional)</Label>
                   <Textarea
                     id="survey-notes"
-                    placeholder="Internal notes about this stay"
+                    placeholder="Internal notes about this visit"
                     rows={4}
                     value={notes}
                     onChange={(e) => onNotesChange(e.target.value)}
@@ -688,7 +688,7 @@ export function HostVisitSurvey({
                   </dt>
                   <dd className="mt-1 font-medium">
                     {actionType === 'manual'
-                      ? 'Manual stay'
+                      ? 'Manual visit'
                       : preApproved
                         ? 'Already confirmed'
                         : INVITATION_TYPE_LABELS[inviteType]}

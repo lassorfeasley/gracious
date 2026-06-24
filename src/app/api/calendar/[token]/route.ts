@@ -5,7 +5,7 @@ import { getApprovedVisitsForFeed } from '@/lib/visits';
 import { generatePropertyFeedIcs } from '@/lib/ical';
 
 /**
- * Subscribable calendar feed for a property's confirmed stays. Unauthenticated
+ * Subscribable calendar feed for a property's confirmed visits. Unauthenticated
  * by design — calendar apps poll this without cookies — so the signed token in
  * the path is the credential. Returns an always-200 VCALENDAR so a subscription
  * never breaks; an invalid token simply yields an empty calendar.
@@ -43,7 +43,7 @@ export async function GET(
   return new NextResponse(ics, {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': 'inline; filename="gracious-stays.ics"',
+      'Content-Disposition': 'inline; filename="gracious-visits.ics"',
       'Cache-Control': 'public, max-age=3600',
     },
   });

@@ -5,7 +5,7 @@ export interface CalendarVisit {
   guestName: string;
   checkIn: string;
   checkOut: string;
-  /** Pending approval — shown differently from confirmed stays. */
+  /** Pending approval — shown differently from confirmed visits. */
   pending?: boolean;
 }
 
@@ -20,7 +20,7 @@ export interface RoomAvailability {
   blocks: CalendarBlock[];
 }
 
-/** True if the stay range overlaps any booking or block in the combined lists. */
+/** True if the visit range overlaps any visit or block in the combined lists. */
 export function rangeConflictsWithAvailability(
   checkIn: string | null,
   checkOut: string | null,

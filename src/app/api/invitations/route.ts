@@ -58,15 +58,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Pre-approved stays still record an invitation (kept "accepted" so guest
+    // Pre-approved visits still record an invitation (kept "accepted" so guest
     // emails can deep-link back into the app), but skip the acceptance flow and
-    // create the confirmed booking immediately.
+    // create the confirmed visit immediately.
     const preApproved = data.pre_approved === true;
     const window = data.windows?.[0];
 
     if (preApproved && !window) {
       return NextResponse.json(
-        { error: 'A fixed stay date is required to request a visit directly' },
+        { error: 'A fixed visit date is required to request a visit directly' },
         { status: 400 }
       );
     }
@@ -173,7 +173,7 @@ interface PreApprovedStayArgs {
 }
 
 /**
- * Creates a confirmed booking on behalf of a guest the host has already
+ * Creates a confirmed visit on behalf of a guest the host has already
  * coordinated with. The invitation row already exists (and is "accepted"); on
  * failure we revoke it so it doesn't linger as a dead accepted invite.
  */

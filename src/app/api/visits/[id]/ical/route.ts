@@ -43,7 +43,7 @@ export async function GET(
   return new NextResponse(ics, {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': `attachment; filename="stay-${visit.property.slug}.ics"`,
+      'Content-Disposition': `attachment; filename="visit-${visit.property.slug}.ics"`,
     },
   });
 }

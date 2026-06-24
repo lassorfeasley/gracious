@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   const now = new Date();
 
-  // Lifecycle emails — evaluated per booking against the property's local time
+  // Lifecycle emails — evaluated per visit against the property's local time
   // so each one lands in the guest's morning, not a fixed UTC hour.
   const { data: approvedVisits } = await admin
     .from('visits')
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     const tz = visit.property.timezone || DEFAULT_TIMEZONE;
     const localHour = Number(formatInTimeZone(now, tz, 'H'));
     // Only act during the property's local send hour. Combined with the
-    // notifications_log dedup, this means at most one send per booking per day.
+    // notifications_log dedup, this means at most one send per visit per day.
     if (localHour !== SEND_HOUR) continue;
 
     const localToday = formatInTimeZone(now, tz, 'yyyy-MM-dd');
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Morning after departure: send the post-stay thank-you.
+    // Morning after departure: send the post-visit thank-you.
     if (daysSinceCheckOut === 1) {
       if (!(await wasNotificationSent(id, 'post_stay'))) {
         await notifyPostStay(visit);

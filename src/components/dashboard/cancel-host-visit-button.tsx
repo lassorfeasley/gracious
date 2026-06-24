@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-export function CancelHostStayButton({ visitId }: { visitId: string }) {
+export function CancelHostVisitButton({ visitId }: { visitId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleCancel() {
     if (
       !window.confirm(
-        'Remove this stay from the calendar? This cannot be undone.'
+        'Remove this visit from the calendar? This cannot be undone.'
       )
     ) {
       return;
@@ -27,11 +27,11 @@ export function CancelHostStayButton({ visitId }: { visitId: string }) {
     setLoading(false);
 
     if (!res.ok) {
-      toast.error('Could not remove stay');
+      toast.error('Could not remove visit');
       return;
     }
 
-    toast.success('Stay removed');
+    toast.success('Visit removed');
     router.refresh();
   }
 
@@ -43,7 +43,7 @@ export function CancelHostStayButton({ visitId }: { visitId: string }) {
       onClick={handleCancel}
       disabled={loading}
     >
-      {loading ? 'Removing…' : 'Remove stay'}
+      {loading ? 'Removing…' : 'Remove visit'}
     </Button>
   );
 }

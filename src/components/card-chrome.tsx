@@ -3,7 +3,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
 /**
- * When true, booking/sidebar "cards" should render without their own card
+ * When true, visit/sidebar "cards" should render without their own card
  * chrome (rounded corners, shadow, border) because they're already sitting
  * inside a surface — e.g. the mobile bottom drawer. The same React element can
  * render chromed in the desktop sidebar and bare in the drawer, since the value

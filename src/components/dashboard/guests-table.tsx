@@ -58,7 +58,7 @@ export function GuestsTable({
       <div className="rounded-2xl border bg-muted/20 px-6 py-12 text-center">
         <p className="text-sm text-muted-foreground">No guests yet.</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Invite someone or add a manual stay to get started.
+          Invite someone or add a manual visit to get started.
         </p>
       </div>
     );
@@ -77,7 +77,7 @@ export function GuestsTable({
             ? INVITATION_TYPE_LABELS[guest.invitation.type] ??
               guest.invitation.type
             : guest.pastStaysCount > 0
-              ? `${guest.pastStaysCount} past stay${guest.pastStaysCount !== 1 ? 's' : ''}`
+              ? `${guest.pastStaysCount} past visit${guest.pastStaysCount !== 1 ? 's' : ''}`
               : null;
 
         return (

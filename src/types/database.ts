@@ -19,7 +19,7 @@ export interface User {
   /** Uploaded profile photo. Null → a generated placeholder is shown. */
   avatar_url: string | null;
   plan: PlanId;
-  hosted_stays_used: number;
+  hosted_visits_used: number;
   bonus_invitations: number;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -35,7 +35,7 @@ export interface NotificationPrefs {
   invitation_expiring: boolean;
   // Nudge when an invited guest hasn't responded after the reminder drip
   invitation_stalled: boolean;
-  // Guest stay reminders (opt-out)
+  // Guest visit reminders (opt-out)
   guest_reminders: boolean;
   // Host onboarding/engagement nudges, e.g. "finish your home profile" (opt-out)
   host_tips: boolean;

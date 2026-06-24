@@ -50,7 +50,7 @@ export interface TimelineRow {
   stays: TimelineStay[];
 }
 
-interface StayTimelineProps {
+interface VisitTimelineProps {
   rows: TimelineRow[];
   /** First day shown, ISO (yyyy-MM-dd). */
   windowStart: string;
@@ -215,7 +215,7 @@ function StayBand({
   );
 }
 
-export function StayTimeline({
+export function VisitTimeline({
   rows,
   windowStart,
   windowDays,
@@ -230,7 +230,7 @@ export function StayTimeline({
   today: todayProp,
   emptyLabel = 'Nothing scheduled yet.',
   className,
-}: StayTimelineProps) {
+}: VisitTimelineProps) {
   const startDay = startOfDay(parseISO(windowStart));
   const days = Array.from({ length: windowDays }, (_, i) => addDays(startDay, i));
   const windowEndDay = days[days.length - 1] ?? startDay;

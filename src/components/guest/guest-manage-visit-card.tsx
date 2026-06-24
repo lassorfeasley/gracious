@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useBareCard } from '@/components/card-chrome';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { StaySummaryList } from '@/components/stay-summary-list';
+import { VisitSummaryList } from '@/components/visit-summary-list';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
 import type { GuestPreviewVisitStatus } from '@/lib/guest-preview';
 
@@ -19,19 +19,19 @@ const statusVariant: Record<
   approved: 'default',
 };
 
-interface GuestManageStayCardProps {
+interface GuestManageVisitCardProps {
   propertyName: string;
   checkIn: string;
   checkOut: string;
   roomNames: string[];
   partySize: number;
   visitStatus: GuestPreviewVisitStatus;
-  /** Real booking id — enables the live add-to-calendar menu. */
+  /** Real visit id — enables the live add-to-calendar menu. */
   visitId?: string;
   previewMode?: boolean;
 }
 
-export function GuestManageStayCard({
+export function GuestManageVisitCard({
   propertyName,
   checkIn,
   checkOut,
@@ -40,20 +40,20 @@ export function GuestManageStayCard({
   visitStatus,
   visitId,
   previewMode = false,
-}: GuestManageStayCardProps) {
+}: GuestManageVisitCardProps) {
   const bare = useBareCard();
   return (
     <div className={cn('p-6', !bare && 'rounded-2xl border shadow-sm')}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-lg font-semibold">Your stay</p>
+          <p className="text-lg font-semibold">Your visit</p>
           <p className="mt-0.5 text-sm text-muted-foreground">{propertyName}</p>
         </div>
         <Badge variant={statusVariant[visitStatus]}>{visitStatus}</Badge>
       </div>
 
       <div className="mt-5">
-        <StaySummaryList
+        <VisitSummaryList
           checkIn={checkIn}
           checkOut={checkOut}
           roomNames={roomNames}
@@ -71,14 +71,14 @@ export function GuestManageStayCard({
 
       {visitStatus === 'approved' && (
         <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-          You&apos;re confirmed for this stay. See your trip details below for
+          You&apos;re confirmed for this visit. See your visit details below for
           arrival and checkout notes.
         </p>
       )}
 
       <div className="mt-5 flex flex-col gap-2">
         <Button variant="outline" className="w-full" asChild>
-          <Link href="/my-trips">View all trips</Link>
+          <Link href="/my-visits">View all visits</Link>
         </Button>
         {visitStatus === 'approved' &&
           (visitId ? (
@@ -107,11 +107,11 @@ export function GuestManageStayCard({
             className="w-full text-destructive hover:text-destructive"
             onClick={() => {
               if (previewMode) {
-                toast.info('Preview mode — cancel stay disabled');
+                toast.info('Preview mode — cancel visit disabled');
               }
             }}
           >
-            Cancel stay
+            Cancel visit
           </Button>
         )}
       </div>
@@ -119,7 +119,7 @@ export function GuestManageStayCard({
       <p className="mt-4 text-center text-xs text-muted-foreground">
         {previewMode
           ? 'Preview of post-visit management UI'
-          : 'Manage your visit from My trips'}
+          : 'Manage your visit from My visits'}
       </p>
     </div>
   );

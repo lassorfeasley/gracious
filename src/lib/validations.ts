@@ -149,8 +149,8 @@ export const invitationSchema = z
         })
       )
       .optional(),
-    // When the host has already confirmed the stay with the guest, skip the
-    // invitation/acceptance flow and book the (fixed-date) stay directly.
+    // When the host has already confirmed the visit with the guest, skip the
+    // invitation/acceptance flow and book the (fixed-date) visit directly.
     pre_approved: z.boolean().optional(),
     party_size: z.number().min(1, 'At least 1 guest').optional(),
   })

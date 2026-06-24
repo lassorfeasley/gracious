@@ -51,7 +51,7 @@ export interface EmailMatrixEntry {
   gating: EmailGating;
   /**
    * Hard preconditions that short-circuit the send (early return), beyond the
-   * gating preference. Expressed as field-level expectations on the booking.
+   * gating preference. Expressed as field-level expectations on the visit.
    */
   preconditions: string[];
   /** The `AUTOMATED_MESSAGES` id this email corresponds to. */
@@ -113,9 +113,9 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     registryId: 'invite-stalled',
   },
 
-  // --- New stay needing approval ------------------------------------------
+  // --- New visit needing approval ------------------------------------------
   {
-    event: 'Guest submits a stay request that needs approval',
+    event: 'Guest submits a visit request that needs approval',
     fn: 'notifyStayRequested',
     logType: 'stay_requested',
     recipient: 'property_owner',
@@ -124,7 +124,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     registryId: 'stay-requested',
   },
   {
-    event: 'Guest submits a stay request that needs approval',
+    event: 'Guest submits a visit request that needs approval',
     fn: 'notifyStayRequested',
     logType: 'stay_requested',
     recipient: 'property_managers',
@@ -133,7 +133,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     registryId: 'stay-requested',
   },
   {
-    event: 'Guest submits a stay request that needs approval',
+    event: 'Guest submits a visit request that needs approval',
     fn: 'notifyRequestReceived',
     logType: 'request_received',
     recipient: 'guest',
@@ -142,9 +142,9 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     registryId: 'request-received',
   },
 
-  // --- New stay auto-approved (pre-approved invite / open availability) ----
+  // --- New visit auto-approved (pre-approved invite / open availability) ----
   {
-    event: 'Stay is booked on the auto-approve path',
+    event: 'Visit is booked on the auto-approve path',
     fn: 'notifyStayConfirmed',
     logType: 'stay_booked',
     recipient: 'property_owner',
@@ -153,7 +153,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     registryId: 'stay-confirmed',
   },
   {
-    event: 'Stay is booked on the auto-approve path',
+    event: 'Visit is booked on the auto-approve path',
     fn: 'notifyStayConfirmed',
     logType: 'stay_booked',
     recipient: 'property_managers',
@@ -165,7 +165,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
   // --- Approval (manual approve, auto-approve, host offline, edit) ---------
   {
     event:
-      'Stay becomes approved (host approves, auto-approve, host offline visit, or approved-stay edit)',
+      'Visit becomes approved (host approves, auto-approve, host offline visit, or approved-visit edit)',
     fn: 'notifyVisitApproved',
     logType: 'visit_approved',
     recipient: 'guest',
@@ -176,7 +176,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
 
   // --- Decline -------------------------------------------------------------
   {
-    event: 'Host declines a stay request',
+    event: 'Host declines a visit request',
     fn: 'notifyVisitDeclined',
     logType: 'visit_declined',
     recipient: 'guest',
@@ -188,7 +188,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
 
   // --- Cancellation (routing + gating depend on who cancelled) ------------
   {
-    event: 'Guest cancels their stay',
+    event: 'Guest cancels their visit',
     fn: 'notifyVisitCancelled',
     logType: 'visit_cancelled_guest',
     recipient: 'property_owner',
@@ -197,7 +197,7 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
     registryId: 'visit-cancelled',
   },
   {
-    event: 'Host cancels the stay',
+    event: 'Host cancels the visit',
     fn: 'notifyVisitCancelled',
     logType: 'visit_cancelled_owner',
     recipient: 'guest',

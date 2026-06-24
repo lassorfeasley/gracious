@@ -57,7 +57,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     tagline: 'For hosts who keep their calendar busy',
     subtext: 'or $39 / month · save 17% annually',
     features: [
-      'Unlimited hosted stays',
+      'Unlimited hosted visits',
       'Unlimited homes & rooms',
       'Co-managers per property',
       'One flat price · no per-visit fees',

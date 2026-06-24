@@ -14,7 +14,7 @@ import {
   PopoverContent,
 } from '@/components/ui/popover';
 import { MagicLinkForm } from '@/components/guest/magic-link-form';
-import { GuestManageStayCard } from '@/components/guest/guest-manage-stay-card';
+import { GuestManageVisitCard } from '@/components/guest/guest-manage-visit-card';
 import { useBareCard } from '@/components/card-chrome';
 import { SelectableRoomCalendar } from '@/components/guest/selectable-room-calendar';
 import {
@@ -29,7 +29,7 @@ import {
 } from '@/lib/invitation-visit';
 import { useVisit } from './visit-context';
 import type { InvitationWithDetails, Room } from '@/types/database';
-import type { GuestStaySummary } from '@/lib/visits';
+import type { GuestVisitSummary } from '@/lib/visits';
 
 interface CalendarVisit {
   id: string;
@@ -55,7 +55,7 @@ interface VisitSidebarProps {
   room: Room;
   isAuthenticated: boolean;
   /** The guest's active visit for this invitation, when one exists. */
-  existingStay?: GuestStaySummary | null;
+  existingVisit?: GuestVisitSummary | null;
   previewMode?: boolean;
   guestPreviewAs?: GuestPreviewAs;
   guestPreviewVisitStatus?: GuestPreviewVisitStatus;
@@ -66,7 +66,7 @@ interface VisitSidebarProps {
   allowedRanges?: DateRange[];
   /** Invitation is for the entire home — individual rooms can't be booked alone. */
   wholeHome?: boolean;
-  /** Link back to the whole-house booking page. */
+  /** Link back to the whole-house visit page. */
   houseHref?: string;
 }
 
@@ -120,7 +120,7 @@ export function VisitSidebar({
   propertyName,
   room,
   isAuthenticated,
-  existingStay,
+  existingVisit,
   previewMode = false,
   guestPreviewAs = 'visit',
   guestPreviewVisitStatus = 'requested',
@@ -208,7 +208,7 @@ export function VisitSidebar({
         return;
       }
       toast.success(guestVisitSuccessMessage(invitation));
-      router.push('/my-trips');
+      router.push('/my-visits');
       router.refresh();
     } catch {
       toast.error('Something went wrong');
@@ -222,24 +222,24 @@ export function VisitSidebar({
   const sampleCheckOut =
     checkOut ?? invitation.windows[0]?.end_date ?? '2026-06-15';
 
-  // A real booked guest revisiting the room page sees their stay — with
+  // A real booked guest revisiting the room page sees their visit — with
   // add-to-calendar — instead of the visit widget.
-  if (!previewMode && existingStay) {
+  if (!previewMode && existingVisit) {
     return (
-      <GuestManageStayCard
+      <GuestManageVisitCard
         propertyName={propertyName}
-        checkIn={existingStay.checkIn}
-        checkOut={existingStay.checkOut}
-        roomNames={existingStay.roomNames}
-        partySize={existingStay.partySize}
-        visitStatus={existingStay.status}
-        visitId={existingStay.id}
+        checkIn={existingVisit.checkIn}
+        checkOut={existingVisit.checkOut}
+        roomNames={existingVisit.roomNames}
+        partySize={existingVisit.partySize}
+        visitStatus={existingVisit.status}
+        visitId={existingVisit.id}
       />
     );
   }
 
   // Entire-home invitations can't be booked one room at a time. Point the guest
-  // back to the whole-house booking instead of showing a per-room widget.
+  // back to the whole-house visit instead of showing a per-room widget.
   if (wholeHome) {
     return (
       <div className={cardClass}>
@@ -260,9 +260,9 @@ export function VisitSidebar({
     );
   }
 
-  if (previewUi.showManageStay) {
+  if (previewUi.showManageVisit) {
     return (
-      <GuestManageStayCard
+      <GuestManageVisitCard
         propertyName={propertyName}
         checkIn={sampleCheckIn}
         checkOut={sampleCheckOut}

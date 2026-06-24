@@ -111,10 +111,10 @@ export function AdminSidebar({
             </SidebarMenuItem>
           )}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="My trips">
-              <Link href="/my-trips">
+            <SidebarMenuButton asChild tooltip="My visits">
+              <Link href="/my-visits">
                 <Luggage />
-                <span>My trips</span>
+                <span>My visits</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -274,7 +274,7 @@ export function PropertyNotesCategoryEditor({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Short notes guests will see before or during their stay. Up to{' '}
+        Short notes guests will see before or during their visit. Up to{' '}
         {PROPERTY_NOTES_MAX_PER_CATEGORY} per section,{' '}
         {PROPERTY_NOTE_MAX_LENGTH} characters each.
       </p>

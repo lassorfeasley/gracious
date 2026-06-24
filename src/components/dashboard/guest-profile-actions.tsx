@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Copy, Eye, ExternalLink } from 'lucide-react';
 import { getInviteUrl } from '@/lib/invite-url';
 import { guestPreviewQuery } from '@/lib/guest-preview';
-import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-button';
+import { CancelHostVisitButton } from '@/components/dashboard/cancel-host-visit-button';
 
 interface GuestProfileActionsProps {
   invitationToken?: string | null;
@@ -90,7 +90,7 @@ export function GuestProfileActions({
         </>
       )}
       {manualVisitId && (
-        <CancelHostStayButton visitId={manualVisitId} />
+        <CancelHostVisitButton visitId={manualVisitId} />
       )}
     </div>
   );

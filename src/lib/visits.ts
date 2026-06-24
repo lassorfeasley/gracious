@@ -73,8 +73,8 @@ export async function getVisitWithDetails(
   } as VisitWithDetails;
 }
 
-/** Minimal stay info for showing a guest their own booking on invite pages. */
-export interface GuestStaySummary {
+/** Minimal visit info for showing a guest their own visit on invite pages. */
+export interface GuestVisitSummary {
   id: string;
   status: 'requested' | 'approved';
   checkIn: string;
@@ -84,14 +84,14 @@ export interface GuestStaySummary {
 }
 
 /**
- * The guest's current stay for an invitation, if any: an active (requested or
- * approved) booking that hasn't ended yet. Used so invite pages keep showing
- * the confirmed stay — with add-to-calendar — instead of the visit widget.
+ * The guest's current visit for an invitation, if any: an active (requested or
+ * approved) visit that hasn't ended yet. Used so invite pages keep showing
+ * the confirmed visit — with add-to-calendar — instead of the visit widget.
  */
-export async function getGuestStayForInvitation(
+export async function getGuestVisitForInvitation(
   invitationId: string,
   guestUserId: string
-): Promise<GuestStaySummary | null> {
+): Promise<GuestVisitSummary | null> {
   const admin = createAdminClient();
   const today = new Date().toISOString().slice(0, 10);
 
@@ -110,31 +110,31 @@ export async function getGuestStayForInvitation(
     .eq('guest_user_id', guestUserId)
     .in('status', ['requested', 'approved']);
 
-  const stays: GuestStaySummary[] = [];
-  for (const b of data ?? []) {
-    const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
+  const visits: GuestVisitSummary[] = [];
+  for (const v of data ?? []) {
+    const dates = Array.isArray(v.dates) ? v.dates[0] : v.dates;
     if (!dates || dates.check_out < today) continue;
-    stays.push({
-      id: b.id,
-      status: b.status as 'requested' | 'approved',
+    visits.push({
+      id: v.id,
+      status: v.status as 'requested' | 'approved',
       checkIn: dates.check_in,
       checkOut: dates.check_out,
       roomNames:
-        b.visit_rooms?.map((br: { room: { name: string } | { name: string }[] }) => {
+        v.visit_rooms?.map((br: { room: { name: string } | { name: string }[] }) => {
           const room = Array.isArray(br.room) ? br.room[0] : br.room;
           return room.name;
         }) ?? [],
-      partySize: b.party_size,
+      partySize: v.party_size,
     });
   }
 
-  stays.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-  return stays[0] ?? null;
+  visits.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+  return visits[0] ?? null;
 }
 
 /**
- * Every approved (confirmed) stay at a property, shaped for the calendar feed.
- * Past stays are kept so subscribers retain history; calendar apps cope fine.
+ * Every approved (confirmed) visit at a property, shaped for the calendar feed.
+ * Past visits are kept so subscribers retain history; calendar apps cope fine.
  */
 export async function getApprovedVisitsForFeed(
   propertyId: string
@@ -229,17 +229,17 @@ export async function checkRoomConflicts(
       .eq('room_id', roomId);
 
     for (const br of visitRooms ?? []) {
-      const stay = (Array.isArray(br.visit) ? br.visit[0] : br.visit) as {
+      const visit = (Array.isArray(br.visit) ? br.visit[0] : br.visit) as {
         status: string;
         dates: { check_in: string; check_out: string } | { check_in: string; check_out: string }[];
       };
       if (excludeVisitId && br.visit_id === excludeVisitId) continue;
-      if (stay.status !== 'approved' && stay.status !== 'requested')
+      if (visit.status !== 'approved' && visit.status !== 'requested')
         continue;
 
-      const dates = Array.isArray(stay.dates)
-        ? stay.dates[0]
-        : stay.dates;
+      const dates = Array.isArray(visit.dates)
+        ? visit.dates[0]
+        : visit.dates;
       if (!dates) continue;
 
       if (
@@ -275,7 +275,7 @@ export function validateVisitAgainstInvitation(
     if (!visitAllRooms) {
       return {
         valid: false,
-        error: 'This home is offered as a whole — your visit must include every room every room',
+        error: 'This home is offered as a whole — your visit must include every room',
       };
     }
   }
@@ -294,7 +294,7 @@ export function validateVisitAgainstInvitation(
     if (checkIn !== w.start_date || checkOut !== w.end_date) {
       return {
         valid: false,
-        error: 'Dates must match the fixed stay offered in your invitation',
+        error: 'Dates must match the fixed visit offered in your invitation',
       };
     }
   }

@@ -22,7 +22,7 @@ export const INVITATION_TYPE_GUEST_DESCRIPTIONS: Record<InvitationType, string> 
     date_offer:
       'Choose your dates within the windows your host has opened on the calendar.',
     prix_fixe:
-      'Your host has offered specific dates — accept the stay exactly as proposed.',
+      'Your host has offered specific dates — accept the visit exactly as proposed.',
   };
 
 /** Lowercase phrase for invitation headlines, e.g. "a date range invitation". */

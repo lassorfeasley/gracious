@@ -61,7 +61,7 @@ export function HostPageSidebar({
   rooms: Room[];
   roomAvailability: Record<string, RoomAvailability>;
   preselectedRoomIds?: string[];
-  /** Optional content rendered inside the card, above the booking summary. */
+  /** Optional content rendered inside the card, above the visit summary. */
   headerSlot?: ReactNode;
 }) {
   const {

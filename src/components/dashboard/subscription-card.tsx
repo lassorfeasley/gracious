@@ -51,7 +51,7 @@ export function SubscriptionCard({
           <>
             <p className="text-sm text-muted-foreground">
               You’re on the <strong>Pro</strong> plan with unlimited hosted
-              stays, homes, and co-managers.
+              visits, homes, and co-managers.
             </p>
             <Button variant="outline" onClick={handleManage} disabled={loading}>
               {loading ? 'Opening…' : 'Manage billing'}
@@ -62,7 +62,7 @@ export function SubscriptionCard({
             <p className="text-sm text-muted-foreground">
               You’re on the <strong>Free</strong> plan — your first{' '}
               {invitationsLimit} invitations are on us. Upgrade to Pro for
-              unlimited stays, homes, and co-managers.
+              unlimited visits, homes, and co-managers.
             </p>
             <p className="text-sm font-medium">
               {invitationsUsed} of {invitationsLimit} free invitations used

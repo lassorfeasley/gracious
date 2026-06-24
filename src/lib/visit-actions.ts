@@ -9,13 +9,13 @@ import {
 
 /**
  * Single source of truth for the approve / decline / cancel transitions on a
- * stay. Both callers — the `PATCH /api/visits/[id]` API route and the
+ * visit. Both callers — the `PATCH /api/visits/[id]` API route and the
  * one-click email links handled in the requests page — go through here so the
  * authorization, idempotency, and notification behavior can't drift apart
  * between the two entry points.
  *
  * Every transition is guarded by a conditional status update (e.g. only move a
- * booking out of `requested` if it is *still* `requested`). That guard is what
+ * visit out of `requested` if it is *still* `requested`). That guard is what
  * makes a double approve — two browser tabs, an email link plus a dashboard
  * click, a refresh of an already-handled request — a no-op instead of a
  * duplicate guest email.
@@ -32,9 +32,9 @@ export type VisitActionResult =
 
 interface ActionOptions {
   /**
-   * When set, the action only applies if the booking belongs to this property.
-   * Used by the requests page so a tampered booking id from an email link can't
-   * touch a stay on a property the host doesn't manage.
+   * When set, the action only applies if the visit belongs to this property.
+   * Used by the requests page so a tampered visit id from an email link can't
+   * touch a visit on a property the host doesn't manage.
    */
   propertyId?: string;
 }
@@ -64,7 +64,7 @@ export async function approveVisit(
     .select('id')
     .maybeSingle();
 
-  // Lost the race: another approve/decline already moved this booking. Don't
+  // Lost the race: another approve/decline already moved this visit. Don't
   // re-send the confirmation.
   if (!updated) return { ok: false, reason: 'not_pending' };
 
@@ -122,7 +122,7 @@ export async function cancelVisit(
     return { ok: false, reason: 'forbidden' };
   }
 
-  // Only an active stay can be cancelled; re-cancelling a settled booking is a
+  // Only an active visit can be cancelled; re-cancelling a settled visit is a
   // no-op so the other party isn't emailed twice.
   if (visit.status !== 'requested' && visit.status !== 'approved') {
     return { ok: false, reason: 'not_pending' };

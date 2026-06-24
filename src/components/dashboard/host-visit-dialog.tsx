@@ -39,7 +39,7 @@ const STEPS: StepKey[] = ['guest', 'dates', 'rooms', 'details', 'review'];
 
 const STEP_TITLES: Record<StepKey, string> = {
   guest: 'Who is the guest?',
-  dates: 'When is the stay?',
+  dates: 'When is the visit?',
   rooms: 'Which rooms are included?',
   details: 'Any final details?',
   review: 'Review and confirm',
@@ -174,12 +174,12 @@ export function ManualStaySurvey({
         return;
       }
       toast.error(
-        typeof data.error === 'string' ? data.error : 'Failed to add stay'
+        typeof data.error === 'string' ? data.error : 'Failed to add visit'
       );
       return;
     }
 
-    toast.success('Stay added to calendar');
+    toast.success('Visit added to calendar');
     onClose();
     router.refresh();
   }
@@ -187,7 +187,7 @@ export function ManualStaySurvey({
   return (
     <>
     <SurveyDialogLayout
-      title="Add a manual stay"
+      title="Add a manual visit"
       stepIndex={current}
       stepCount={STEPS.length}
       stepTitle={STEP_TITLES[stepKey]}
@@ -408,7 +408,7 @@ export function ManualStaySurvey({
           )}
           {notifyGuest && guestEmail && (
             <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-              The guest will receive confirmation and stay emails.
+              The guest will receive confirmation and visit emails.
             </p>
           )}
         </dl>
@@ -455,7 +455,7 @@ export function HostVisitDialog({
         {trigger ?? (
           <Button variant="outline" size="sm" disabled={rooms.length === 0}>
             <CalendarPlus className="mr-1 h-4 w-4" />
-            Add manual stay
+            Add manual visit
           </Button>
         )}
       </DialogTrigger>

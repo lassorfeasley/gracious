@@ -36,7 +36,7 @@ export function RequestsAlertBanner({
           </p>
           <p className="text-sm text-muted-foreground">
             {isPlural ? 'These' : 'This'} {guestNoun} waiting to hear back from
-            you before {isPlural ? 'their trips' : 'their trip'} can be
+            you before {isPlural ? 'their visits' : 'their visit'} can be
             confirmed.
           </p>
         </div>

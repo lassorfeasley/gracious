@@ -65,7 +65,7 @@ function DateBox({
   );
 }
 
-export interface HostStaySidebarProps {
+export interface HostVisitSidebarProps {
   propertyId: string;
   actionType: HostActionType;
   onActionTypeChange: (type: HostActionType) => void;
@@ -101,7 +101,7 @@ export interface HostStaySidebarProps {
   onSubmitManual: () => void;
 }
 
-export function HostStaySidebar({
+export function HostVisitSidebar({
   propertyId,
   actionType,
   onActionTypeChange,
@@ -135,7 +135,7 @@ export function HostStaySidebar({
   loading,
   onSubmitInvite,
   onSubmitManual,
-}: HostStaySidebarProps) {
+}: HostVisitSidebarProps) {
   const {
     checkIn,
     checkOut,

@@ -44,7 +44,7 @@ export function UpgradeDialog({
           <DialogTitle>You&apos;ve used your {limit} free invitations</DialogTitle>
           <DialogDescription>
             You&apos;ve used {used} of {limit} free invitations on your account.
-            Upgrade to Pro for unlimited stays, homes, and co-managers.
+            Upgrade to Pro for unlimited visits, homes, and co-managers.
           </DialogDescription>
         </DialogHeader>
 

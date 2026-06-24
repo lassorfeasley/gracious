@@ -60,7 +60,7 @@ function StructuredData() {
           '@type': 'Offer',
           price: '0',
           priceCurrency: 'USD',
-          description: 'Your first two stays are free.',
+          description: 'Your first two visits are free.',
         },
       },
     ],
@@ -173,7 +173,7 @@ export default async function HomePage({
             Be the host they remember.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-lg leading-relaxed text-primary-foreground/80">
-            Set up your home in minutes — your first two stays are free.
+            Set up your home in minutes — your first two visits are free.
           </p>
           <div className="mt-8 flex justify-center">
             <Button

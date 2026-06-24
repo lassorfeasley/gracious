@@ -147,7 +147,7 @@ export async function deliverRendered(
  *
  * Use this only for latency-sensitive mail that must not wait on a queue —
  * auth/magic-link emails and the on-demand guest sign-in link. Everything else
- * (booking/invitation/reminder notifications) should go through `enqueueEmail`
+ * (visit/invitation/reminder notifications) should go through `enqueueEmail`
  * in `@/lib/email/outbox` so a transient provider failure can be retried.
  */
 export async function sendEmail({

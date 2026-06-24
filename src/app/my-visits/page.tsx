@@ -3,22 +3,22 @@ import { requireAuth, getOwnerProperties } from '@/lib/auth';
 import { isSiteAdmin } from '@/lib/site-admin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { VisibilityToggle } from '@/components/guest/visibility-toggle';
-import { TripsView } from '@/components/guest/trips-view';
+import { VisitsView } from '@/components/guest/visits-view';
 import { LogoutButton } from '@/components/logout-button';
 import { SiteFooter } from '@/components/site-footer';
 import { Wordmark } from '@/components/brand/wordmark';
 import { Button } from '@/components/ui/button';
 import { Home, Shield } from 'lucide-react';
 
-export const metadata = { title: 'My trips' };
+export const metadata = { title: 'My visits' };
 
-export default async function MyTripsPage() {
+export default async function MyVisitsPage() {
   const user = await requireAuth();
   const properties = await getOwnerProperties(user.id);
   const isHost = properties.length > 0;
   const showAdminLink = isSiteAdmin(user);
 
-  // Guests can't read rooms/properties under RLS, so their trips would render
+  // Guests can't read rooms/properties under RLS, so their visits would render
   // with null joins (and crash). Query as admin, scoped to the signed-in user.
   const admin = createAdminClient();
   const { data: visits } = await admin
@@ -39,7 +39,7 @@ export default async function MyTripsPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b">
         <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-4">
-          <Link href="/my-trips" className="min-w-0 shrink" aria-label="Gracious home">
+          <Link href="/my-visits" className="min-w-0 shrink" aria-label="Gracious home">
             <Wordmark className="h-5 text-primary" />
           </Link>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -66,10 +66,10 @@ export default async function MyTripsPage() {
       </header>
 
       <main className="container mx-auto w-full max-w-2xl px-4 py-8">
-        <h1 className="text-2xl font-semibold">My trips</h1>
-        <p className="mt-1 text-muted-foreground">Your stays and requests</p>
+        <h1 className="text-2xl font-semibold">My visits</h1>
+        <p className="mt-1 text-muted-foreground">Your visits and requests</p>
 
-        <TripsView visits={visits ?? []} />
+        <VisitsView visits={visits ?? []} />
       </main>
 
       <SiteFooter />

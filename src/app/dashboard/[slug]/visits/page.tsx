@@ -63,7 +63,7 @@ export default async function VisitsPage({
     .order('created_at', { ascending: false });
 
   // Batch-fetch avatars by email so account-holding guests show their photo
-  // even on rows where there's no guest_user_id join (manual stays, invites).
+  // even on rows where there's no guest_user_id join (manual visits, invites).
   const emailSet = new Set<string>();
   for (const b of visitRows ?? []) {
     if (b.guest_email) emailSet.add(b.guest_email.toLowerCase());
@@ -194,7 +194,7 @@ export default async function VisitsPage({
 
       {rooms?.length === 0 && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-          Add rooms before inviting guests or adding manual stays.
+          Add rooms before inviting guests or adding manual visits.
         </div>
       )}
 

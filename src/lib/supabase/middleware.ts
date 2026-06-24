@@ -82,7 +82,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = profile
       ? await getAuthenticatedHomePath(profile)
-      : '/my-trips';
+      : '/my-visits';
     url.search = '';
     return NextResponse.redirect(url);
   }

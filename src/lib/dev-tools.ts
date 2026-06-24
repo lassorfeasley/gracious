@@ -19,7 +19,7 @@ export function isDevAdminPreviewEnabled(): boolean {
 export function detectAppView(pathname: string): AppView | null {
   if (pathname.startsWith('/admin')) return 'admin';
   if (pathname.startsWith('/dashboard')) return 'host';
-  if (pathname.startsWith('/invite') || pathname === '/my-trips') return 'guest';
+  if (pathname.startsWith('/invite') || pathname === '/my-visits') return 'guest';
   if (pathname === '/') return 'landing';
   return null;
 }

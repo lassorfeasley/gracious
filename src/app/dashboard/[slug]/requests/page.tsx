@@ -43,8 +43,8 @@ async function handleQuickAction(
     '@/lib/visit-actions'
   );
 
-  // Scope by propertyId so a tampered booking id from an email link can't act
-  // on a stay this host doesn't manage. The shared action also enforces the
+  // Scope by propertyId so a tampered visit id from an email link can't act
+  // on a visit this host doesn't manage. The shared action also enforces the
   // pending-only guard, so a refresh of an already-handled request is a no-op.
   const result =
     action === 'approve'

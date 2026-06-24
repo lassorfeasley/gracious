@@ -38,7 +38,7 @@ export default async function AdminUsersPage() {
   );
   const usageByOwnerId = new Map(usageEntries);
 
-  // Per-guest visit tallies. "pending" = awaiting host approval; approved stays
+  // Per-guest visit tallies. "pending" = awaiting host approval; approved visits
   // split into "upcoming" vs "complete" by whether checkout is still ahead.
   const today = new Date().toISOString().slice(0, 10);
   const visitsByUser = new Map<string, VisitCounts>();

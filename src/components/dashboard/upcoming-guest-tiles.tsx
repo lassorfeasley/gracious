@@ -32,10 +32,10 @@ export function UpcomingGuestTiles({
     return (
       <div className="rounded-2xl border bg-muted/20 px-6 py-12 text-center">
         <p className="text-sm text-muted-foreground">
-          No upcoming stays on the calendar.
+          No upcoming visits on the calendar.
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Invite a guest or add a manual stay to get started.
+          Invite a guest or add a manual visit to get started.
         </p>
       </div>
     );
@@ -51,7 +51,7 @@ export function UpcomingGuestTiles({
           stay.checkIn <= today && stay.checkOut >= today;
         const nights = nightsBetween(stay.checkIn, stay.checkOut);
         const statusLabel = stay.isManual
-          ? 'Manual stay'
+          ? 'Manual visit'
           : onProperty
             ? 'On property'
             : 'Upcoming';

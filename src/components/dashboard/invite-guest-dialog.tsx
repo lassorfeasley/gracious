@@ -56,7 +56,7 @@ interface InviteGuestDialogProps {
   rooms: Room[];
   roomAvailability?: Record<string, RoomAvailability>;
   preselectedRoomIds?: string[];
-  /** When true, manual stay uses the surrounding VisitProvider. */
+  /** When true, manual visit uses the surrounding VisitProvider. */
   useParentVisitContext?: boolean;
   trigger?: ReactNode;
 }
@@ -83,7 +83,7 @@ export function InviteGuestDialog({
   const router = useRouter();
   const params = useParams();
   const propertySlug = typeof params.slug === 'string' ? params.slug : undefined;
-  const parentBooking = useOptionalVisit();
+  const parentVisit = useOptionalVisit();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'invite' | 'manual'>('invite');
   const [loading, setLoading] = useState(false);
@@ -126,7 +126,7 @@ export function InviteGuestDialog({
     .reduce((sum, r) => sum + r.max_occupancy, 0);
 
   // "Already confirmed" is the pre-approved direct-visit path surfaced as a
-  // first-class choice. Under the hood it's a fixed-date stay booked on the
+  // first-class choice. Under the hood it's a fixed-date visit booked on the
   // guest's behalf — no acceptance step.
   const KIND_OPTIONS = [
     ...INVITATION_TYPE_OPTIONS,
@@ -134,7 +134,7 @@ export function InviteGuestDialog({
       value: 'confirmed',
       label: 'Already confirmed',
       description:
-        'You confirmed this stay outside Gracious — confirm it now and we’ll notify the guest. No acceptance needed.',
+        'You confirmed this visit outside Gracious — confirm it now and we’ll notify the guest. No acceptance needed.',
     },
   ];
   const selectedKind = preApproved ? 'confirmed' : invType;
@@ -224,7 +224,7 @@ export function InviteGuestDialog({
     if (next) {
       resetForm();
       // Carry over any dates the host already picked in the page sidebar.
-      const pre = useParentVisitContext ? parentBooking : null;
+      const pre = useParentVisitContext ? parentVisit : null;
       if (pre?.checkIn && pre?.checkOut) {
         setDateSelection({ checkIn: pre.checkIn, checkOut: pre.checkOut });
         form.setValue('type', 'prix_fixe');
@@ -280,7 +280,7 @@ export function InviteGuestDialog({
       if (collectWindows().length === 0) {
         toast.error(
           invType === 'prix_fixe'
-            ? 'Select the stay dates'
+            ? 'Select the visit dates'
             : 'Add at least one date range'
         );
         return false;

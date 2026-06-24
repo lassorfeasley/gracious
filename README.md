@@ -62,7 +62,7 @@ Open [http://localhost:3000](http://localhost:3000).
 1. Open invitation link `/invite/[token]`
 2. Sign in via magic link
 3. Request or accept a stay
-4. Manage trips at `/my-trips`
+4. Manage visits at `/my-visits`
 
 ## Cron (Vercel)
 

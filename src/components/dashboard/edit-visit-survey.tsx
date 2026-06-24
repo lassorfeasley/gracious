@@ -25,7 +25,7 @@ type StepKey = 'dates' | 'rooms' | 'details' | 'review';
 const STEPS: StepKey[] = ['dates', 'rooms', 'details', 'review'];
 
 const STEP_TITLES: Record<StepKey, string> = {
-  dates: 'When is the stay?',
+  dates: 'When is the visit?',
   rooms: 'Which rooms are included?',
   details: 'Guests and notes',
   review: 'Review changes',
@@ -155,7 +155,7 @@ export function EditVisitSurvey({
             {stepKey === 'dates' && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Select new check-in and check-out dates. The current stay&apos;s
+                  Select new check-in and check-out dates. The current visit&apos;s
                   nights are available to reselect.
                 </p>
                 <HouseCalendar monthsToShow={1} />
@@ -256,7 +256,7 @@ export function EditVisitSurvey({
                   <Textarea
                     id="edit-notes"
                     rows={4}
-                    placeholder="Internal notes about this stay"
+                    placeholder="Internal notes about this visit"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />

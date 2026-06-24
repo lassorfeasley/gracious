@@ -60,19 +60,19 @@ export async function requireAuth(): Promise<User> {
 /**
  * True if the user can host: they own or co-manage at least one property.
  * Host status is derived from data, never stored, so it can't drift out of sync
- * (e.g. an owner who books a stay stays a host).
+ * (e.g. an owner who books a visit stays a host).
  */
 /**
  * Default destination after sign-in or when visiting `/` while signed in.
  * Hosts land on the dashboard; platform admins without host duties land on
- * /admin; everyone else goes to my-trips.
+ * /admin; everyone else goes to my-visits.
  */
 export async function getAuthenticatedHomePath(
   user: Pick<User, 'id' | 'is_admin' | 'email'>
 ): Promise<string> {
   if (await userManagesAnyProperty(user.id)) return '/dashboard';
   if (isSiteAdmin(user)) return '/admin';
-  return '/my-trips';
+  return '/my-visits';
 }
 
 /** Host or guest app home — never /admin. Used when leaving the admin panel. */
@@ -80,7 +80,7 @@ export async function getNonAdminHomePath(
   user: Pick<User, 'id'>
 ): Promise<string> {
   if (await userManagesAnyProperty(user.id)) return '/dashboard';
-  return '/my-trips';
+  return '/my-visits';
 }
 
 export async function userManagesAnyProperty(userId: string): Promise<boolean> {

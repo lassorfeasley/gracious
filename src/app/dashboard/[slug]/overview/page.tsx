@@ -123,7 +123,7 @@ export default async function OverviewPage({
     { id: 'location', label: 'Location' },
     { id: 'amenities', label: 'Amenities' },
     { id: 'guest-info', label: 'Guest info' },
-    { id: 'upcoming', label: 'Stays' },
+    { id: 'upcoming', label: 'Visits' },
   ];
 
   return (
@@ -370,12 +370,12 @@ export default async function OverviewPage({
 
       <GuestInformationSection property={property} notes={notes} />
 
-      {/* Upcoming stays */}
+      {/* Upcoming visits */}
       <section id="upcoming" className="scroll-mt-28 py-10">
-        <h2 className="text-2xl font-semibold tracking-tight">Upcoming stays</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Upcoming visits</h2>
         {upcoming.length === 0 ? (
           <p className="mt-6 text-sm text-muted-foreground">
-            No upcoming approved stays.
+            No upcoming approved visits.
           </p>
         ) : (
           <ul className="mt-6 space-y-3">

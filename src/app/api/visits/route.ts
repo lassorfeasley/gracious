@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure the guest's profile row exists. This no longer touches any role —
-    // booking a stay must never affect the user's host capability.
+    // creating a visit must never affect the user's host capability.
     await upsertUserProfile(authUser.id, authUser.email!, {
       firstName: data.guest_first_name,
       lastName: data.guest_last_name,

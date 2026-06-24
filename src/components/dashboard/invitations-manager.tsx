@@ -49,7 +49,7 @@ export function InvitationsManager({
 
   const isDev = process.env.NODE_ENV !== 'production';
 
-  function previewBooking(token: string) {
+  function previewVisit(token: string) {
     window.open(
       `${getInviteUrl(token)}?${guestPreviewQuery('visit')}`,
       '_blank'
@@ -116,7 +116,7 @@ export function InvitationsManager({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => previewBooking(inv.token)}
+                      onClick={() => previewVisit(inv.token)}
                     >
                       <Eye className="mr-1 h-3 w-3" />
                       Preview visit

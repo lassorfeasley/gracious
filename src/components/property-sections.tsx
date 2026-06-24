@@ -8,7 +8,7 @@ import type { Property, PropertyNoteCategory } from '@/types/database';
 
 /**
  * Read-only property detail sections (About / Location / Amenities / Guest info)
- * shared by the guest invite page and the host manage-booking view. Each section
+ * shared by the guest invite page and the host manage-visit view. Each section
  * is hidden when its data is empty.
  */
 export function PropertySections({
@@ -18,7 +18,7 @@ export function PropertySections({
 }: {
   property: Property;
   noteCategories?: PropertyNoteCategory[];
-  /** WiFi and other access details — only after a stay is approved. */
+  /** WiFi and other access details — only after a visit is approved. */
   showWifi?: boolean;
 }) {
   const notes = property.property_notes ?? [];

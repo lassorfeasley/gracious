@@ -9,7 +9,7 @@ import {
   useVisit,
   type RequestableRoom,
 } from '@/components/guest/visit-context';
-import { HostManageStayCard } from '@/components/dashboard/host-manage-stay-card';
+import { HostManageVisitCard } from '@/components/dashboard/host-manage-visit-card';
 import { VisitMainActions } from '@/components/dashboard/visit-main-actions';
 import type { CalendarVisit, RoomAvailability } from '@/lib/guest-calendar';
 import type { VisitWithDetails } from '@/types/database';
@@ -21,9 +21,9 @@ function visitTypeInfo(visit: VisitWithDetails): {
 } {
   if (!visit.invitation_id || !visit.invitation) {
     return {
-      label: 'Manual stay',
+      label: 'Manual visit',
       description:
-        'You added this stay directly. The guest isn\u2019t using the app, so dates are simply blocked on your calendar.',
+        'You added this visit directly. The guest isn\u2019t using the app, so dates are simply blocked on your calendar.',
     };
   }
   switch (visit.invitation.type) {
@@ -85,7 +85,7 @@ export function VisitManageView({
 }) {
   const stayVisit: CalendarVisit = {
     id: visit.id,
-    guestName: visit.guest.name ?? 'This stay',
+    guestName: visit.guest.name ?? 'This visit',
     checkIn: visit.dates.check_in,
     checkOut: visit.dates.check_out,
   };
@@ -154,7 +154,7 @@ export function VisitManageView({
           <section className="py-10">
             <h2 className="text-2xl font-semibold tracking-tight">Calendar</h2>
             <p className="mt-2 text-base text-muted-foreground">
-              This stay is highlighted. Hover any date to see who&apos;s staying,
+              This visit is highlighted. Hover any date to see who&apos;s staying,
               or click a booked date to open it.
             </p>
             <div className="mt-6">
@@ -169,7 +169,7 @@ export function VisitManageView({
         </div>
 
         <aside className="lg:sticky lg:top-8 lg:self-start">
-          <HostManageStayCard visit={visit} />
+          <HostManageVisitCard visit={visit} />
         </aside>
       </div>
     </VisitProvider>

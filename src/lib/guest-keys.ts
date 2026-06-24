@@ -3,7 +3,7 @@ export function guestKeyFromEmail(email: string): string {
   return `e-${encodeURIComponent(email.trim().toLowerCase())}`;
 }
 
-/** Host dashboard path to a guest's profile (invitation + stay history). */
+/** Host dashboard path to a guest's profile (invitation + visit history). */
 export function guestProfileHref(slug: string, guestEmail: string): string {
   return `/dashboard/${slug}/guests/${guestKeyFromEmail(guestEmail)}`;
 }

@@ -14,7 +14,7 @@ import {
   PopoverContent,
 } from '@/components/ui/popover';
 import { MagicLinkForm } from '@/components/guest/magic-link-form';
-import { GuestManageStayCard } from '@/components/guest/guest-manage-stay-card';
+import { GuestManageVisitCard } from '@/components/guest/guest-manage-visit-card';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import { useBareCard } from '@/components/card-chrome';
 import {
@@ -29,7 +29,7 @@ import {
 } from '@/lib/invitation-visit';
 import { useVisit } from './visit-context';
 import type { InvitationWithDetails } from '@/types/database';
-import type { GuestStaySummary } from '@/lib/visits';
+import type { GuestVisitSummary } from '@/lib/visits';
 
 interface DateRange {
   start: string;
@@ -41,7 +41,7 @@ interface HouseVisitSidebarProps {
   propertyName: string;
   isAuthenticated: boolean;
   /** The guest's active visit for this invitation, when one exists. */
-  existingStay?: GuestStaySummary | null;
+  existingVisit?: GuestVisitSummary | null;
   previewMode?: boolean;
   guestPreviewAs?: GuestPreviewAs;
   guestPreviewVisitStatus?: GuestPreviewVisitStatus;
@@ -98,7 +98,7 @@ export function HouseVisitSidebar({
   invitation,
   propertyName,
   isAuthenticated,
-  existingStay,
+  existingVisit,
   previewMode = false,
   guestPreviewAs = 'visit',
   guestPreviewVisitStatus = 'requested',
@@ -208,7 +208,7 @@ export function HouseVisitSidebar({
         return;
       }
       toast.success(guestVisitSuccessMessage(invitation));
-      router.push('/my-trips');
+      router.push('/my-visits');
       router.refresh();
     } catch {
       toast.error('Something went wrong');
@@ -225,25 +225,25 @@ export function HouseVisitSidebar({
     .filter((r) => selectedRoomIds.includes(r.id))
     .map((r) => r.name);
 
-  // A real booked guest revisiting the invite page sees their stay — with
+  // A real booked guest revisiting the invite page sees their visit — with
   // add-to-calendar — instead of the visit widget.
-  if (!previewMode && existingStay) {
+  if (!previewMode && existingVisit) {
     return (
-      <GuestManageStayCard
+      <GuestManageVisitCard
         propertyName={propertyName}
-        checkIn={existingStay.checkIn}
-        checkOut={existingStay.checkOut}
-        roomNames={existingStay.roomNames}
-        partySize={existingStay.partySize}
-        visitStatus={existingStay.status}
-        visitId={existingStay.id}
+        checkIn={existingVisit.checkIn}
+        checkOut={existingVisit.checkOut}
+        roomNames={existingVisit.roomNames}
+        partySize={existingVisit.partySize}
+        visitStatus={existingVisit.status}
+        visitId={existingVisit.id}
       />
     );
   }
 
-  if (previewUi.showManageStay) {
+  if (previewUi.showManageVisit) {
     return (
-      <GuestManageStayCard
+      <GuestManageVisitCard
         propertyName={propertyName}
         checkIn={sampleCheckIn}
         checkOut={sampleCheckOut}

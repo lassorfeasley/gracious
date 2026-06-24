@@ -8,7 +8,7 @@ import {
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { formatDate, formatDateRange } from '@/lib/dates';
 import { INVITATION_TYPE_LABELS } from '@/lib/invitation-types';
-import { StaySummaryList } from '@/components/stay-summary-list';
+import { VisitSummaryList } from '@/components/visit-summary-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PersonCard } from '@/components/person-card';
@@ -38,7 +38,7 @@ function guestHeadline(
     if (stay.checkIn <= today && stay.checkOut >= today) {
       return { label: 'On property', variant: 'default' };
     }
-    return { label: 'Upcoming stay', variant: 'default' };
+    return { label: 'Upcoming visit', variant: 'default' };
   }
   if (guest.invitation?.status === 'pending') {
     return { label: 'Invited', variant: 'secondary' };
@@ -46,7 +46,7 @@ function guestHeadline(
   if (guest.pastStaysCount > 0) {
     return { label: 'Past guest', variant: 'outline' };
   }
-  return { label: 'No stays yet', variant: 'outline' };
+  return { label: 'No visits yet', variant: 'outline' };
 }
 
 export function GuestProfileView({
@@ -85,7 +85,7 @@ export function GuestProfileView({
         role={
           guest.relationship ??
           (!guest.email && !guest.phone
-            ? 'Manual stay — no contact info on file'
+            ? 'Manual visit — no contact info on file'
             : null)
         }
         email={guest.email}
@@ -113,7 +113,7 @@ export function GuestProfileView({
               {guest.stays.length}
             </span>{' '}
             <span className="text-muted-foreground">
-              {guest.stays.length === 1 ? 'stay' : 'stays'} total
+              {guest.stays.length === 1 ? 'visit' : 'visits'} total
             </span>
           </span>
           {guest.pastStaysCount > 0 && (
@@ -130,7 +130,7 @@ export function GuestProfileView({
       {guest.upcomingStay && (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold tracking-tight">
-            Upcoming stay
+            Upcoming visit
           </h2>
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             <div className="border-b bg-muted/30 px-6 py-4">
@@ -143,12 +143,12 @@ export function GuestProfileView({
                   {guest.upcomingStay.status}
                 </Badge>
                 {guest.upcomingStay.isManual && (
-                  <Badge variant="secondary">Manual stay</Badge>
+                  <Badge variant="secondary">Manual visit</Badge>
                 )}
               </div>
             </div>
             <div className="space-y-5 p-6">
-              <StaySummaryList
+              <VisitSummaryList
                 checkIn={guest.upcomingStay.checkIn}
                 checkOut={guest.upcomingStay.checkOut}
                 roomNames={guest.upcomingStay.roomNames}
@@ -218,10 +218,10 @@ export function GuestProfileView({
 
       <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">Stay history</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Visit history</h2>
           {pastStays.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              {pastStays.length} {pastStays.length === 1 ? 'stay' : 'stays'}
+              {pastStays.length} {pastStays.length === 1 ? 'visit' : 'visits'}
             </p>
           )}
         </div>
@@ -231,7 +231,7 @@ export function GuestProfileView({
             <p className="text-sm text-muted-foreground">
               {guest.invitation?.status === 'pending'
                 ? 'No visits yet — waiting for them to request a visit.'
-                : 'No past stays on record.'}
+                : 'No past visits on record.'}
             </p>
           </div>
         ) : (

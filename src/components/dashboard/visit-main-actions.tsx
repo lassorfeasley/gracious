@@ -17,7 +17,7 @@ export function VisitMainActions({ visit }: { visit: VisitWithDetails }) {
   if (visit.status !== 'approved' && !canEdit) return null;
 
   async function handleCancel() {
-    if (!confirm('Cancel this stay? This frees up the dates.')) return;
+    if (!confirm('Cancel this visit? This frees up the dates.')) return;
     setLoading(true);
     const res = await fetch(`/api/visits/${visit.id}`, {
       method: 'PATCH',
@@ -26,16 +26,16 @@ export function VisitMainActions({ visit }: { visit: VisitWithDetails }) {
     });
     setLoading(false);
     if (!res.ok) {
-      toast.error('Could not cancel the stay');
+      toast.error('Could not cancel the visit');
       return;
     }
-    toast.success('Stay cancelled');
+    toast.success('Visit cancelled');
     router.refresh();
   }
 
   return (
     <section className="py-10">
-      <h2 className="text-2xl font-semibold tracking-tight">Manage this stay</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Manage this visit</h2>
       <div className="mt-6 flex flex-wrap items-center gap-3">
         {visit.status === 'approved' && (
           <Button variant="outline" asChild>
@@ -52,7 +52,7 @@ export function VisitMainActions({ visit }: { visit: VisitWithDetails }) {
             onClick={handleCancel}
             disabled={loading}
           >
-            Cancel stay
+            Cancel visit
           </Button>
         )}
       </div>

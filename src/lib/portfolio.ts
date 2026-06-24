@@ -82,7 +82,7 @@ export async function getPortfolioData(
       };
     }
 
-    // A booking can span several rooms in the same home; collapse to one band
+    // A visit can span several rooms in the same home; collapse to one band
     // for the calendar + stats.
     const visitsById = new Map<string, PortfolioCalendarVisit>();
     for (const room of propertyRooms) {

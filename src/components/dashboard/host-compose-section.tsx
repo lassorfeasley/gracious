@@ -2,11 +2,11 @@ import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import {
   HostComposePanel,
   HostComposeSplitGrid,
-} from '@/components/dashboard/stay-compose';
+} from '@/components/dashboard/visit-compose';
 import type { Room } from '@/types/database';
 
 /** Wraps page content in a two-column grid with a sticky host visit sidebar. */
-export async function HostBookingShell({
+export async function HostVisitShell({
   propertyId,
   slug,
   rooms,

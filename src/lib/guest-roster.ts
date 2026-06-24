@@ -36,7 +36,7 @@ export interface GuestRosterEntry {
   pastStaysCount: number;
 }
 
-type BookingRow = {
+type VisitRow = {
   id: string;
   status: string;
   invitation_id: string | null;
@@ -60,7 +60,7 @@ function normalizeEmail(email: string | null | undefined): string | null {
   return e && e.includes('@') ? e : null;
 }
 
-function guestNameFromBooking(b: BookingRow): string {
+function guestNameFromVisit(b: VisitRow): string {
   const user = Array.isArray(b.guest) ? b.guest[0] : b.guest;
   return (
     user?.name ??
@@ -71,12 +71,12 @@ function guestNameFromBooking(b: BookingRow): string {
   );
 }
 
-function guestEmailFromBooking(b: BookingRow): string | null {
+function guestEmailFromVisit(b: VisitRow): string | null {
   const user = Array.isArray(b.guest) ? b.guest[0] : b.guest;
   return normalizeEmail(user?.email ?? b.guest_email);
 }
 
-function toStay(b: BookingRow): GuestStay | null {
+function toVisit(b: VisitRow): GuestStay | null {
   const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
   if (!dates?.check_in || !dates?.check_out) return null;
   const roomNames =
@@ -118,7 +118,7 @@ function pickUpcoming(stays: GuestStay[], today: string): GuestStay | null {
 
 export function buildGuestRoster(
   invitations: Invitation[],
-  visits: BookingRow[],
+  visits: VisitRow[],
   today = new Date().toISOString().split('T')[0]
 ): GuestRosterEntry[] {
   const map = new Map<string, GuestRosterEntry>();
@@ -170,12 +170,12 @@ export function buildGuestRoster(
   }
 
   for (const b of visits) {
-    const email = guestEmailFromBooking(b);
+    const email = guestEmailFromVisit(b);
     const key = email
       ? guestKeyFromEmail(email)
       : guestKeyFromManualVisit(b.id);
     const entry = ensure(key, {
-      name: guestNameFromBooking(b),
+      name: guestNameFromVisit(b),
       email,
       phone: b.guest_phone,
     });
@@ -193,9 +193,9 @@ export function buildGuestRoster(
       entry.relationship = b.relationship;
     }
 
-    const stay = toStay(b);
-    if (stay && !entry.stays.some((s) => s.visitId === stay.visitId)) {
-      entry.stays.push(stay);
+    const visit = toVisit(b);
+    if (visit && !entry.stays.some((s) => s.visitId === visit.visitId)) {
+      entry.stays.push(visit);
     }
   }
 

@@ -49,7 +49,7 @@ export function resolveGuestPreviewUi(
     return {
       showSignIn: !isAuthenticated,
       showVisitRequest: isAuthenticated,
-      showManageStay: false,
+      showManageVisit: false,
       effectiveAuthenticated: isAuthenticated,
     };
   }
@@ -59,21 +59,21 @@ export function resolveGuestPreviewUi(
       return {
         showSignIn: true,
         showVisitRequest: false,
-        showManageStay: false,
+        showManageVisit: false,
         effectiveAuthenticated: false,
       };
     case 'confirmed':
       return {
         showSignIn: false,
         showVisitRequest: false,
-        showManageStay: true,
+        showManageVisit: true,
         effectiveAuthenticated: true,
       };
     default:
       return {
         showSignIn: false,
         showVisitRequest: true,
-        showManageStay: false,
+        showManageVisit: false,
         effectiveAuthenticated: true,
       };
   }

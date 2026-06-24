@@ -32,7 +32,7 @@ export async function getInvitationRoomAvailability(
 
   const admin = createAdminClient();
 
-  const { data: bookingRows } = await admin
+  const { data: visitRows } = await admin
     .from('visit_rooms')
     .select(
       `room_id,
@@ -40,7 +40,7 @@ export async function getInvitationRoomAvailability(
     )
     .in('room_id', roomIds);
 
-  for (const row of bookingRows ?? []) {
+  for (const row of visitRows ?? []) {
     const visit = Array.isArray(row.visit) ? row.visit[0] : row.visit;
     if (
       !visit ||

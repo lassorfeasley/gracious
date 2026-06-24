@@ -4,13 +4,13 @@ import { formatDateRange } from '@/lib/dates';
 const LABEL = 'text-[11px] font-semibold uppercase tracking-wide text-muted-foreground';
 
 /**
- * Shared stay summary (dates · nights, rooms, guests) used by both the guest
- * manage-stay card and the host manage-visit sidebar.
+ * Shared visit summary (dates · nights, rooms, guests) used by both the guest
+ * manage-visit card and the host manage-visit sidebar.
  *
  * `boxed` renders the fields inside a bordered, divided container to match the
  * visit sidebar's boxed data on other pages; the default is a plain list.
  */
-export function StaySummaryList({
+export function VisitSummaryList({
   checkIn,
   checkOut,
   roomNames,

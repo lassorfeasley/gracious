@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { StayTimeline, type TimelineRow } from '@/components/stay-timeline';
+import { VisitTimeline, type TimelineRow } from '@/components/visit-timeline';
 
 /*
  * Landing-page hero showcase: an auto-rotating set of homes, each with its own
  * room-by-room timeline. Hardcoded fictional data — a lookalike of the real
  * dashboard schedule (pine = confirmed, brass = pending), never a live
- * component. The timeline rendering itself is the shared `StayTimeline`
+ * component. The timeline rendering itself is the shared `VisitTimeline`
  * design-system component (also used by the host dashboard); this wrapper only
  * supplies demo data and the home-tab rotation. Rotation pauses while the
  * visitor hovers the panel and stops permanently the moment they interact with
@@ -168,7 +168,7 @@ function homeToRows(home: DemoHome): TimelineRow[] {
 function HomePanel({ home }: { home: DemoHome }) {
   return (
     <div className="animate-in fade-in duration-500">
-      <StayTimeline
+      <VisitTimeline
         rows={homeToRows(home)}
         windowStart={WINDOW_START_ISO}
         windowDays={WINDOW_DAYS_COUNT}

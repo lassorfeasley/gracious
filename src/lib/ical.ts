@@ -11,7 +11,7 @@ export const STAY_CHECK_IN_HOUR = 15;
 export const STAY_CHECK_OUT_HOUR = 11;
 
 /**
- * Calendar-agnostic description of a stay event. Single source of truth for
+ * Calendar-agnostic description of a visit event. Single source of truth for
  * the .ics file and the Google/Outlook quick-add links so every calendar
  * shows the same thing.
  */
@@ -29,7 +29,7 @@ export function buildStayEvent(visit: VisitWithDetails): StayEvent {
   const roomNames = visit.rooms.map((r) => r.name).join(', ');
 
   return {
-    title: `Stay at ${visit.property.name}`,
+    title: `Visit at ${visit.property.name}`,
     description: [
       `Property: ${visit.property.name}`,
       visit.property.address ? `Address: ${visit.property.address}` : '',
@@ -95,7 +95,7 @@ function dateTuple(date: string, hour: number): [number, number, number, number,
 }
 
 /**
- * Builds a single calendar event for a host-confirmed stay, used by the
+ * Builds a single calendar event for a host-confirmed visit, used by the
  * property feed. Mirrors `buildStayEvent` but works from the lighter shape the
  * feed query returns (no full property/room joins needed per row).
  */
@@ -120,7 +120,7 @@ function feedEventDescription(visit: FeedVisit): string {
 }
 
 /**
- * A subscribable VCALENDAR of every confirmed stay at a property. Calendar apps
+ * A subscribable VCALENDAR of every confirmed visit at a property. Calendar apps
  * (Apple/Google) poll the feed URL and keep these events in sync on their own
  * schedule. Stable per-visit UIDs let updates and cancellations reconcile
  * instead of duplicating.
@@ -131,7 +131,7 @@ export function generatePropertyFeedIcs(
 ): string {
   const calName = `${property.name} — Gracious`;
 
-  // A property with no confirmed stays still needs a valid, non-breaking feed
+  // A property with no confirmed visits still needs a valid, non-breaking feed
   // so an existing subscription doesn't error — return an empty VCALENDAR.
   if (visits.length === 0) {
     return [

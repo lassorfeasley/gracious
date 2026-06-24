@@ -21,8 +21,8 @@ interface CalendarSyncButtonProps {
 }
 
 /**
- * Subscribe-to-calendar control for a property. Unlike the per-stay
- * "Add to calendar", this hands out a live feed URL: new confirmed stays appear
+ * Subscribe-to-calendar control for a property. Unlike the per-visit
+ * "Add to calendar", this hands out a live feed URL: new confirmed visits appear
  * automatically and cancellations drop off, on the calendar app's own refresh
  * schedule. Apple opens via webcal://; Google takes the feed as a subscription.
  */
@@ -56,7 +56,7 @@ export function CalendarSyncButton({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal text-muted-foreground">
-          Keep confirmed stays in sync. New bookings appear automatically.
+          Keep confirmed visits in sync. New visits appear automatically.
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

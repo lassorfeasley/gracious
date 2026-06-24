@@ -7,7 +7,7 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 
 /**
  * Builds a one-click sign-in link for an invited guest. Clicking it verifies a
- * token_hash via /auth/confirm and drops them on the booking page already
+ * token_hash via /auth/confirm and drops them on the visit page already
  * authenticated — no password and no second email — for both new and existing
  * accounts. Falls back to the plain (unauthenticated) invite link if anything
  * goes wrong.

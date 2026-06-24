@@ -3,18 +3,18 @@
 import { useMemo } from 'react';
 import { useVisit } from '@/components/guest/visit-context';
 import {
-  StayTimeline,
+  VisitTimeline,
   type TimelineRow,
   type TimelineStay,
-} from '@/components/stay-timeline';
+} from '@/components/visit-timeline';
 
 /**
- * Host-dashboard view of the stay timeline. Reads the live visit context
+ * Host-dashboard view of the visit timeline. Reads the live visit context
  * (all property rooms + their visits and owner blocks) and feeds it into the
- * shared {@link StayTimeline}. One row per room; confirmed/pending visits and
+ * shared {@link VisitTimeline}. One row per room; confirmed/pending visits and
  * owner blocks render as bands across a scrollable date window.
  */
-export function HostStayTimeline({
+export function HostVisitTimeline({
   windowStart,
   windowDays,
   visitHrefBase,
@@ -53,14 +53,14 @@ export function HostStayTimeline({
   );
 
   return (
-    <StayTimeline
+    <VisitTimeline
       rows={rows}
       windowStart={windowStart}
       windowDays={windowDays}
       showMonths
       startAtToday
       showLegend
-      emptyLabel="No rooms yet — add a room to start scheduling stays."
+      emptyLabel="No rooms yet — add a room to start scheduling visits."
     />
   );
 }

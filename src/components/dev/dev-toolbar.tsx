@@ -48,10 +48,10 @@ const APP_VIEWS: { id: AppView; label: string }[] = [
 const GUEST_STATES: { id: GuestPreviewAs; label: string }[] = [
   { id: 'signed-out', label: 'Before sign-in' },
   { id: 'visit', label: 'Visit' },
-  { id: 'confirmed', label: 'Manage stay' },
+  { id: 'confirmed', label: 'Manage visit' },
 ];
 
-const BOOKING_STATUSES: { id: GuestPreviewVisitStatus; label: string }[] = [
+const VISIT_STATUSES: { id: GuestPreviewVisitStatus; label: string }[] = [
   { id: 'requested', label: 'Requested' },
   { id: 'approved', label: 'Approved' },
 ];
@@ -98,7 +98,7 @@ function SegmentTabs<T extends string>({
 const PERSONA_DESTINATIONS: Record<string, string> = {
   owner: '/dashboard',
   admin: '/admin',
-  guest: '/my-trips',
+  guest: '/my-visits',
 };
 
 function DevAuthControls() {
@@ -182,7 +182,7 @@ export function DevToolbar() {
       landing: LANDING_DEV_PATH,
       guest: inviteToken
         ? buildGuestDevPath(inviteToken, guestAs, guestStatus)
-        : '/my-trips',
+        : '/my-visits',
       host: buildHostDevPath(propertySlug),
       admin: ADMIN_DEV_PATH,
     }),
@@ -319,19 +319,19 @@ export function DevToolbar() {
                 getHref={(as) =>
                   inviteToken
                     ? buildGuestDevPath(inviteToken, as, guestStatus)
-                    : '/my-trips'
+                    : '/my-visits'
                 }
                 ariaLabel="Guest preview state"
                 activeClassName="bg-amber-400 text-amber-950 shadow-sm"
               />
               {guestAs === 'confirmed' && (
                 <SegmentTabs
-                  items={BOOKING_STATUSES}
+                  items={VISIT_STATUSES}
                   value={guestStatus}
                   getHref={(status) =>
                     inviteToken
                       ? buildGuestDevPath(inviteToken, 'confirmed', status)
-                      : '/my-trips'
+                      : '/my-visits'
                   }
                   ariaLabel="Visit status preview"
                   activeClassName="bg-amber-300 text-amber-950 shadow-sm"
@@ -352,7 +352,7 @@ export function DevToolbar() {
                   href={
                     inviteToken
                       ? buildGuestDevPath(inviteToken, 'visit')
-                      : '/my-trips'
+                      : '/my-visits'
                   }
                   className="font-medium text-amber-400 underline underline-offset-2"
                 >

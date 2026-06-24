@@ -1,0 +1,30 @@
+---
+description: Canonical domain vocabulary for the booking entity (visit vs stay vs booking)
+alwaysApply: true
+---
+
+# Domain nomenclature
+
+The product has exactly two persisted domain entities around a guest coming to a property:
+
+- **Invitation** — the *offer* a host extends to a guest (the `invitations` table).
+- **Visit** — the actual *booking*: a guest coming on specific dates, in specific
+  rooms, with a status lifecycle (the `visits` table, formerly `bookings`).
+
+## Use "visit" everywhere — code AND user-facing copy
+
+`visit` is the single canonical word for the booking entity, in both code and UI.
+
+- Do **not** introduce "stay" as a synonym for a visit in new code or copy. Prefer
+  "visit" ("Your visit", "Upcoming visits", "Cancel visit", "Visit confirmed").
+- Do **not** use "booking" — it's the legacy name and is being purged. Use `visit`
+  for variables, types, comments, and identifiers.
+- When you touch existing code that says "stay" or "booking" to mean a visit,
+  rename it to "visit" as you go.
+
+### The one exception: ordinary-English marketing prose
+
+On the public landing/marketing pages, plain-English "stay" (e.g. "a place to
+stay", "your stay starts here") is fine as natural copy and is **not** an entity
+reference. Don't mechanically rewrite marketing prose to "visit" if it reads as
+ordinary English rather than naming the booking record.

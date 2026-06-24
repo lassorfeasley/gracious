@@ -16,10 +16,10 @@ import type { RoomAvailability } from '@/lib/guest-calendar';
 import { VisitProvider, useVisit } from '@/components/guest/visit-context';
 import { HouseCalendar } from '@/components/guest/house-calendar';
 import {
-  HostStaySidebar,
+  HostVisitSidebar,
   type HostActionType,
   type HostInviteType,
-} from '@/components/dashboard/host-stay-sidebar';
+} from '@/components/dashboard/host-visit-sidebar';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { Button } from '@/components/ui/button';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
@@ -255,12 +255,12 @@ function HostComposeForm({
         return;
       }
       toast.error(
-        typeof data.error === 'string' ? data.error : 'Failed to add stay'
+        typeof data.error === 'string' ? data.error : 'Failed to add visit'
       );
       return;
     }
 
-    toast.success('Stay added to calendar');
+    toast.success('Visit added to calendar');
     router.push(`/dashboard/${slug}/overview`);
     router.refresh();
   }
@@ -269,12 +269,12 @@ function HostComposeForm({
     actionType === 'manual'
       ? 'Solid dates are fully booked. Select check-in and check-out.'
       : inviteType === 'prix_fixe'
-        ? 'Select the exact stay dates you are offering.'
+        ? 'Select the exact visit dates you are offering.'
         : 'Select a range, then add it as an offered window below.';
 
   const sidebar = (
     <>
-      <HostStaySidebar
+      <HostVisitSidebar
         propertyId={propertyId}
         actionType={actionType}
         onActionTypeChange={setActionType}
@@ -478,7 +478,7 @@ export function HostComposePanel({
       <div className="mx-auto max-w-lg py-16 text-center">
         <h1 className="text-2xl font-semibold">Add a room first</h1>
         <p className="mt-2 text-muted-foreground">
-          You need at least one room before inviting guests or adding stays.
+          You need at least one room before inviting guests or adding visits.
         </p>
         <Button className="mt-6" asChild>
           <Link href={`/dashboard/${slug}/overview#rooms`}>Go to rooms</Link>
@@ -560,7 +560,7 @@ export function HostComposeCalendarSection({
 }
 
 /** @deprecated Use HostComposePanel — kept for compose page */
-export function StayCompose({
+export function VisitCompose({
   propertyId,
   slug,
   rooms,

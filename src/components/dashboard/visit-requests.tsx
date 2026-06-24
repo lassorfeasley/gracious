@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { formatDateRange } from '@/lib/dates';
 import { Badge } from '@/components/ui/badge';
 import { AddToCalendarButton } from '@/components/add-to-calendar-button';
-import { CancelHostStayButton } from '@/components/dashboard/cancel-host-stay-button';
+import { CancelHostVisitButton } from '@/components/dashboard/cancel-host-visit-button';
 import { UpgradeDialog } from '@/components/dashboard/upgrade-dialog';
 import { isLimitReachedResponse } from '@/lib/billing-client';
 
@@ -198,7 +198,7 @@ export function VisitRequests({
                         </p>
                         {!visit.invitation_id && (
                           <Badge variant="secondary" className="text-xs">
-                            Manual stay
+                            Manual visit
                           </Badge>
                         )}
                       </div>
@@ -218,7 +218,7 @@ export function VisitRequests({
                         )}
                       {visit.status === 'approved' &&
                         !visit.invitation_id && (
-                          <CancelHostStayButton visitId={visit.id} />
+                          <CancelHostVisitButton visitId={visit.id} />
                         )}
                       <Button size="sm" variant="ghost" asChild>
                         <Link href={`/dashboard/${slug}/visits/${visit.id}`}>

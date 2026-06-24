@@ -154,13 +154,13 @@ export function SettingsForm({
         <div className="mt-6 space-y-8">
           <PrefGroup
             title="Guest emails"
-            description="For stays you're a guest on — trip reminders, checkout details, and post-stay notes. Essential emails like visit confirmations are always sent."
+            description="For visits you're a guest on — visit reminders, checkout details, and post-visit notes. Essential emails like visit confirmations are always sent."
           >
             <PrefToggle
               prefs={prefs}
               setPrefs={setPrefs}
               prefKey="guest_reminders"
-              label="Stay reminders & follow-ups"
+              label="Visit reminders & follow-ups"
             />
           </PrefGroup>
 

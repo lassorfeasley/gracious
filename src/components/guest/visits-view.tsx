@@ -49,7 +49,7 @@ function isUpcomingActive(visit: TripVisit, today: string) {
   return dates.check_out >= today;
 }
 
-export function TripsView({ visits }: { visits: TripVisit[] }) {
+export function VisitsView({ visits }: { visits: TripVisit[] }) {
   const today = format(startOfDay(new Date()), 'yyyy-MM-dd');
 
   const upcomingVisits = useMemo(
@@ -65,7 +65,7 @@ export function TripsView({ visits }: { visits: TripVisit[] }) {
           if (!dates) return null;
           return {
             id: visit.id,
-            guestName: visit.property?.name ?? 'Stay',
+            guestName: visit.property?.name ?? 'Visit',
             checkIn: dates.check_in,
             checkOut: dates.check_out,
             pending: visit.status === 'requested',
@@ -79,7 +79,7 @@ export function TripsView({ visits }: { visits: TripVisit[] }) {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <p className="text-muted-foreground">No trips yet.</p>
+          <p className="text-muted-foreground">No visits yet.</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Open an invitation link from your host to get started.
           </p>
@@ -162,9 +162,9 @@ export function TripsView({ visits }: { visits: TripVisit[] }) {
         {calendarVisits.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No upcoming trips.</p>
+              <p className="text-muted-foreground">No upcoming visits.</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Approved and pending stays will appear on your calendar.
+                Approved and pending visits will appear on your calendar.
               </p>
             </CardContent>
           </Card>

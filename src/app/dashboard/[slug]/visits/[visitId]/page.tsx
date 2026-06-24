@@ -110,7 +110,7 @@ export default async function ManageVisitPage({
         )}
         <div className="relative p-8">
           <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            {guestName}&apos;s Stay
+            {guestName}&apos;s Visit
           </h1>
           <p className="mt-2 text-base text-white/80">{heroSubtitle}</p>
         </div>

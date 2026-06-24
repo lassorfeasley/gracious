@@ -840,7 +840,7 @@ function InviteCard({
               <AlertDialogTitle>Cancel this invitation?</AlertDialogTitle>
               <AlertDialogDescription>
                 {firstName}&apos;s invite link will stop working and they
-                won&apos;t be able to request a stay. This can&apos;t be undone.
+                won&apos;t be able to request a visit. This can&apos;t be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

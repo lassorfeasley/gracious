@@ -9,7 +9,7 @@ import {
   isInvitationActive,
 } from '@/lib/invitations';
 import { getCoGuestsForInvitation } from '@/lib/coguests';
-import { getGuestStayForInvitation } from '@/lib/visits';
+import { getGuestVisitForInvitation } from '@/lib/visits';
 import { canManageProperty, getAuthUser } from '@/lib/auth';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { formatDateRange, formatDate } from '@/lib/dates';
@@ -94,9 +94,9 @@ export default async function InvitePage({
     : false;
   const justCreated = isHost && invited === '1';
 
-  const existingStay =
+  const existingVisit =
     isAuthenticated && authUser
-      ? await getGuestStayForInvitation(invitation.id, authUser.id)
+      ? await getGuestVisitForInvitation(invitation.id, authUser.id)
       : null;
 
   const coguests = await getCoGuestsForInvitation(
@@ -128,18 +128,24 @@ export default async function InvitePage({
     max_occupancy: r.max_occupancy,
   }));
 
-  const showSidebar = active || previewMode || !!existingStay;
+  const showSidebar = active || previewMode || !!existingVisit;
   const previewUi = resolveGuestPreviewUi(
     previewMode,
     guestPreviewAs,
     isAuthenticated
   );
-  const isManageStay =
-    (!previewMode && !!existingStay) || previewUi.showManageStay;
-  const dock = isManageStay
+  const isManageVisit =
+    (!previewMode && !!existingVisit) || previewUi.showManageVisit;
+  // The accepted visit's status, so the page chrome can speak in "visit" terms.
+  const visitStatus: 'requested' | 'approved' | null = existingVisit
+    ? existingVisit.status
+    : previewUi.showManageVisit
+      ? guestPreviewVisitStatus
+      : null;
+  const dock = isManageVisit
     ? {
-        ctaLabel: 'View stay',
-        idleTitle: 'Your stay',
+        ctaLabel: 'View visit',
+        idleTitle: 'Your visit',
         idleSubtitle: property.name,
         trackDates: false,
       }
@@ -154,7 +160,7 @@ export default async function InvitePage({
           ctaLabel: guestVisitCtaLabel(invitation),
           idleTitle: 'Add your dates',
           idleSubtitle: isPrixFixe
-            ? 'Fixed-date stay'
+            ? 'Fixed-date visit'
             : 'Choose when you’ll arrive',
           trackDates: true,
         };
@@ -163,7 +169,7 @@ export default async function InvitePage({
       invitation={invitation}
       propertyName={property.name}
       isAuthenticated={isAuthenticated}
-      existingStay={existingStay}
+      existingVisit={existingVisit}
       previewMode={previewMode}
       guestPreviewAs={guestPreviewAs}
       guestPreviewVisitStatus={guestPreviewVisitStatus}
@@ -211,11 +217,28 @@ export default async function InvitePage({
           </Link>
         )}
 
-        {/* Invitation headline */}
+        {/* Headline — flips from invitation to visit once the guest has accepted */}
         <h1 className="mb-8 max-w-4xl break-words text-3xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
-          {hostName} has sent you {inviteArticle} {inviteTypeWord} invitation to
-          stay at{' '}
-          <span className="text-muted-foreground">{property.name}</span>.
+          {isManageVisit ? (
+            visitStatus === 'approved' ? (
+              <>
+                You&apos;re visiting{' '}
+                <span className="text-muted-foreground">{property.name}</span>.
+              </>
+            ) : (
+              <>
+                Your visit to{' '}
+                <span className="text-muted-foreground">{property.name}</span>{' '}
+                is pending confirmation.
+              </>
+            )
+          ) : (
+            <>
+              {hostName} has sent you {inviteArticle} {inviteTypeWord} invitation
+              to stay at{' '}
+              <span className="text-muted-foreground">{property.name}</span>.
+            </>
+          )}
         </h1>
 
         {/* Compact address + directions trigger */}
@@ -269,25 +292,51 @@ export default async function InvitePage({
                 className="mb-6"
               />
 
-              {/* Invitation type */}
-              <div className="flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex min-w-0 items-start gap-4 sm:items-center">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <TypeIcon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium">{typeLabel}</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {typeDescription}
-                    </p>
+              {/* Status summary once accepted, otherwise the invitation type */}
+              {isManageVisit ? (
+                <div className="flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex min-w-0 items-start gap-4 sm:items-center">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+                      {visitStatus === 'approved' ? (
+                        <CalendarCheck className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <CalendarRange className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {visitStatus === 'approved'
+                          ? 'Visit confirmed'
+                          : 'Awaiting confirmation'}
+                      </p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {visitStatus === 'approved'
+                          ? 'Your dates are booked — open your visit details to add it to your calendar.'
+                          : 'Your host is reviewing your requested dates. We’ll email you as soon as it’s confirmed.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                {invitation.expires_at && (
-                  <Badge variant="outline" className="w-fit shrink-0 sm:ml-auto">
-                    Expires {formatDate(invitation.expires_at)}
-                  </Badge>
-                )}
-              </div>
+              ) : (
+                <div className="flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex min-w-0 items-start gap-4 sm:items-center">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <TypeIcon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium">{typeLabel}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {typeDescription}
+                      </p>
+                    </div>
+                  </div>
+                  {invitation.expires_at && (
+                    <Badge variant="outline" className="w-fit shrink-0 sm:ml-auto">
+                      Expires {formatDate(invitation.expires_at)}
+                    </Badge>
+                  )}
+                </div>
+              )}
 
               {!active && (
                 <div className="mt-6 rounded-2xl border border-destructive/50 bg-destructive/10 p-5 text-center text-base">
@@ -311,7 +360,7 @@ export default async function InvitePage({
               {/* Available dates */}
               <section className="py-10 first:pt-0">
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  Available dates
+                  {isManageVisit ? 'Your dates' : 'Available dates'}
                 </h2>
                 {invitation.type !== 'standing' &&
                   (invitation.windows.length > 0 ? (
@@ -331,7 +380,9 @@ export default async function InvitePage({
                     </p>
                   ))}
 
-                {(active || previewMode) && showVisitRequestCalendar && (
+                {(active || previewMode) &&
+                  showVisitRequestCalendar &&
+                  !isManageVisit && (
                   <div className="mt-8">
                     <HouseCalendar
                       allowedRanges={allowedRanges}
@@ -345,7 +396,7 @@ export default async function InvitePage({
               {/* Rooms available to you */}
               <section className="py-10">
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  Rooms available to you
+                  {isManageVisit ? 'Your rooms' : 'Rooms available to you'}
                 </h2>
                 <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-2">
                   {invitation.rooms.map((room) => (
@@ -370,7 +421,7 @@ export default async function InvitePage({
 
               <PropertySections
                 property={property}
-                showWifi={existingStay?.status === 'approved'}
+                showWifi={existingVisit?.status === 'approved'}
               />
 
               {/* Who's staying */}

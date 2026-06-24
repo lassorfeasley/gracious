@@ -118,16 +118,16 @@ const SAMPLE = {
     'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=928&q=70',
 };
 
-const SAMPLE_STAY_EVENT = {
-  title: `Stay at ${SAMPLE.propertyName}`,
+const SAMPLE_VISIT_EVENT = {
+  title: `Visit at ${SAMPLE.propertyName}`,
   description: `Property: ${SAMPLE.propertyName}\nRooms: ${SAMPLE.rooms}`,
   location: SAMPLE.address,
   checkIn: '2026-07-12',
   checkOut: '2026-07-16',
 };
 
-const SAMPLE_GOOGLE_CAL_URL = googleCalendarUrl(SAMPLE_STAY_EVENT);
-const SAMPLE_OUTLOOK_CAL_URL = outlookCalendarUrl(SAMPLE_STAY_EVENT);
+const SAMPLE_GOOGLE_CAL_URL = googleCalendarUrl(SAMPLE_VISIT_EVENT);
+const SAMPLE_OUTLOOK_CAL_URL = outlookCalendarUrl(SAMPLE_VISIT_EVENT);
 
 export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
   {
@@ -210,7 +210,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Invited guest',
     description:
-      'Invites a guest to view a property and request a stay, with an optional personal message and expiry date. Sent as "{host} via Gracious" so the inbox row leads with the host.',
+      'Invites a guest to view a property and request a visit, with an optional personal message and expiry date. Sent as "{host} via Gracious" so the inbox row leads with the host.',
     trigger: 'A host creates and sends an invitation.',
     timing: 'Immediately',
     replyTo: 'The host\u2019s email address — guests can reply directly',
@@ -349,7 +349,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
   },
   {
     id: 'stay-requested',
-    name: 'Stay request',
+    name: 'Visit request',
     channel: 'email',
     category: 'Visit requests',
     recipients: ['host'],

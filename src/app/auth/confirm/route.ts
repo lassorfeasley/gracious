@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
-  const nextParam = searchParams.get('next') ?? '/my-trips';
+  const nextParam = searchParams.get('next') ?? '/my-visits';
   const next = nextParam.startsWith('/') ? nextParam : `/${nextParam}`;
 
   if (tokenHash && type) {
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   }
 
   // If the link is stale/invalid but points at an invitation, send the guest to
-  // the booking page where they can request a fresh sign-in link, rather than
+  // the visit page where they can request a fresh sign-in link, rather than
   // the host-oriented login form.
   const fallback = next.startsWith('/invite/') ? next : '/login?error=auth';
   return NextResponse.redirect(`${origin}${fallback}`);

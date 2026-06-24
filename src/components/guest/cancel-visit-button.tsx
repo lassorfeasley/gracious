@@ -45,7 +45,7 @@ export function CancelVisitButton({ visitId }: { visitId: string }) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Cancel this stay?</AlertDialogTitle>
+          <AlertDialogTitle>Cancel this visit?</AlertDialogTitle>
           <AlertDialogDescription>
             The host will be notified. This cannot be undone.
           </AlertDialogDescription>
@@ -53,7 +53,7 @@ export function CancelVisitButton({ visitId }: { visitId: string }) {
         <AlertDialogFooter>
           <AlertDialogCancel>Keep visit</AlertDialogCancel>
           <AlertDialogAction onClick={cancel} disabled={loading}>
-            {loading ? 'Cancelling...' : 'Cancel stay'}
+            {loading ? 'Cancelling...' : 'Cancel visit'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

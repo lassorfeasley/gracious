@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
 
     await sendEmail({
       to: invitation.guest_email,
-      subject: `Your sign-in link for ${property?.name ?? 'your stay'}`,
+      subject: `Your sign-in link for ${property?.name ?? 'your visit'}`,
       react: SignInLinkEmail({
-        propertyName: property?.name ?? 'your stay',
+        propertyName: property?.name ?? 'your visit',
         signInUrl,
       }),
     });
