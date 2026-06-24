@@ -241,7 +241,12 @@ export async function notifyInviteStalled(
   ownerId: string,
   ownerEmail: string,
   ownerName: string,
-  invitations: { guestName: string; propertyName: string; inviteUrl: string }[]
+  invitations: {
+    guestName: string;
+    guestEmail: string;
+    propertyName: string;
+    inviteUrl: string;
+  }[]
 ) {
   await enqueueEmail({
     to: ownerEmail,

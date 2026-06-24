@@ -92,6 +92,7 @@ export interface AutomatedMessage {
 
 const SAMPLE = {
   guestName: 'Jordan Rivera',
+  guestEmail: 'jordan.rivera@example.com',
   ownerName: 'Sam Patel',
   propertyName: 'The Lake House',
   dates: 'Jul 12, 2026 – Jul 16, 2026',
@@ -308,7 +309,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Property owner',
     description:
-      'A digest telling a host which invited guests still haven\u2019t responded after the reminder drip, with the public link for each so they can share it directly (e.g. by text).',
+      'A digest telling a host which invited guests still haven\u2019t responded after the reminder drip. Each guest gets a person card with a big \u201cForward invite\u201d button that opens a pre-drafted email (mailto) to that guest, so the host can re-send it in one tap.',
     trigger:
       'A pending invitation is still unanswered 4 days after it was sent.',
     timing: 'Scheduled — once, the day after the final guest reminder',
@@ -329,11 +330,13 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
             invitations={[
               {
                 guestName: SAMPLE.guestName,
+                guestEmail: SAMPLE.guestEmail,
                 propertyName: SAMPLE.propertyName,
                 inviteUrl: SAMPLE.inviteUrl,
               },
               {
                 guestName: 'Alex Chen',
+                guestEmail: 'alex.chen@example.com',
                 propertyName: SAMPLE.propertyName,
                 inviteUrl: 'https://gracious.host/invite/another-token',
               },

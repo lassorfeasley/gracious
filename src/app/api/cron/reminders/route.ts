@@ -159,7 +159,12 @@ export async function GET(request: NextRequest) {
       id: string;
       email: string;
       name: string;
-      invitations: { guestName: string; propertyName: string; inviteUrl: string }[];
+      invitations: {
+        guestName: string;
+        guestEmail: string;
+        propertyName: string;
+        inviteUrl: string;
+      }[];
       invitationIds: string[];
     };
     const byOwner = new Map<string, StalledOwner>();
@@ -206,6 +211,7 @@ export async function GET(request: NextRequest) {
       const bucket = byOwner.get(owner.id)!;
       bucket.invitations.push({
         guestName: inv.guest_name ?? inv.guest_email,
+        guestEmail: inv.guest_email,
         propertyName: property!.name,
         inviteUrl: inviteUrl(inv.token),
       });

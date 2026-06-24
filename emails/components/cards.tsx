@@ -1,4 +1,4 @@
-import { Column, Hr, Row, Section, Text } from '@react-email/components';
+import { Column, Hr, Link, Row, Section, Text } from '@react-email/components';
 import { format, parseISO } from 'date-fns';
 import * as React from 'react';
 
@@ -94,6 +94,89 @@ export function QuoteCard({
     <Section style={quote}>
       <Text style={quoteText}>&ldquo;{children}&rdquo;</Text>
       {attribution && <Text style={quoteAttribution}>— {attribution}</Text>}
+    </Section>
+  );
+}
+
+/*
+ * Email-safe twin of the app's <PersonCard> / <PersonAvatar>. We can't reuse
+ * those (Tailwind + app components don't render in Gmail/Outlook), so this
+ * mirrors their look with inline styles and an initials avatar. The big action
+ * is a single full-width button — typically a `mailto:` that drafts a forward.
+ */
+
+const AVATAR_GRADIENTS: [string, string][] = [
+  ['#FDA4AF', '#FB7185'],
+  ['#FCD34D', '#F59E0B'],
+  ['#86EFAC', '#22C55E'],
+  ['#7DD3FC', '#0EA5E9'],
+  ['#C4B5FD', '#8B5CF6'],
+  ['#F9A8D4', '#EC4899'],
+  ['#5EEAD4', '#14B8A6'],
+  ['#FDBA74', '#F97316'],
+  ['#A5B4FC', '#6366F1'],
+  ['#D9F99D', '#84CC16'],
+];
+
+function hashSeed(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+export function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+interface PersonCardProps {
+  name: string;
+  /** A short status / relationship line — "Hasn't opened their invite". */
+  statusLine: string;
+  /** Shown under the status line; doubles as the avatar color seed. */
+  email?: string | null;
+  /** Big primary action (usually a mailto: that drafts a forward). */
+  actionHref: string;
+  actionLabel: string;
+}
+
+/** A person + a single big call-to-action, styled like the app's PersonCard. */
+export function PersonCard({
+  name,
+  statusLine,
+  email,
+  actionHref,
+  actionLabel,
+}: PersonCardProps) {
+  const [from, to] = AVATAR_GRADIENTS[hashSeed((email || name).toLowerCase()) % AVATAR_GRADIENTS.length];
+  return (
+    <Section style={personCard}>
+      <Row>
+        <Column style={avatarCol}>
+          <div
+            style={{
+              ...avatar,
+              backgroundColor: from,
+              backgroundImage: `linear-gradient(135deg, ${from}, ${to})`,
+            }}
+          >
+            {initialsFromName(name)}
+          </div>
+        </Column>
+        <Column style={{ verticalAlign: 'middle' }}>
+          <Text style={personName}>{name}</Text>
+          <Text style={personStatus}>{statusLine}</Text>
+          {email ? <Text style={personEmail}>{email}</Text> : null}
+        </Column>
+      </Row>
+      <Link href={actionHref} style={bigButton}>
+        {actionLabel}
+      </Link>
     </Section>
   );
 }
@@ -208,4 +291,65 @@ const sectionTitle = {
   fontWeight: '600' as const,
   color: '#221e19',
   margin: '0 0 4px',
+};
+
+const personCard = {
+  border: BORDER,
+  borderRadius: '12px',
+  padding: '18px 20px',
+  margin: '16px 0',
+  borderCollapse: 'separate' as const,
+  width: '100%',
+};
+
+const avatarCol = {
+  width: '60px',
+  verticalAlign: 'middle' as const,
+};
+
+const avatar = {
+  width: '48px',
+  height: '48px',
+  borderRadius: '24px',
+  color: '#ffffff',
+  fontSize: '18px',
+  fontWeight: '600' as const,
+  textAlign: 'center' as const,
+  // lineHeight == height vertically centers the initials in the circle.
+  lineHeight: '48px',
+};
+
+const personName = {
+  fontSize: '16px',
+  fontWeight: '600' as const,
+  color: '#221e19',
+  margin: '0',
+  lineHeight: '22px',
+};
+
+const personStatus = {
+  fontSize: '14px',
+  color: '#48433c',
+  margin: '2px 0 0',
+  lineHeight: '20px',
+};
+
+const personEmail = {
+  fontSize: '13px',
+  color: '#8a8273',
+  margin: '2px 0 0',
+  lineHeight: '20px',
+};
+
+const bigButton = {
+  backgroundColor: '#1f3d33',
+  color: '#f7f4ed',
+  padding: '14px 24px',
+  borderRadius: '8px',
+  textDecoration: 'none',
+  display: 'block',
+  textAlign: 'center' as const,
+  fontWeight: '600' as const,
+  fontSize: '15px',
+  margin: '16px 0 0',
 };
