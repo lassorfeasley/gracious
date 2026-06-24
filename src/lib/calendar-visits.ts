@@ -1,4 +1,4 @@
-type BookingCalendarRow = {
+type VisitCalendarRow = {
   id: string;
   status: string;
   guest_name: string | null;
@@ -11,7 +11,7 @@ type BookingCalendarRow = {
 };
 
 export function mapPropertyVisitsToCalendar(
-  visits: BookingCalendarRow[],
+  visits: VisitCalendarRow[],
   options?: { includeRequested?: boolean }
 ) {
   const includeRequested = options?.includeRequested ?? false;

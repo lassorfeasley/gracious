@@ -5,7 +5,7 @@ import { invitationSchema } from '@/lib/validations';
 import {
   notifyInvitationSent,
   notifyVisitApproved,
-  notifyStayConfirmed,
+  notifyVisitConfirmed,
 } from '@/lib/email/notifications';
 import { checkRoomConflicts } from '@/lib/visits';
 import {
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (preApproved && window) {
-      return bookPreApprovedStay({
+      return bookPreApprovedVisit({
         admin,
         invitationId: invitation.id,
         propertyId: property_id,
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-interface PreApprovedStayArgs {
+interface PreApprovedVisitArgs {
   admin: ReturnType<typeof createAdminClient>;
   invitationId: string;
   propertyId: string;
@@ -177,7 +177,7 @@ interface PreApprovedStayArgs {
  * coordinated with. The invitation row already exists (and is "accepted"); on
  * failure we revoke it so it doesn't linger as a dead accepted invite.
  */
-async function bookPreApprovedStay(args: PreApprovedStayArgs) {
+async function bookPreApprovedVisit(args: PreApprovedVisitArgs) {
   const {
     admin,
     invitationId,
@@ -281,7 +281,7 @@ async function bookPreApprovedStay(args: PreApprovedStayArgs) {
   );
 
   notifyVisitApproved(visit.id).catch(console.error);
-  notifyStayConfirmed(visit.id).catch(console.error);
+  notifyVisitConfirmed(visit.id).catch(console.error);
 
   return NextResponse.json({ invitation_id: invitationId, visit, preApproved: true });
 }

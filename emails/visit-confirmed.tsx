@@ -1,6 +1,6 @@
 import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
-import { FactsCard, QuoteCard, StayDatesCard } from './components/cards';
+import { FactsCard, QuoteCard, VisitDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -16,7 +16,7 @@ interface Props {
   unsubscribeUrl?: string;
 }
 
-export default function StayConfirmedEmail({
+export default function VisitConfirmedEmail({
   guestName,
   propertyName,
   checkInDate,
@@ -39,7 +39,7 @@ export default function StayConfirmedEmail({
         approval, so the visit is confirmed and on your calendar.
       </Text>
 
-      <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
+      <VisitDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
 
       <FactsCard
         facts={[

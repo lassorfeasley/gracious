@@ -64,9 +64,9 @@ export interface CategoryMeta {
 
 export const CATEGORY_META: Record<UnsubscribeCategory, CategoryMeta> = {
   guest_reminders: {
-    label: 'Stay reminders',
+    label: 'Visit reminders',
     description:
-      "Trip reminders, checkout details, and post-stay notes for stays you're a guest on.",
+      "Visit reminders, checkout details, and post-visit notes for visits you're a guest on.",
     audience: 'guest',
   },
   host_activity: {

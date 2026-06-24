@@ -45,7 +45,7 @@ const STEP_TITLES: Record<StepKey, string> = {
   review: 'Review and confirm',
 };
 
-export function ManualStaySurvey({
+export function ManualVisitSurvey({
   propertyId,
   returnPath,
   onClose,
@@ -442,7 +442,7 @@ export function HostVisitDialog({
   }));
 
   const survey = (
-    <ManualStaySurvey
+    <ManualVisitSurvey
       propertyId={propertyId}
       returnPath={returnPath}
       onClose={() => setOpen(false)}

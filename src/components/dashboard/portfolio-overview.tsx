@@ -24,7 +24,7 @@ export function PortfolioOverview({
             {firstName ? `Welcome back, ${firstName}` : 'Your homes'}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Every stay across your homes, on one schedule.
+            Every visit across your homes, on one schedule.
           </p>
         </div>
         <Button asChild>
@@ -75,7 +75,7 @@ export function PortfolioOverview({
 }
 
 function HouseCard({ house }: { house: PortfolioHouse }) {
-  const { property, roomCount, upcomingCount, nextStay } = house;
+  const { property, roomCount, upcomingCount, nextVisit } = house;
   const meta = `${roomCount} ${roomCount === 1 ? 'room' : 'rooms'}`;
 
   return (
@@ -117,12 +117,12 @@ function HouseCard({ house }: { house: PortfolioHouse }) {
       </div>
 
       <p className="mt-1 text-sm text-muted-foreground">
-        {nextStay
-          ? `${meta} · Next: ${nextStay.guestName}, ${formatDateRange(
-              nextStay.checkIn,
-              nextStay.checkOut
+        {nextVisit
+          ? `${meta} · Next: ${nextVisit.guestName}, ${formatDateRange(
+              nextVisit.checkIn,
+              nextVisit.checkOut
             )}`
-          : `${meta} · No upcoming stays`}
+          : `${meta} · No upcoming visits`}
       </p>
     </div>
   );

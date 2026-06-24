@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, canManageProperty } from '@/lib/auth';
 import { getInvitationByToken } from '@/lib/invitations';
 import {
-  buildInvitationStayEvent,
+  buildInvitationVisitEvent,
   generateInvitationIcs,
 } from '@/lib/ical';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
@@ -43,7 +43,7 @@ export async function GET(
 
   const provider = request.nextUrl.searchParams.get('provider');
   if (provider === 'google' || provider === 'outlook') {
-    const event = buildInvitationStayEvent(invitation);
+    const event = buildInvitationVisitEvent(invitation);
     if (!event) {
       return NextResponse.json({ error: 'No dates' }, { status: 400 });
     }

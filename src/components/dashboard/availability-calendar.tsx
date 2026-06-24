@@ -24,7 +24,7 @@ interface CalendarVisit {
   guestName: string;
   checkIn: string;
   checkOut: string;
-  /** Pending approval — shown differently from confirmed stays. */
+  /** Pending approval — shown differently from confirmed visits. */
   pending?: boolean;
 }
 
@@ -44,7 +44,7 @@ interface CalendarRoom {
   name: string;
 }
 
-/** One room that is taken on a given day (booking or owner block). */
+/** One room that is taken on a given day (visit or owner block). */
 interface TakenRoom {
   roomName: string;
   guestName?: string;
@@ -94,7 +94,7 @@ const INNER =
   'flex h-full w-full items-center justify-center rounded-full text-sm transition-colors';
 
 /**
- * Stay-band rendering (matches the landing-page calendar): days within a stay
+ * Visit-band rendering (matches the landing-page calendar): days within a visit
  * are drawn as a continuous full-width tint, with rounded caps on the first
  * and last day of the run. Status picks the tint — pine for confirmed, brass
  * for pending, muted for owner blocks.
@@ -130,7 +130,7 @@ function DayCell({
   inset = 'p-1.5',
 }: {
   children: React.ReactNode;
-  /** Inner padding. Circle days use all-sides padding; stay bands use vertical
+  /** Inner padding. Circle days use all-sides padding; visit bands use vertical
    * only so the tint can run edge-to-edge between days. */
   inset?: string;
 }) {
@@ -277,7 +277,7 @@ function MonthGrid({
    * Band state for any day — also evaluated for the day's neighbors to decide
    * where a run starts/ends (rounded caps). Mirrors the display semantics:
    * selectable room-mode calendars band only fully-booked days; everything
-   * else bands from the flat booking/block lists.
+   * else bands from the flat visit/block lists.
    */
   function bandStateForDay(day: Date): DayBandState | null {
     // Pending takes visual priority everywhere: a pending request needs the
@@ -317,7 +317,7 @@ function MonthGrid({
         ))}
         {days.map((day) => {
           // Per-room availability when the full room set is supplied; otherwise
-          // fall back to the flat booking/block lists.
+          // fall back to the flat visit/block lists.
           const taken: TakenRoom[] =
             roomMode && rooms && roomAvailability
               ? takenRoomsForDay(day, rooms, roomAvailability)
@@ -342,12 +342,12 @@ function MonthGrid({
             : booked.some((b) => b.pending);
           const unavailable = fullyBooked;
 
-          const representativeBookingId = roomMode
+          const representativeVisitId = roomMode
             ? taken.find((t) => t.visitId)?.visitId
             : booked[0]?.id;
-          const bookingHref =
-            visitHrefBase && representativeBookingId
-              ? `${visitHrefBase}/${representativeBookingId}`
+          const visitHref =
+            visitHrefBase && representativeVisitId
+              ? `${visitHrefBase}/${representativeVisitId}`
               : undefined;
 
           // Tooltip: list of taken rooms (room mode) or guest names (legacy).
@@ -403,7 +403,7 @@ function MonthGrid({
 
             if (isPast) {
               // Past days aren't actionable — render like an empty day, but
-              // keep a faint fill (and hover) to show a stay was there.
+              // keep a faint fill (and hover) to show a visit was there.
               return (
                 <DayCell key={day.toISOString()}>
                   <DayTooltip label={anyTaken ? title : undefined}>
@@ -490,14 +490,14 @@ function MonthGrid({
               );
             }
 
-            if (bookingHref) {
-              // Fully booked, host context — stay band that opens the booking.
+            if (visitHref) {
+              // Fully booked, host context — visit band that opens the visit.
               const state = bandState ?? 'confirmed';
               return (
                 <DayCell key={day.toISOString()} inset="py-1.5">
                   <DayTooltip label={title}>
                     <Link
-                      href={bookingHref}
+                      href={visitHref}
                       className={cn(
                         BAND,
                         BAND_STATE_CLASS[state],
@@ -531,14 +531,14 @@ function MonthGrid({
             );
           }
 
-          // Read-only stay band (landing-page calendar format).
+          // Read-only visit band (landing-page calendar format).
           if (bandState) {
             return (
               <DayCell key={day.toISOString()} inset="py-1.5">
                 <DayTooltip label={title}>
-                  {bookingHref ? (
+                  {visitHref ? (
                     <Link
-                      href={bookingHref}
+                      href={visitHref}
                       className={cn(
                         BAND,
                         BAND_STATE_CLASS[bandState],
@@ -673,14 +673,14 @@ export function AvailabilityCalendar({
   // the invited dates are highlighted instead of being selectable.
   const restrictToAllowed = !selectable && allowedRanges.length > 0;
 
-  /** A single room is free for the whole stay [start, end) (nights only). */
+  /** A single room is free for the whole visit [start, end) (nights only). */
   function roomFreeForRange(roomId: string, start: string, end: string): boolean {
     const avail = roomAvailability?.[roomId];
     if (!avail) return true;
-    const blockedByBooking = avail.visits.some((b) =>
+    const blockedByVisit = avail.visits.some((b) =>
       datesOverlap(start, end, b.checkIn, b.checkOut)
     );
-    if (blockedByBooking) return false;
+    if (blockedByVisit) return false;
     return !avail.blocks.some((bl) =>
       datesOverlap(start, end, bl.start_date, bl.end_date)
     );
@@ -876,7 +876,7 @@ export function AvailabilityCalendar({
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/20 text-[10px] font-medium text-primary">
                 1
               </span>
-              Confirmed stay
+              Confirmed visit
             </span>
           )}
           {visits.some((b) => b.pending) && (

@@ -14,7 +14,7 @@ interface Props {
   hostOnboardingUrl?: string;
 }
 
-export default function PostStayThankYouEmail({
+export default function PostVisitThankYouEmail({
   guestName,
   propertyName,
   hostName,
@@ -25,8 +25,8 @@ export default function PostStayThankYouEmail({
 }: Props) {
   return (
     <EmailLayout
-      preview={`Thanks for staying at ${propertyName}`}
-      heading="Thanks for staying with us"
+      preview={`Thanks for visiting ${propertyName}`}
+      heading="Thanks for visiting"
       unsubscribeUrl={unsubscribeUrl}
       footerAside={
         <HostInviteFooter
@@ -37,7 +37,7 @@ export default function PostStayThankYouEmail({
     >
       <Text>Hi {guestName},</Text>
       <Text>
-        Thank you for staying at <strong>{propertyName}</strong>. We hope you
+        Thank you for visiting <strong>{propertyName}</strong>. We hope you
         had a wonderful time and made some great memories.
       </Text>
       <Text>

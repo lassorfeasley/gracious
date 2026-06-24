@@ -9,7 +9,7 @@ export function PricingCards({ className }: { className?: string }) {
         <div className="flex flex-col items-center gap-8 text-center lg:flex-row lg:items-stretch lg:gap-10 lg:text-left">
           <div className="flex-1 lg:flex lg:flex-col lg:justify-center">
             <h3 className="font-display text-2xl font-semibold tracking-tight">
-              Your first two stays are on the house
+              Your first two visits are on the house
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               Get to know gracious by setting up your account and sending your

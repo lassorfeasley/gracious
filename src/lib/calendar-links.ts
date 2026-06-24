@@ -1,7 +1,7 @@
 import {
-  STAY_CHECK_IN_HOUR,
-  STAY_CHECK_OUT_HOUR,
-  type StayEvent,
+  VISIT_CHECK_IN_HOUR,
+  VISIT_CHECK_OUT_HOUR,
+  type VisitEvent,
 } from '@/lib/ical';
 
 /**
@@ -22,26 +22,26 @@ function isoStamp(date: string, hour: number): string {
   return `${date}T${pad(hour)}:00:00`;
 }
 
-export function googleCalendarUrl(event: StayEvent): string {
+export function googleCalendarUrl(event: VisitEvent): string {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: event.title,
-    dates: `${compactStamp(event.checkIn, STAY_CHECK_IN_HOUR)}/${compactStamp(event.checkOut, STAY_CHECK_OUT_HOUR)}`,
+    dates: `${compactStamp(event.checkIn, VISIT_CHECK_IN_HOUR)}/${compactStamp(event.checkOut, VISIT_CHECK_OUT_HOUR)}`,
     details: event.description,
     location: event.location,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-export function outlookCalendarUrl(event: StayEvent): string {
+export function outlookCalendarUrl(event: VisitEvent): string {
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
     rru: 'addevent',
     subject: event.title,
     body: event.description,
     location: event.location,
-    startdt: isoStamp(event.checkIn, STAY_CHECK_IN_HOUR),
-    enddt: isoStamp(event.checkOut, STAY_CHECK_OUT_HOUR),
+    startdt: isoStamp(event.checkIn, VISIT_CHECK_IN_HOUR),
+    enddt: isoStamp(event.checkOut, VISIT_CHECK_OUT_HOUR),
   });
   return `https://outlook.live.com/calendar/0/action/compose?${params.toString()}`;
 }

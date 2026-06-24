@@ -22,7 +22,7 @@ function guestStatus(
   label: string;
   variant: 'default' | 'secondary' | 'outline' | 'destructive';
 } {
-  const stay = entry.upcomingStay;
+  const stay = entry.upcomingVisit;
   if (stay) {
     if (stay.checkIn <= today && stay.checkOut >= today) {
       return { label: 'On property', variant: 'default' };
@@ -35,7 +35,7 @@ function guestStatus(
   if (entry.invitation?.status === 'accepted') {
     return { label: 'Accepted', variant: 'outline' };
   }
-  if (entry.pastStaysCount > 0) {
+  if (entry.pastVisitsCount > 0) {
     return { label: 'Past guest', variant: 'outline' };
   }
   if (entry.invitation?.status === 'revoked') {
@@ -68,16 +68,16 @@ export function GuestsTable({
     <ul className="divide-y rounded-2xl border bg-card shadow-sm">
       {guests.map((guest) => {
         const status = guestStatus(guest, today);
-        const nextLabel = guest.upcomingStay
+        const nextLabel = guest.upcomingVisit
           ? formatDateRange(
-              guest.upcomingStay.checkIn,
-              guest.upcomingStay.checkOut
+              guest.upcomingVisit.checkIn,
+              guest.upcomingVisit.checkOut
             )
           : guest.invitation
             ? INVITATION_TYPE_LABELS[guest.invitation.type] ??
               guest.invitation.type
-            : guest.pastStaysCount > 0
-              ? `${guest.pastStaysCount} past visit${guest.pastStaysCount !== 1 ? 's' : ''}`
+            : guest.pastVisitsCount > 0
+              ? `${guest.pastVisitsCount} past visit${guest.pastVisitsCount !== 1 ? 's' : ''}`
               : null;
 
         return (
@@ -108,7 +108,7 @@ export function GuestsTable({
                     </span>
                   )}
                 </p>
-                {guest.invitation?.expiresAt && !guest.upcomingStay && (
+                {guest.invitation?.expiresAt && !guest.upcomingVisit && (
                   <p className="mt-0.5 text-xs text-muted-foreground sm:hidden">
                     Expires {formatDate(guest.invitation.expiresAt)}
                   </p>
@@ -119,7 +119,7 @@ export function GuestsTable({
                 {nextLabel && (
                   <p className="text-sm text-muted-foreground">{nextLabel}</p>
                 )}
-                {guest.invitation?.expiresAt && !guest.upcomingStay && (
+                {guest.invitation?.expiresAt && !guest.upcomingVisit && (
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Expires {formatDate(guest.invitation.expiresAt)}
                   </p>

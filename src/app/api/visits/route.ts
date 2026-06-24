@@ -15,8 +15,8 @@ import { invitationRequiresApproval } from '@/lib/invitation-visit';
 import {
   notifyVisitApproved,
   notifyRequestReceived,
-  notifyStayConfirmed,
-  notifyStayRequested,
+  notifyVisitConfirmed,
+  notifyVisitRequested,
 } from '@/lib/email/notifications';
 import { upsertUserProfile } from '@/lib/auth';
 
@@ -135,11 +135,11 @@ export async function POST(request: NextRequest) {
       .eq('status', 'pending');
 
     if (needsApproval) {
-      notifyStayRequested(visit.id).catch(console.error);
+      notifyVisitRequested(visit.id).catch(console.error);
       notifyRequestReceived(visit.id).catch(console.error);
     } else {
       notifyVisitApproved(visit.id).catch(console.error);
-      notifyStayConfirmed(visit.id).catch(console.error);
+      notifyVisitConfirmed(visit.id).catch(console.error);
     }
 
     return NextResponse.json({ visit, status: initialStatus });

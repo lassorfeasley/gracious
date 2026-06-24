@@ -15,7 +15,7 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-function formatStayDate(date: string): string {
+function formatVisitDate(date: string): string {
   return format(parseISO(date), 'EEE, MMM d');
 }
 
@@ -26,7 +26,7 @@ export function UpcomingGuestTiles({
   guests: GuestRosterEntry[];
   slug: string;
 }) {
-  const upcoming = guests.filter((g) => g.upcomingStay);
+  const upcoming = guests.filter((g) => g.upcomingVisit);
 
   if (upcoming.length === 0) {
     return (
@@ -46,7 +46,7 @@ export function UpcomingGuestTiles({
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {upcoming.map((guest) => {
-        const stay = guest.upcomingStay!;
+        const stay = guest.upcomingVisit!;
         const onProperty =
           stay.checkIn <= today && stay.checkOut >= today;
         const nights = nightsBetween(stay.checkIn, stay.checkOut);
@@ -107,7 +107,7 @@ export function UpcomingGuestTiles({
                         Check-in
                       </p>
                       <p className="mt-0.5 text-sm font-medium">
-                        {formatStayDate(stay.checkIn)}
+                        {formatVisitDate(stay.checkIn)}
                       </p>
                     </div>
                     <div className="p-3">
@@ -115,7 +115,7 @@ export function UpcomingGuestTiles({
                         Checkout
                       </p>
                       <p className="mt-0.5 text-sm font-medium">
-                        {formatStayDate(stay.checkOut)}
+                        {formatVisitDate(stay.checkOut)}
                       </p>
                     </div>
                   </div>

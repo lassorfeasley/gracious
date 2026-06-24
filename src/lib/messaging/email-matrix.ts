@@ -116,21 +116,21 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
   // --- New visit needing approval ------------------------------------------
   {
     event: 'Guest submits a visit request that needs approval',
-    fn: 'notifyStayRequested',
-    logType: 'stay_requested',
+    fn: 'notifyVisitRequested',
+    logType: 'visit_requested',
     recipient: 'property_owner',
     gating: pref('visit_requests'),
     preconditions: [],
-    registryId: 'stay-requested',
+    registryId: 'visit-requested',
   },
   {
     event: 'Guest submits a visit request that needs approval',
-    fn: 'notifyStayRequested',
-    logType: 'stay_requested',
+    fn: 'notifyVisitRequested',
+    logType: 'visit_requested',
     recipient: 'property_managers',
     gating: pref('visit_requests'),
     preconditions: [],
-    registryId: 'stay-requested',
+    registryId: 'visit-requested',
   },
   {
     event: 'Guest submits a visit request that needs approval',
@@ -145,21 +145,21 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
   // --- New visit auto-approved (pre-approved invite / open availability) ----
   {
     event: 'Visit is booked on the auto-approve path',
-    fn: 'notifyStayConfirmed',
-    logType: 'stay_booked',
+    fn: 'notifyVisitConfirmed',
+    logType: 'visit_booked',
     recipient: 'property_owner',
     gating: pref('visit_requests'),
     preconditions: [],
-    registryId: 'stay-confirmed',
+    registryId: 'visit-confirmed',
   },
   {
     event: 'Visit is booked on the auto-approve path',
-    fn: 'notifyStayConfirmed',
-    logType: 'stay_booked',
+    fn: 'notifyVisitConfirmed',
+    logType: 'visit_booked',
     recipient: 'property_managers',
     gating: pref('visit_requests'),
     preconditions: [],
-    registryId: 'stay-confirmed',
+    registryId: 'visit-confirmed',
   },
 
   // --- Approval (manual approve, auto-approve, host offline, edit) ---------
@@ -209,21 +209,21 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
   // --- Lifecycle reminders (cron, gated by guest_reminders) ---------------
   {
     event: 'Cron: ~7 days before check-in',
-    fn: 'notifyTripReminder',
+    fn: 'notifyVisitReminder',
     logType: 'reminder_7d',
     recipient: 'guest',
     gating: pref('guest_reminders'),
     preconditions: ['notify_guest', 'guest.email'],
-    registryId: 'trip-reminder',
+    registryId: 'visit-reminder',
   },
   {
     event: 'Cron: ~1 day before check-in',
-    fn: 'notifyTripReminder',
+    fn: 'notifyVisitReminder',
     logType: 'reminder_1d',
     recipient: 'guest',
     gating: pref('guest_reminders'),
     preconditions: ['notify_guest', 'guest.email'],
-    registryId: 'trip-reminder',
+    registryId: 'visit-reminder',
   },
   {
     event: 'Cron: morning of check-in',
@@ -245,12 +245,12 @@ export const EMAIL_MATRIX: EmailMatrixEntry[] = [
   },
   {
     event: 'Cron: morning after check-out',
-    fn: 'notifyPostStay',
-    logType: 'post_stay',
+    fn: 'notifyPostVisit',
+    logType: 'post_visit',
     recipient: 'guest',
     gating: pref('guest_reminders'),
     preconditions: ['notify_guest', 'guest.email'],
-    registryId: 'post-stay',
+    registryId: 'post-visit',
   },
 
   // --- Host digest ---------------------------------------------------------

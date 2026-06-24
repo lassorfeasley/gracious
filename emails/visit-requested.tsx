@@ -1,6 +1,6 @@
 import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
-import { FactsCard, QuoteCard, StayDatesCard } from './components/cards';
+import { FactsCard, QuoteCard, VisitDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -17,7 +17,7 @@ interface Props {
   unsubscribeUrl?: string;
 }
 
-export default function StayRequestedEmail({
+export default function VisitRequestedEmail({
   guestName,
   propertyName,
   checkInDate,
@@ -31,16 +31,16 @@ export default function StayRequestedEmail({
 }: Props) {
   return (
     <EmailLayout
-      preview={`${guestName} requested a stay at ${propertyName}`}
-      heading="New stay request"
+      preview={`${guestName} requested a visit at ${propertyName}`}
+      heading="New visit request"
       unsubscribeUrl={unsubscribeUrl}
     >
       <Text>
-        <strong>{guestName}</strong> has requested a stay at{' '}
+        <strong>{guestName}</strong> has requested a visit at{' '}
         <strong>{propertyName}</strong>.
       </Text>
 
-      <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
+      <VisitDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
 
       <FactsCard
         facts={[

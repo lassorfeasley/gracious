@@ -36,7 +36,7 @@ export interface TimelineStay {
   /** ISO date (yyyy-MM-dd), exclusive — the checkout morning is not occupied. */
   checkOut: string;
   variant: TimelineStayVariant;
-  /** When set, the band becomes a link (e.g. to the booking detail page). */
+  /** When set, the band becomes a link (e.g. to the visit detail page). */
   href?: string;
 }
 

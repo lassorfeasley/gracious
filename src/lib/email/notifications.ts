@@ -1,6 +1,6 @@
 import { logNotification, appUrl } from '@/lib/email/send';
 import { enqueueEmail } from '@/lib/email/outbox';
-import { buildStayEvent, generateIcs } from '@/lib/ical';
+import { buildVisitEvent, generateIcs } from '@/lib/ical';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { formatDateRange, formatDate } from '@/lib/dates';
 import { inviteUrl } from '@/lib/invitations';
@@ -91,15 +91,15 @@ async function guestReminderDelivery(guestId: string | null): Promise<{
 import InvitationSentEmail from '../../../emails/invitation-sent';
 import InviteReminderEmail from '../../../emails/invite-reminder';
 import InviteStalledHostEmail from '../../../emails/invite-stalled-host';
-import StayRequestedEmail from '../../../emails/stay-requested';
+import VisitRequestedEmail from '../../../emails/visit-requested';
 import VisitApprovedEmail from '../../../emails/visit-approved';
 import VisitDeclinedEmail from '../../../emails/visit-declined';
 import VisitCancelledEmail from '../../../emails/visit-cancelled';
-import TripReminderEmail from '../../../emails/trip-reminder';
+import VisitReminderEmail from '../../../emails/visit-reminder';
 import InvitationExpiringEmail from '../../../emails/invitation-expiring';
 import CheckoutInstructionsEmail from '../../../emails/checkout-instructions';
-import PostStayThankYouEmail from '../../../emails/post-stay-thankyou';
-import StayConfirmedEmail from '../../../emails/stay-confirmed';
+import PostVisitThankYouEmail from '../../../emails/post-visit-thankyou';
+import VisitConfirmedEmail from '../../../emails/visit-confirmed';
 import RequestReceivedEmail from '../../../emails/request-received';
 import ArrivalWelcomeEmail from '../../../emails/arrival-welcome';
 
@@ -264,7 +264,7 @@ export async function notifyInviteStalled(
   });
 }
 
-export async function notifyStayRequested(visitId: string) {
+export async function notifyVisitRequested(visitId: string) {
   const visit = await getVisitWithDetails(visitId);
   if (!visit) return;
 
@@ -313,7 +313,7 @@ export async function notifyStayRequested(visitId: string) {
     await enqueueEmail({
       to: recipient.email,
       subject: `Visit request from ${guestLabel}`,
-      react: StayRequestedEmail({
+      react: VisitRequestedEmail({
         guestName: guestLabel,
         propertyName: visit.property.name,
         checkInDate: visit.dates.check_in,
@@ -331,14 +331,14 @@ export async function notifyStayRequested(visitId: string) {
     });
   }
 
-  await logNotification({ visitId, type: 'stay_requested' });
+  await logNotification({ visitId, type: 'visit_requested' });
 }
 
 /**
  * Tells hosts a visit was created on the auto-approve path (no request to
  * act on — purely informational so visits never appear silently).
  */
-export async function notifyStayConfirmed(visitId: string) {
+export async function notifyVisitConfirmed(visitId: string) {
   const visit = await getVisitWithDetails(visitId);
   if (!visit) return;
 
@@ -385,7 +385,7 @@ export async function notifyStayConfirmed(visitId: string) {
     await enqueueEmail({
       to: recipient.email,
       subject: `${guestLabel} booked a visit at ${visit.property.name}`,
-      react: StayConfirmedEmail({
+      react: VisitConfirmedEmail({
         guestName: guestLabel,
         propertyName: visit.property.name,
         checkInDate: visit.dates.check_in,
@@ -402,7 +402,7 @@ export async function notifyStayConfirmed(visitId: string) {
     });
   }
 
-  await logNotification({ visitId, type: 'stay_booked' });
+  await logNotification({ visitId, type: 'visit_booked' });
 }
 
 /**
@@ -437,7 +437,7 @@ export async function notifyVisitApproved(visitId: string) {
   if (!visit || !visit.notify_guest || !visit.guest.email) return;
 
   const icsContent = generateIcs(visit);
-  const visitEvent = buildStayEvent(visit);
+  const visitEvent = buildVisitEvent(visit);
   const rooms = visit.rooms.map((r) => r.name).join(', ');
 
   const { getCoGuestsForDates } = await import('@/lib/coguests');
@@ -586,7 +586,7 @@ export async function notifyVisitCancelled(
   await logNotification({ visitId, type: `visit_cancelled_${cancelledBy}` });
 }
 
-export async function notifyTripReminder(
+export async function notifyVisitReminder(
   visit: VisitWithDetails,
   daysUntil: number
 ) {
@@ -596,7 +596,7 @@ export async function notifyTripReminder(
   if (!delivery.ok) return;
 
   const type = daysUntil <= 1 ? 'reminder_1d' : 'reminder_7d';
-  const visitEvent = buildStayEvent(visit);
+  const visitEvent = buildVisitEvent(visit);
 
   await enqueueEmail({
     to: visit.guest.email,
@@ -604,7 +604,7 @@ export async function notifyTripReminder(
       daysUntil <= 1
         ? `Tomorrow: your visit at ${visit.property.name}`
         : `One week until your visit at ${visit.property.name}`,
-    react: TripReminderEmail({
+    react: VisitReminderEmail({
       guestName: visit.guest.name ?? 'there',
       propertyName: visit.property.name,
       checkInDate: visit.dates.check_in,
@@ -692,7 +692,7 @@ export async function notifyCheckoutInstructions(visit: VisitWithDetails) {
   });
 }
 
-export async function notifyPostStay(visit: VisitWithDetails) {
+export async function notifyPostVisit(visit: VisitWithDetails) {
   if (!visit.notify_guest || !visit.guest.email) return;
 
   const delivery = await guestReminderDelivery(visit.guest.id);
@@ -704,7 +704,7 @@ export async function notifyPostStay(visit: VisitWithDetails) {
   await enqueueEmail({
     to: visit.guest.email,
     subject: `Thanks for staying at ${visit.property.name}`,
-    react: PostStayThankYouEmail({
+    react: PostVisitThankYouEmail({
       guestName: visit.guest.name ?? 'there',
       propertyName: visit.property.name,
       profileUrl: visit.invitation
@@ -720,7 +720,7 @@ export async function notifyPostStay(visit: VisitWithDetails) {
   await logNotification({
     userId: visit.guest_user_id ?? undefined,
     visitId: visit.id,
-    type: 'post_stay',
+    type: 'post_visit',
   });
 }
 

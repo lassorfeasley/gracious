@@ -80,7 +80,7 @@ const SEMANTIC_COLORS = [
 
 const LEXICON: { use: string; never: string }[] = [
   { use: 'invitation', never: 'listing' },
-  { use: 'stay', never: 'booking / reservation' },
+  { use: 'visit', never: 'booking / reservation / stay' },
   { use: 'arrival', never: 'check-in' },
   { use: 'the house', never: 'the property / the unit' },
   { use: 'having people to stay', never: 'managing guests' },
@@ -91,7 +91,7 @@ const LEXICON: { use: string; never: string }[] = [
 const VOICE_SAMPLES = [
   { good: true, text: 'Your invitation is waiting. The house notes are inside.' },
   { good: true, text: 'The Calloways arrive Friday and stay through Sunday.' },
-  { good: false, text: 'Manage your visits and availability in one dashboard.' },
+  { good: false, text: 'Manage your listings and availability in one dashboard.' },
   { good: false, text: 'Sign up now to unlock unlimited listings!' },
 ];
 
@@ -396,8 +396,8 @@ export function StyleGuide() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
-                  The product exists to give stays away. Never borrow language
-                  from rental marketplaces — no listings, visits, or
+                  The product exists to give visits away. Never borrow language
+                  from rental marketplaces — no listings, ratings, or
                   availability management.
                 </CardContent>
               </Card>
@@ -409,7 +409,7 @@ export function StyleGuide() {
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
                   The absence of a public page isn&apos;t a velvet rope — it&apos;s
-                  the discretion of a home. Privacy keeps a stay personal and
+                  the discretion of a home. Privacy keeps a visit personal and
                   warm, never a transaction with a stranger. This is about being
                   known for your hospitality, not for being hard to reach.
                 </CardContent>
@@ -639,7 +639,7 @@ export function StyleGuide() {
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="sg-note">Message</Label>
-                  <Textarea id="sg-note" placeholder="Tell us about your stay…" />
+                  <Textarea id="sg-note" placeholder="Tell us about your visit…" />
                 </div>
                 <div className="flex items-center gap-3">
                   <Switch id="sg-switch" defaultChecked />

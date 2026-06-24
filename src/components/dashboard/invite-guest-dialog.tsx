@@ -37,7 +37,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { SurveyDialogLayout } from '@/components/dashboard/survey-dialog-layout';
-import { ManualStaySurvey } from '@/components/dashboard/host-visit-dialog';
+import { ManualVisitSurvey } from '@/components/dashboard/host-visit-dialog';
 import { GuestCombobox } from '@/components/dashboard/guest-combobox';
 import { VisitProvider, useOptionalVisit } from '@/components/guest/visit-context';
 import { toast } from 'sonner';
@@ -241,7 +241,7 @@ export function InviteGuestDialog({
   }));
 
   const manualSurvey = (
-    <ManualStaySurvey
+    <ManualVisitSurvey
       propertyId={propertyId}
       onClose={() => setOpen(false)}
       onBackFromStart={() => setMode('invite')}
@@ -335,7 +335,7 @@ export function InviteGuestDialog({
     if (!res.ok) {
       if (data.error === 'limit_reached') {
         toast.error(
-          "You've reached your hosted-stay limit. Upgrade your plan to host more visits."
+          "You've reached your hosted-visit limit. Upgrade your plan to host more visits."
         );
         return;
       }
@@ -343,7 +343,7 @@ export function InviteGuestDialog({
         typeof data.error === 'string'
           ? data.error
           : confirmDirectly
-            ? 'Failed to confirm the stay'
+            ? 'Failed to confirm the visit'
             : 'Failed to create invitation'
       );
       return;
@@ -412,7 +412,7 @@ export function InviteGuestDialog({
         stepCount={steps.length}
         stepTitle={
           preApproved && stepKey === 'dates'
-            ? 'When is the stay?'
+            ? 'When is the visit?'
             : preApproved && stepKey === 'rooms'
               ? 'Which rooms are confirmed?'
               : STEP_TITLES[stepKey]
@@ -468,7 +468,7 @@ export function InviteGuestDialog({
                   onClick={() => setMode('manual')}
                   className="font-medium text-foreground underline underline-offset-2"
                 >
-                  Add a manual stay instead
+                  Add a manual visit instead
                 </button>
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -554,7 +554,7 @@ export function InviteGuestDialog({
             <div className="space-y-6">
               <p className="text-sm text-muted-foreground">
                 {invType === 'prix_fixe'
-                  ? 'Select the exact dates of the stay.'
+                  ? 'Select the exact dates of the visit.'
                   : 'Select one or more date ranges they can request within.'}
               </p>
 

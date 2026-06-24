@@ -13,7 +13,7 @@ export default function SignInLinkEmail({ propertyName, signInUrl }: Props) {
       heading="Your sign-in link"
     >
       <Text>
-        Click below to sign in and continue to your stay at{' '}
+        Click below to sign in and continue to your visit at{' '}
         <strong>{propertyName}</strong>.
       </Text>
       <Button style={buttonStyle} href={signInUrl}>

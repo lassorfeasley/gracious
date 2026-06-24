@@ -183,7 +183,7 @@ const INVITE_STATUS_META: Record<InvitationStatus, StatusMeta> = {
   revoked: { label: 'Revoked', variant: 'destructive' },
 };
 
-function formatStayDate(date: string): string {
+function formatVisitDate(date: string): string {
   return format(parseISO(date), 'EEE, MMM d');
 }
 
@@ -657,14 +657,14 @@ function DateBox({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Check-in
           </p>
-          <p className="mt-0.5 text-sm font-medium">{formatStayDate(checkIn)}</p>
+          <p className="mt-0.5 text-sm font-medium">{formatVisitDate(checkIn)}</p>
         </div>
         <div className="px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Checkout
           </p>
           <p className="mt-0.5 text-sm font-medium">
-            {formatStayDate(checkOut)}
+            {formatVisitDate(checkOut)}
           </p>
         </div>
       </div>

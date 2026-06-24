@@ -10,7 +10,7 @@ export interface GuestLookupResult {
   avatarUrl: string | null;
   /** Whether this email already has an invitation on this property. */
   invitedHere: boolean;
-  pastStaysHere: number;
+  pastVisitsHere: number;
   relationship: string | null;
 }
 
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     ]);
 
   const today = new Date().toISOString().split('T')[0];
-  const pastStaysHere = (visits ?? []).filter((v) => {
+  const pastVisitsHere = (visits ?? []).filter((v) => {
     const dates = Array.isArray(v.dates) ? v.dates[0] : v.dates;
     return v.status === 'approved' && dates?.check_out && dates.check_out < today;
   }).length;
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     name: member ? (formatPersonName(member) ?? null) : null,
     avatarUrl: member?.avatar_url ?? null,
     invitedHere: (invites ?? []).length > 0,
-    pastStaysHere,
+    pastVisitsHere,
     relationship,
   };
 

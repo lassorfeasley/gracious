@@ -18,8 +18,8 @@ export default function VisitDeclinedEmail({
 }: Props) {
   return (
     <EmailLayout
-      preview={`Your stay request at ${propertyName} was declined`}
-      heading="Stay request declined"
+      preview={`Your visit request at ${propertyName} was declined`}
+      heading="Visit request declined"
     >
       <Text>Hi {guestName},</Text>
       <Text>

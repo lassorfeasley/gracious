@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
 import { EmailLayout } from './components/layout';
-import { FactsCard, StayDatesCard } from './components/cards';
+import { FactsCard, VisitDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -26,12 +26,12 @@ export default function RequestReceivedEmail({
     >
       <Text>Hi {guestName},</Text>
       <Text>
-        We&apos;ve passed your stay request along to the hosts of{' '}
+        We&apos;ve passed your visit request along to the hosts of{' '}
         <strong>{propertyName}</strong>. You&apos;ll get an email as soon as
         they respond.
       </Text>
 
-      <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
+      <VisitDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
 
       <FactsCard facts={[{ label: 'Rooms', value: rooms }]} />
 

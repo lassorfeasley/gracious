@@ -21,19 +21,19 @@ export default function VisitCancelledEmail({
   const isOwnerRecipient = cancelledBy === 'guest';
   return (
     <EmailLayout
-      preview={`Stay cancelled at ${propertyName}`}
-      heading="Stay cancelled"
+      preview={`Visit cancelled at ${propertyName}`}
+      heading="Visit cancelled"
       unsubscribeUrl={unsubscribeUrl}
     >
       <Text>Hi {recipientName},</Text>
       {isOwnerRecipient ? (
         <Text>
-          <strong>{guestName}</strong> has cancelled their stay at{' '}
+          <strong>{guestName}</strong> has cancelled their visit at{' '}
           <strong>{propertyName}</strong> ({dates}).
         </Text>
       ) : (
         <Text>
-          Your stay at <strong>{propertyName}</strong> ({dates}) has been
+          Your visit at <strong>{propertyName}</strong> ({dates}) has been
           cancelled by the host.
         </Text>
       )}

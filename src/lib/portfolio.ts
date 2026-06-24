@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import type { Property, Room } from '@/types/database';
 import type { RoomAvailability } from '@/lib/guest-calendar';
-import type { TimelineRow, TimelineStay } from '@/components/stay-timeline';
+import type { TimelineRow, TimelineStay } from '@/components/visit-timeline';
 
 export interface PortfolioCalendarVisit {
   id: string;
@@ -24,7 +24,7 @@ export interface PortfolioHouse {
   roomAvailability: Record<string, RoomAvailability>;
   roomCount: number;
   upcomingCount: number;
-  nextStay: { guestName: string; checkIn: string; checkOut: string } | null;
+  nextVisit: { guestName: string; checkIn: string; checkOut: string } | null;
 }
 
 export interface PortfolioData {
@@ -165,7 +165,7 @@ export async function getPortfolioData(
       roomAvailability: houseAvailability,
       roomCount: propertyRooms.length,
       upcomingCount: upcoming.length,
-      nextStay: upcoming[0]
+      nextVisit: upcoming[0]
         ? {
             guestName: upcoming[0].guestName,
             checkIn: upcoming[0].checkIn,

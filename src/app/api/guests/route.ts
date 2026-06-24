@@ -12,7 +12,7 @@ export interface GuestDirectoryEntry {
   relationship: string | null;
   avatarUrl: string | null;
   isMember: boolean;
-  pastStaysCount: number;
+  pastVisitsCount: number;
   hasUpcoming: boolean;
   invitationStatus: string | null;
 }
@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
       relationship: g.relationship,
       avatarUrl: member?.avatar_url ?? null,
       isMember: Boolean(member),
-      pastStaysCount: g.pastStaysCount,
-      hasUpcoming: Boolean(g.upcomingStay),
+      pastVisitsCount: g.pastVisitsCount,
+      hasUpcoming: Boolean(g.upcomingVisit),
       invitationStatus: g.invitation?.status ?? null,
     };
   });

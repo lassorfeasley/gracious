@@ -11,7 +11,7 @@ import * as React from 'react';
 /* Brand palette — paper, ink, pine, brass (see components/layout.tsx). */
 const BORDER = '1px solid #e4ddd0';
 
-interface StayDatesCardProps {
+interface VisitDatesCardProps {
   /** yyyy-MM-dd */
   checkInDate: string;
   /** yyyy-MM-dd */
@@ -22,14 +22,14 @@ interface StayDatesCardProps {
 
 /**
  * Two-column check-in / checkout card, the visual anchor of every email
- * about a stay.
+ * about a visit.
  */
-export function StayDatesCard({
+export function VisitDatesCard({
   checkInDate,
   checkOutDate,
   checkInTime = '3:00 PM',
   checkOutTime = '11:00 AM',
-}: StayDatesCardProps) {
+}: VisitDatesCardProps) {
   const checkIn = parseISO(checkInDate);
   const checkOut = parseISO(checkOutDate);
 

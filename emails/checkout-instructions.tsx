@@ -21,13 +21,13 @@ export default function CheckoutInstructionsEmail({
 }: Props) {
   return (
     <EmailLayout
-      preview={`Checkout details for your stay at ${propertyName}`}
+      preview={`Checkout details for your visit at ${propertyName}`}
       heading="Time to head out"
       unsubscribeUrl={unsubscribeUrl}
     >
       <Text>Hi {guestName},</Text>
       <Text>
-        We hope you enjoyed your stay at <strong>{propertyName}</strong>. Here
+        We hope you enjoyed your visit at <strong>{propertyName}</strong>. Here
         are a few things to take care of before you go.
       </Text>
 

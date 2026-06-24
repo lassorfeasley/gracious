@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getVisitWithDetails } from '@/lib/visits';
-import { buildStayEvent, generateIcs } from '@/lib/ical';
+import { buildVisitEvent, generateIcs } from '@/lib/ical';
 import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import { canManageProperty } from '@/lib/auth';
 
@@ -33,10 +33,10 @@ export async function GET(
 
   const provider = request.nextUrl.searchParams.get('provider');
   if (provider === 'google') {
-    return NextResponse.redirect(googleCalendarUrl(buildStayEvent(visit)));
+    return NextResponse.redirect(googleCalendarUrl(buildVisitEvent(visit)));
   }
   if (provider === 'outlook') {
-    return NextResponse.redirect(outlookCalendarUrl(buildStayEvent(visit)));
+    return NextResponse.redirect(outlookCalendarUrl(buildVisitEvent(visit)));
   }
 
   const ics = generateIcs(visit);

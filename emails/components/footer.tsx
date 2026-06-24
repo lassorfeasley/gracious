@@ -30,7 +30,7 @@ interface HostInviteFooterProps {
 
 /**
  * A quiet, fine-print CTA — shown only on relationship emails (invitation,
- * stay confirmed, post-stay follow-up) — gently inviting a guest to open a
+ * visit confirmed, post-visit follow-up) — gently inviting a guest to open a
  * home of their own. Sits below the main footer divider. Never shown to people
  * who already host, and never on high-urgency functional emails.
  */

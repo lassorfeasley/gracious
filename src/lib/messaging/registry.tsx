@@ -5,19 +5,19 @@ import { googleCalendarUrl, outlookCalendarUrl } from '@/lib/calendar-links';
 import InvitationSentEmail from '../../../emails/invitation-sent';
 import InviteReminderEmail from '../../../emails/invite-reminder';
 import InviteStalledHostEmail from '../../../emails/invite-stalled-host';
-import StayRequestedEmail from '../../../emails/stay-requested';
+import VisitRequestedEmail from '../../../emails/visit-requested';
 import VisitApprovedEmail from '../../../emails/visit-approved';
 import VisitDeclinedEmail from '../../../emails/visit-declined';
 import VisitCancelledEmail from '../../../emails/visit-cancelled';
-import TripReminderEmail from '../../../emails/trip-reminder';
+import VisitReminderEmail from '../../../emails/visit-reminder';
 import InvitationExpiringEmail from '../../../emails/invitation-expiring';
 import CheckoutInstructionsEmail from '../../../emails/checkout-instructions';
-import PostStayThankYouEmail from '../../../emails/post-stay-thankyou';
+import PostVisitThankYouEmail from '../../../emails/post-visit-thankyou';
 import AuthConfirmSignupEmail from '../../../emails/auth-confirm-signup';
 import AuthMagicLinkEmail from '../../../emails/auth-magic-link';
 import AuthRecoveryEmail from '../../../emails/auth-recovery';
 import ProductUpdateEmail from '../../../emails/product-update';
-import StayConfirmedEmail from '../../../emails/stay-confirmed';
+import VisitConfirmedEmail from '../../../emails/visit-confirmed';
 import RequestReceivedEmail from '../../../emails/request-received';
 import ArrivalWelcomeEmail from '../../../emails/arrival-welcome';
 
@@ -348,7 +348,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     ],
   },
   {
-    id: 'stay-requested',
+    id: 'visit-requested',
     name: 'Visit request',
     channel: 'email',
     category: 'Visit requests',
@@ -356,11 +356,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Property owner + co-managers',
     description:
-      'Notifies hosts that a guest has requested a stay, with Approve/Decline buttons that deep-link into the dashboard.',
+      'Notifies hosts that a guest has requested a visit, with Approve/Decline buttons that deep-link into the dashboard.',
     trigger: 'A guest submits a visit request that requires approval.',
     timing: 'Immediately',
     replyTo: 'The guest\u2019s email address — hosts can reply directly',
-    logTypes: ['stay_requested'],
+    logTypes: ['visit_requested'],
     notificationPref: {
       key: 'visit_requests',
       label: 'Visit requests',
@@ -370,9 +370,9 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: `Stay request from ${SAMPLE.guestName}`,
+        subject: `Visit request from ${SAMPLE.guestName}`,
         element: (
-          <StayRequestedEmail
+          <VisitRequestedEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
@@ -396,7 +396,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Guest',
     description:
-      'A receipt to the guest confirming their stay request went through and the hosts have been notified. Only sent when the invitation requires approval.',
+      'A receipt to the guest confirming their visit request went through and the hosts have been notified. Only sent when the invitation requires approval.',
     trigger: 'A guest submits a visit request that requires host approval.',
     timing: 'Immediately',
     logTypes: ['request_received'],
@@ -419,7 +419,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     ],
   },
   {
-    id: 'stay-confirmed',
+    id: 'visit-confirmed',
     name: 'Visit confirmed',
     channel: 'email',
     category: 'Visit requests',
@@ -427,11 +427,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Property owner + co-managers',
     description:
-      'Tells hosts a guest booked a stay that didn\u2019t need approval, so confirmed visits never appear on the calendar silently.',
+      'Tells hosts a guest booked a visit that didn\u2019t need approval, so confirmed visits never appear on the calendar silently.',
     trigger: 'A guest books via an invitation that doesn\u2019t require approval.',
     timing: 'Immediately',
     replyTo: 'The guest\u2019s email address — hosts can reply directly',
-    logTypes: ['stay_booked'],
+    logTypes: ['visit_booked'],
     notificationPref: {
       key: 'visit_requests',
       label: 'Visit requests',
@@ -441,9 +441,9 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: `${SAMPLE.guestName} booked a stay at ${SAMPLE.propertyName}`,
+        subject: `${SAMPLE.guestName} booked a visit at ${SAMPLE.propertyName}`,
         element: (
-          <StayConfirmedEmail
+          <VisitConfirmedEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
@@ -466,7 +466,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Guest',
     description:
-      'Confirms an approved stay with full property details (address, directions, WiFi, check-in, house rules) and attaches a calendar (.ics) file.',
+      'Confirms an approved visit with full property details (address, directions, WiFi, check-in, house rules) and attaches a calendar (.ics) file.',
     trigger:
       'A host approves a request, a visit auto-approves, a host creates an offline visit, or an approved visit is updated.',
     timing: 'Immediately',
@@ -476,7 +476,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'With photo',
-        subject: `Your stay at ${SAMPLE.propertyName} is confirmed`,
+        subject: `Your visit at ${SAMPLE.propertyName} is confirmed`,
         element: (
           <VisitApprovedEmail
             guestName={SAMPLE.guestName}
@@ -501,7 +501,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       },
       {
         label: 'No photo (branded)',
-        subject: `Your stay at ${SAMPLE.propertyName} is confirmed`,
+        subject: `Your visit at ${SAMPLE.propertyName} is confirmed`,
         element: (
           <VisitApprovedEmail
             guestName={SAMPLE.guestName}
@@ -535,7 +535,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     audience: 'Guest',
     description:
       'Lets a guest know their request was not approved, with an optional message from the host and a link to request again.',
-    trigger: 'A host declines a stay request.',
+    trigger: 'A host declines a visit request.',
     timing: 'Immediately',
     logTypes: ['visit_declined'],
     notificationPref: null,
@@ -543,7 +543,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: `Stay request declined — ${SAMPLE.propertyName}`,
+        subject: `Visit request declined — ${SAMPLE.propertyName}`,
         element: (
           <VisitDeclinedEmail
             guestName={SAMPLE.guestName}
@@ -565,7 +565,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     status: 'active',
     audience: 'Host or guest (whoever did not cancel)',
     description:
-      'Notifies the other party that a confirmed stay was cancelled. The wording changes depending on who cancelled.',
+      'Notifies the other party that a confirmed visit was cancelled. The wording changes depending on who cancelled.',
     trigger: 'A guest or host cancels a confirmed visit.',
     timing: 'Immediately',
     logTypes: ['visit_cancelled_guest', 'visit_cancelled_owner'],
@@ -578,7 +578,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'To host (guest cancelled)',
-        subject: `${SAMPLE.guestName} cancelled their stay`,
+        subject: `${SAMPLE.guestName} cancelled their visit`,
         element: (
           <VisitCancelledEmail
             recipientName={SAMPLE.ownerName}
@@ -591,7 +591,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       },
       {
         label: 'To guest (host cancelled)',
-        subject: `Your stay at ${SAMPLE.propertyName} was cancelled`,
+        subject: `Your visit at ${SAMPLE.propertyName} was cancelled`,
         element: (
           <VisitCancelledEmail
             recipientName={SAMPLE.guestName}
@@ -605,30 +605,30 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     ],
   },
   {
-    id: 'trip-reminder',
-    name: 'Trip reminder',
+    id: 'visit-reminder',
+    name: 'Visit reminder',
     channel: 'email',
     category: 'Reminders',
     recipients: ['guest'],
     status: 'active',
     audience: 'Guest',
     description:
-      'Reminds a guest about an upcoming stay. The 1-day reminder also includes check-in instructions.',
-    trigger: 'A confirmed booking is exactly 7 days or 1 day before check-in.',
+      'Reminds a guest about an upcoming visit. The 1-day reminder also includes check-in instructions.',
+    trigger: 'A confirmed visit is exactly 7 days or 1 day before check-in.',
     timing: 'Scheduled — ~8am local, 7 days and 1 day before check-in',
     logTypes: ['reminder_7d', 'reminder_1d'],
     notificationPref: {
       key: 'guest_reminders',
-      label: 'Stay reminders',
+      label: 'Visit reminders',
       enforced: true,
     },
     source: 'src/app/api/cron/reminders/route.ts',
     variants: [
       {
         label: '7 days before',
-        subject: `One week until your stay at ${SAMPLE.propertyName}`,
+        subject: `One week until your visit at ${SAMPLE.propertyName}`,
         element: (
-          <TripReminderEmail
+          <VisitReminderEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
@@ -646,9 +646,9 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       },
       {
         label: '1 day before',
-        subject: `Tomorrow: your stay at ${SAMPLE.propertyName}`,
+        subject: `Tomorrow: your visit at ${SAMPLE.propertyName}`,
         element: (
-          <TripReminderEmail
+          <VisitReminderEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
@@ -667,9 +667,9 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       },
       {
         label: 'No photo (branded)',
-        subject: `One week until your stay at ${SAMPLE.propertyName}`,
+        subject: `One week until your visit at ${SAMPLE.propertyName}`,
         element: (
-          <TripReminderEmail
+          <VisitReminderEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
@@ -696,12 +696,12 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     audience: 'Guest',
     description:
       'A day-of welcome with everything needed to get in: check-in instructions, address, directions, and WiFi.',
-    trigger: 'A confirmed booking reaches its check-in date.',
+    trigger: 'A confirmed visit reaches its check-in date.',
     timing: 'Scheduled — ~8am local on the day of check-in',
     logTypes: ['arrival_welcome'],
     notificationPref: {
       key: 'guest_reminders',
-      label: 'Stay reminders',
+      label: 'Visit reminders',
       enforced: true,
     },
     source: 'src/app/api/cron/reminders/route.ts',
@@ -751,12 +751,12 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     audience: 'Guest',
     description:
       'Proactively sends checkout steps and a house-rules reminder on the morning the guest leaves.',
-    trigger: 'A confirmed booking reaches its check-out date.',
+    trigger: 'A confirmed visit reaches its check-out date.',
     timing: 'Scheduled — ~8am local on the day of checkout',
     logTypes: ['checkout_instructions'],
     notificationPref: {
       key: 'guest_reminders',
-      label: 'Stay reminders',
+      label: 'Visit reminders',
       enforced: true,
     },
     source: 'src/app/api/cron/reminders/route.ts',
@@ -777,8 +777,8 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     ],
   },
   {
-    id: 'post-stay',
-    name: 'Post-stay thank-you',
+    id: 'post-visit',
+    name: 'Post-visit thank-you',
     channel: 'email',
     category: 'Reminders',
     recipients: ['guest'],
@@ -788,10 +788,10 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       'A warm thank-you the day after a guest checks out, with a link back to the house.',
     trigger: 'The day after a confirmed visit\u2019s check-out date.',
     timing: 'Scheduled — ~8am local the day after checkout',
-    logTypes: ['post_stay'],
+    logTypes: ['post_visit'],
     notificationPref: {
       key: 'guest_reminders',
-      label: 'Stay reminders',
+      label: 'Visit reminders',
       enforced: true,
     },
     source: 'src/app/api/cron/reminders/route.ts',
@@ -800,7 +800,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
         label: 'Default',
         subject: `Thanks for staying at ${SAMPLE.propertyName}`,
         element: (
-          <PostStayThankYouEmail
+          <PostVisitThankYouEmail
             guestName={SAMPLE.guestName}
             propertyName={SAMPLE.propertyName}
             hostName={SAMPLE.ownerName}
@@ -960,12 +960,12 @@ export const GUEST_JOURNEY: JourneyStep[] = [
   {
     title: 'Your visit is coming up',
     when: 'About a week before check-in',
-    messageIds: ['trip-reminder'],
+    messageIds: ['visit-reminder'],
   },
   {
     title: 'Your visit is tomorrow',
     when: 'The day before check-in',
-    messageIds: ['trip-reminder'],
+    messageIds: ['visit-reminder'],
   },
   {
     title: "Welcome — here's how to get in",
@@ -980,7 +980,7 @@ export const GUEST_JOURNEY: JourneyStep[] = [
   {
     title: 'Thanks for visiting',
     when: 'The morning after you check out',
-    messageIds: ['post-stay'],
+    messageIds: ['post-visit'],
   },
 ];
 
@@ -993,26 +993,26 @@ export const HOST_JOURNEY: JourneyStep[] = [
     messageIds: ['invite-stalled'],
   },
   {
-    title: 'A guest requested a stay',
+    title: 'A guest requested a visit',
     when: 'As soon as a guest submits their dates',
     description: 'When the invitation requires your approval.',
-    messageIds: ['stay-requested'],
+    messageIds: ['visit-requested'],
   },
   {
-    title: 'A guest booked a stay',
+    title: 'A guest booked a visit',
     when: 'The moment an instant visit lands on your calendar',
     description:
       'When the invitation doesn\u2019t require approval — informational, nothing to act on.',
-    messageIds: ['stay-confirmed'],
+    messageIds: ['visit-confirmed'],
   },
   {
-    title: 'A stay was cancelled',
+    title: 'A visit was cancelled',
     when: 'If a guest cancels a confirmed visit',
     messageIds: ['visit-cancelled'],
   },
 ];
 
-// Account/auth touchpoints. Not a chronological journey like a booking — these
+// Account/auth touchpoints. Not a chronological journey like a visit — these
 // fire whenever the matching auth event happens — but listing them as a short
 // flow keeps the "what arrives when" framing consistent.
 export const ACCOUNT_JOURNEY: JourneyStep[] = [

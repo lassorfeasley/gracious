@@ -1,7 +1,7 @@
 import { guestKeyFromEmail, guestKeyFromManualVisit } from '@/lib/guest-keys';
 import type { Invitation, InvitationStatus, InvitationType } from '@/types/database';
 
-export interface GuestStay {
+export interface GuestVisit {
   visitId: string;
   checkIn: string;
   checkOut: string;
@@ -31,9 +31,9 @@ export interface GuestRosterEntry {
   /** Host's label for who this guest is to them, if set. */
   relationship: string | null;
   invitation: GuestInvitationSummary | null;
-  stays: GuestStay[];
-  upcomingStay: GuestStay | null;
-  pastStaysCount: number;
+  visits: GuestVisit[];
+  upcomingVisit: GuestVisit | null;
+  pastVisitsCount: number;
 }
 
 type VisitRow = {
@@ -76,7 +76,7 @@ function guestEmailFromVisit(b: VisitRow): string | null {
   return normalizeEmail(user?.email ?? b.guest_email);
 }
 
-function toVisit(b: VisitRow): GuestStay | null {
+function toVisit(b: VisitRow): GuestVisit | null {
   const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
   if (!dates?.check_in || !dates?.check_out) return null;
   const roomNames =
@@ -109,7 +109,7 @@ function invitationSummary(inv: Invitation): GuestInvitationSummary {
   };
 }
 
-function pickUpcoming(stays: GuestStay[], today: string): GuestStay | null {
+function pickUpcoming(stays: GuestVisit[], today: string): GuestVisit | null {
   const upcoming = stays
     .filter((s) => s.status === 'approved' && s.checkOut >= today)
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
@@ -136,9 +136,9 @@ export function buildGuestRoster(
         phone: seed.phone ?? null,
         relationship: null,
         invitation: null,
-        stays: [],
-        upcomingStay: null,
-        pastStaysCount: 0,
+        visits: [],
+        upcomingVisit: null,
+        pastVisitsCount: 0,
       };
       map.set(key, entry);
     } else {
@@ -194,24 +194,24 @@ export function buildGuestRoster(
     }
 
     const visit = toVisit(b);
-    if (visit && !entry.stays.some((s) => s.visitId === visit.visitId)) {
-      entry.stays.push(visit);
+    if (visit && !entry.visits.some((s) => s.visitId === visit.visitId)) {
+      entry.visits.push(visit);
     }
   }
 
   for (const entry of map.values()) {
-    entry.stays.sort((a, b) => b.checkIn.localeCompare(a.checkIn));
-    entry.upcomingStay = pickUpcoming(entry.stays, today);
-    entry.pastStaysCount = entry.stays.filter(
+    entry.visits.sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+    entry.upcomingVisit = pickUpcoming(entry.visits, today);
+    entry.pastVisitsCount = entry.visits.filter(
       (s) => s.status === 'approved' && s.checkOut < today
     ).length;
   }
 
   return Array.from(map.values()).sort((a, b) => {
-    if (a.upcomingStay && !b.upcomingStay) return -1;
-    if (!a.upcomingStay && b.upcomingStay) return 1;
-    if (a.upcomingStay && b.upcomingStay) {
-      return a.upcomingStay.checkIn.localeCompare(b.upcomingStay.checkIn);
+    if (a.upcomingVisit && !b.upcomingVisit) return -1;
+    if (!a.upcomingVisit && b.upcomingVisit) return 1;
+    if (a.upcomingVisit && b.upcomingVisit) {
+      return a.upcomingVisit.checkIn.localeCompare(b.upcomingVisit.checkIn);
     }
     return a.name.localeCompare(b.name);
   });

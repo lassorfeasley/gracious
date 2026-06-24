@@ -7,15 +7,15 @@ import type {
 import { formatDateRange } from '@/lib/dates';
 
 /** Default event times used when a property has no explicit schedule. */
-export const STAY_CHECK_IN_HOUR = 15;
-export const STAY_CHECK_OUT_HOUR = 11;
+export const VISIT_CHECK_IN_HOUR = 15;
+export const VISIT_CHECK_OUT_HOUR = 11;
 
 /**
  * Calendar-agnostic description of a visit event. Single source of truth for
  * the .ics file and the Google/Outlook quick-add links so every calendar
  * shows the same thing.
  */
-export interface StayEvent {
+export interface VisitEvent {
   title: string;
   description: string;
   location: string;
@@ -25,7 +25,7 @@ export interface StayEvent {
   checkOut: string;
 }
 
-export function buildStayEvent(visit: VisitWithDetails): StayEvent {
+export function buildVisitEvent(visit: VisitWithDetails): VisitEvent {
   const roomNames = visit.rooms.map((r) => r.name).join(', ');
 
   return {
@@ -51,7 +51,7 @@ export function buildStayEvent(visit: VisitWithDetails): StayEvent {
 }
 
 export function generateIcs(visit: VisitWithDetails): string {
-  const event = buildStayEvent(visit);
+  const event = buildVisitEvent(visit);
   const checkIn = new Date(`${event.checkIn}T15:00:00`);
   const checkOut = new Date(`${event.checkOut}T11:00:00`);
 
@@ -60,14 +60,14 @@ export function generateIcs(visit: VisitWithDetails): string {
       checkIn.getFullYear(),
       checkIn.getMonth() + 1,
       checkIn.getDate(),
-      STAY_CHECK_IN_HOUR,
+      VISIT_CHECK_IN_HOUR,
       0,
     ],
     end: [
       checkOut.getFullYear(),
       checkOut.getMonth() + 1,
       checkOut.getDate(),
-      STAY_CHECK_OUT_HOUR,
+      VISIT_CHECK_OUT_HOUR,
       0,
     ],
     title: event.title,
@@ -96,7 +96,7 @@ function dateTuple(date: string, hour: number): [number, number, number, number,
 
 /**
  * Builds a single calendar event for a host-confirmed visit, used by the
- * property feed. Mirrors `buildStayEvent` but works from the lighter shape the
+ * property feed. Mirrors `buildVisitEvent` but works from the lighter shape the
  * feed query returns (no full property/room joins needed per row).
  */
 export interface FeedVisit {
@@ -147,8 +147,8 @@ export function generatePropertyFeedIcs(
 
   const events: EventAttributes[] = visits.map((visit) => ({
     uid: `visit-${visit.id}@gracious.host`,
-    start: dateTuple(visit.checkIn, STAY_CHECK_IN_HOUR),
-    end: dateTuple(visit.checkOut, STAY_CHECK_OUT_HOUR),
+    start: dateTuple(visit.checkIn, VISIT_CHECK_IN_HOUR),
+    end: dateTuple(visit.checkOut, VISIT_CHECK_OUT_HOUR),
     title: `${visit.guestName} at ${property.name}`,
     description: feedEventDescription(visit),
     location: property.address ?? property.name,
@@ -185,8 +185,8 @@ export function buildInvitationEvents(
   const property = invitation.property;
   return invitation.windows.map((w) => ({
     uid: `invitation-${invitation.id}-${w.id}@gracious.host`,
-    start: dateTuple(w.start_date, STAY_CHECK_IN_HOUR),
-    end: dateTuple(w.end_date, STAY_CHECK_OUT_HOUR),
+    start: dateTuple(w.start_date, VISIT_CHECK_IN_HOUR),
+    end: dateTuple(w.end_date, VISIT_CHECK_OUT_HOUR),
     title: `${guest} at ${property.name} (invited)`,
     description: [
       `${guest} has been invited to stay at ${property.name}.`,
@@ -212,10 +212,10 @@ export function generateInvitationIcs(invitation: InvitationWithDetails): string
   return value;
 }
 
-/** StayEvent for the first window of an invitation — for Google/Outlook quick links. */
-export function buildInvitationStayEvent(
+/** VisitEvent for the first window of an invitation — for Google/Outlook quick links. */
+export function buildInvitationVisitEvent(
   invitation: InvitationWithDetails
-): StayEvent | null {
+): VisitEvent | null {
   const w = invitation.windows[0];
   if (!w) return null;
   const guest = invitationGuestLabel(invitation);

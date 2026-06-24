@@ -33,7 +33,7 @@ function guestHeadline(
   guest: GuestRosterEntry,
   today: string
 ): { label: string; variant: 'default' | 'secondary' | 'outline' } {
-  const stay = guest.upcomingStay;
+  const stay = guest.upcomingVisit;
   if (stay) {
     if (stay.checkIn <= today && stay.checkOut >= today) {
       return { label: 'On property', variant: 'default' };
@@ -43,7 +43,7 @@ function guestHeadline(
   if (guest.invitation?.status === 'pending') {
     return { label: 'Invited', variant: 'secondary' };
   }
-  if (guest.pastStaysCount > 0) {
+  if (guest.pastVisitsCount > 0) {
     return { label: 'Past guest', variant: 'outline' };
   }
   return { label: 'No visits yet', variant: 'outline' };
@@ -62,10 +62,10 @@ export function GuestProfileView({
 }) {
   const headline = guestHeadline(guest, today);
   const upcomingManualId =
-    guest.upcomingStay?.isManual ? guest.upcomingStay.visitId : null;
+    guest.upcomingVisit?.isManual ? guest.upcomingVisit.visitId : null;
 
-  const pastStays = guest.stays.filter(
-    (s) => s.visitId !== guest.upcomingStay?.visitId
+  const pastVisits = guest.visits.filter(
+    (s) => s.visitId !== guest.upcomingVisit?.visitId
   );
 
   return (
@@ -106,20 +106,20 @@ export function GuestProfileView({
         }
       />
 
-      {guest.stays.length > 0 && (
+      {guest.visits.length > 0 && (
         <div className="flex flex-wrap gap-4 text-sm">
           <span>
             <span className="font-medium text-foreground">
-              {guest.stays.length}
+              {guest.visits.length}
             </span>{' '}
             <span className="text-muted-foreground">
-              {guest.stays.length === 1 ? 'visit' : 'visits'} total
+              {guest.visits.length === 1 ? 'visit' : 'visits'} total
             </span>
           </span>
-          {guest.pastStaysCount > 0 && (
+          {guest.pastVisitsCount > 0 && (
             <span>
               <span className="font-medium text-foreground">
-                {guest.pastStaysCount}
+                {guest.pastVisitsCount}
               </span>{' '}
               <span className="text-muted-foreground">past</span>
             </span>
@@ -127,7 +127,7 @@ export function GuestProfileView({
         </div>
       )}
 
-      {guest.upcomingStay && (
+      {guest.upcomingVisit && (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold tracking-tight">
             Upcoming visit
@@ -137,31 +137,31 @@ export function GuestProfileView({
               <div className="flex flex-wrap items-center gap-2">
                 <Badge
                   variant={
-                    statusVariant[guest.upcomingStay.status] ?? 'outline'
+                    statusVariant[guest.upcomingVisit.status] ?? 'outline'
                   }
                 >
-                  {guest.upcomingStay.status}
+                  {guest.upcomingVisit.status}
                 </Badge>
-                {guest.upcomingStay.isManual && (
+                {guest.upcomingVisit.isManual && (
                   <Badge variant="secondary">Manual visit</Badge>
                 )}
               </div>
             </div>
             <div className="space-y-5 p-6">
               <VisitSummaryList
-                checkIn={guest.upcomingStay.checkIn}
-                checkOut={guest.upcomingStay.checkOut}
-                roomNames={guest.upcomingStay.roomNames}
-                partySize={guest.upcomingStay.partySize}
+                checkIn={guest.upcomingVisit.checkIn}
+                checkOut={guest.upcomingVisit.checkOut}
+                roomNames={guest.upcomingVisit.roomNames}
+                partySize={guest.upcomingVisit.partySize}
               />
-              {guest.upcomingStay.notes && (
+              {guest.upcomingVisit.notes && (
                 <blockquote className="border-l-2 border-muted-foreground/30 pl-4 text-sm italic text-muted-foreground">
-                  &ldquo;{guest.upcomingStay.notes}&rdquo;
+                  &ldquo;{guest.upcomingVisit.notes}&rdquo;
                 </blockquote>
               )}
               <Button asChild>
                 <Link
-                  href={`/dashboard/${slug}/visits/${guest.upcomingStay.visitId}`}
+                  href={`/dashboard/${slug}/visits/${guest.upcomingVisit.visitId}`}
                 >
                   Manage visit
                   <ChevronRight className="ml-1 h-4 w-4" />
@@ -219,14 +219,14 @@ export function GuestProfileView({
       <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="text-lg font-semibold tracking-tight">Visit history</h2>
-          {pastStays.length > 0 && (
+          {pastVisits.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              {pastStays.length} {pastStays.length === 1 ? 'visit' : 'visits'}
+              {pastVisits.length} {pastVisits.length === 1 ? 'visit' : 'visits'}
             </p>
           )}
         </div>
 
-        {pastStays.length === 0 ? (
+        {pastVisits.length === 0 ? (
           <div className="rounded-2xl border bg-muted/20 px-6 py-12 text-center">
             <p className="text-sm text-muted-foreground">
               {guest.invitation?.status === 'pending'
@@ -236,7 +236,7 @@ export function GuestProfileView({
           </div>
         ) : (
           <ul className="space-y-3">
-            {pastStays.map((stay) => (
+            {pastVisits.map((stay) => (
               <li key={stay.visitId}>
                 <Link
                   href={`/dashboard/${slug}/visits/${stay.visitId}`}

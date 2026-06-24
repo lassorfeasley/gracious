@@ -179,9 +179,9 @@ export function GuestCombobox({
                       )}
                     </span>
                     <span className="flex shrink-0 items-center gap-1">
-                      {g.pastStaysCount > 0 && (
+                      {g.pastVisitsCount > 0 && (
                         <Badge variant="outline" className="text-[10px]">
-                          {g.pastStaysCount} {g.pastStaysCount === 1 ? 'stay' : 'stays'}
+                          {g.pastVisitsCount} {g.pastVisitsCount === 1 ? 'visit' : 'visits'}
                         </Badge>
                       )}
                       {selected && <Check className="h-4 w-4" />}

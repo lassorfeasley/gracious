@@ -2,7 +2,7 @@ import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { EmailCalendarLinks } from './components/calendar-links';
-import { EmailSection, FactsCard, StayDatesCard } from './components/cards';
+import { EmailSection, FactsCard, VisitDatesCard } from './components/cards';
 
 interface Props {
   guestName: string;
@@ -26,7 +26,7 @@ interface Props {
   outlookCalendarUrl?: string;
 }
 
-export default function TripReminderEmail({
+export default function VisitReminderEmail({
   guestName,
   propertyName,
   checkInDate,
@@ -56,11 +56,11 @@ export default function TripReminderEmail({
     >
       <Text>Hi {guestName},</Text>
       <Text>
-        Just a reminder — your stay at <strong>{propertyName}</strong> is
+        Just a reminder — your visit at <strong>{propertyName}</strong> is
         coming up.
       </Text>
 
-      <StayDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
+      <VisitDatesCard checkInDate={checkInDate} checkOutDate={checkOutDate} />
 
       <FactsCard
         facts={[

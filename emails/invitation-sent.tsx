@@ -55,7 +55,7 @@ export default function InvitationSentEmail({
           </>
         ) : (
           <>
-            You&apos;ve been invited to request a stay at{' '}
+            You&apos;ve been invited to request a visit at{' '}
             <strong>{propertyName}</strong>.
           </>
         )}
@@ -65,7 +65,7 @@ export default function InvitationSentEmail({
         <Text>This invitation expires on {expiresAt}.</Text>
       )}
       <Button style={buttonStyle} href={inviteUrl}>
-        View house & request stay
+        View house & request a visit
       </Button>
       <Text style={{ fontSize: '12px', color: '#8a8273', marginTop: '16px' }}>
         Or copy this link:{' '}

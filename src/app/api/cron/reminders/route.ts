@@ -4,10 +4,10 @@ import { addDays, parseISO, differenceInCalendarDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getVisitWithDetails } from '@/lib/visits';
 import {
-  notifyTripReminder,
+  notifyVisitReminder,
   notifyArrivalWelcome,
   notifyCheckoutInstructions,
-  notifyPostStay,
+  notifyPostVisit,
   notifyInvitationsExpiring,
   notifyInviteReminder,
   notifyInviteStalled,
@@ -73,12 +73,12 @@ export async function GET(request: NextRequest) {
 
     if (daysUntilCheckIn === 7) {
       if (!(await wasNotificationSent(id, 'reminder_7d'))) {
-        await notifyTripReminder(visit, 7);
+        await notifyVisitReminder(visit, 7);
         lifecycleSends++;
       }
     } else if (daysUntilCheckIn === 1) {
       if (!(await wasNotificationSent(id, 'reminder_1d'))) {
-        await notifyTripReminder(visit, 1);
+        await notifyVisitReminder(visit, 1);
         lifecycleSends++;
       }
     } else if (daysUntilCheckIn === 0) {
@@ -99,8 +99,8 @@ export async function GET(request: NextRequest) {
 
     // Morning after departure: send the post-visit thank-you.
     if (daysSinceCheckOut === 1) {
-      if (!(await wasNotificationSent(id, 'post_stay'))) {
-        await notifyPostStay(visit);
+      if (!(await wasNotificationSent(id, 'post_visit'))) {
+        await notifyPostVisit(visit);
         lifecycleSends++;
       }
     }

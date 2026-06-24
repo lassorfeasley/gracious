@@ -2,7 +2,7 @@ import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { EmailCalendarLinks } from './components/calendar-links';
-import { EmailSection, FactsCard, StayDatesCard } from './components/cards';
+import { EmailSection, FactsCard, VisitDatesCard } from './components/cards';
 import { HostInviteFooter } from './components/footer';
 
 interface Props {
@@ -39,8 +39,8 @@ interface Props {
 export default function VisitApprovedEmail(props: Props) {
   return (
     <EmailLayout
-      preview={`Your stay at ${props.propertyName} is confirmed`}
-      heading="Your stay is confirmed!"
+      preview={`Your visit at ${props.propertyName} is confirmed`}
+      heading="Your visit is confirmed!"
       hero={
         <EmailHero
           propertyName={props.propertyName}
@@ -56,7 +56,7 @@ export default function VisitApprovedEmail(props: Props) {
     >
       <Text>Hi {props.guestName},</Text>
       <Text>
-        Your stay at <strong>{props.propertyName}</strong> has been approved.
+        Your visit at <strong>{props.propertyName}</strong> has been approved.
       </Text>
 
       {props.hostNote && (
@@ -67,7 +67,7 @@ export default function VisitApprovedEmail(props: Props) {
         </EmailSection>
       )}
 
-      <StayDatesCard
+      <VisitDatesCard
         checkInDate={props.checkInDate}
         checkOutDate={props.checkOutDate}
       />
@@ -117,7 +117,7 @@ export default function VisitApprovedEmail(props: Props) {
         />
       ) : (
         <Text>
-          A calendar file (.ics) is attached to add this stay to your calendar.
+          A calendar file (.ics) is attached to add this visit to your calendar.
         </Text>
       )}
       {props.profileUrl && (
