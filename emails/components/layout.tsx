@@ -23,12 +23,18 @@ const logoSrc = `${baseUrl}/brand/email-logo.png`;
 
 interface EmailLayoutProps {
   preview: string;
-  heading: string;
+  heading: React.ReactNode;
   children: React.ReactNode;
   /** Optional banner (e.g. <EmailHero />) shown above the heading. */
   hero?: React.ReactNode;
   /** When provided, an unsubscribe link is shown in the footer (opt-out emails). */
   unsubscribeUrl?: string;
+  /**
+   * Where the Gracious wordmark sits. Defaults to the top of the card; pass
+   * 'footer' for a quieter, less-branded look that leads with the headline
+   * (e.g. guest invite emails).
+   */
+  logoPlacement?: 'header' | 'footer';
   /**
    * Optional fine-print aside (e.g. <HostInviteFooter />) shown beneath the
    * footer line. Reserved for relationship emails — leave unset on
@@ -43,36 +49,51 @@ export function EmailLayout({
   children,
   hero,
   unsubscribeUrl,
+  logoPlacement = 'header',
   footerAside,
 }: EmailLayoutProps) {
+  const logoInFooter = logoPlacement === 'footer';
   return (
     <Html>
       <Head />
       <Preview>{preview}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Img
-            src={logoSrc}
-            alt="Gracious"
-            width={132}
-            height={33}
-            style={logo}
-          />
+          {!logoInFooter && (
+            <Img
+              src={logoSrc}
+              alt="Gracious"
+              width={132}
+              height={33}
+              style={logo}
+            />
+          )}
           {hero}
           <Heading style={h1}>{heading}</Heading>
           <Section style={content}>{children}</Section>
           <Hr style={hr} />
-          <Text style={footer}>
-            Gracious
-            {unsubscribeUrl && (
-              <>
-                <br />
-                <Link href={unsubscribeUrl} style={footerLink}>
-                  Unsubscribe from these emails
-                </Link>
-              </>
-            )}
-          </Text>
+          {logoInFooter && (
+            <Img
+              src={logoSrc}
+              alt="Gracious"
+              width={108}
+              height={27}
+              style={footerLogo}
+            />
+          )}
+          {(!logoInFooter || unsubscribeUrl) && (
+            <Text style={footer}>
+              {!logoInFooter && 'Gracious'}
+              {unsubscribeUrl && (
+                <>
+                  {!logoInFooter && <br />}
+                  <Link href={unsubscribeUrl} style={footerLink}>
+                    Unsubscribe from these emails
+                  </Link>
+                </>
+              )}
+            </Text>
+          )}
           {footerAside}
         </Container>
       </Body>
@@ -117,6 +138,15 @@ const logo = {
   width: '132px',
   height: 'auto',
   margin: '0 0 24px',
+};
+
+// Quieter mark for the footer: smaller than the header logo and spaced above
+// the fine print so the email leads with its headline, not the brand.
+const footerLogo = {
+  display: 'block',
+  width: '108px',
+  height: 'auto',
+  margin: '0 0 12px',
 };
 
 const h1 = {
@@ -174,4 +204,21 @@ export const buttonStyle = {
   display: 'inline-block',
   fontWeight: '600' as const,
   fontSize: '14px',
+};
+
+/**
+ * The hero action on invite emails, where the button — not a banner — is the
+ * first thing a guest sees. Bigger tap target and type than the standard
+ * `buttonStyle`, with breathing room above so it reads as the headline's payoff.
+ */
+export const ctaButtonStyle = {
+  backgroundColor: '#1f3d33',
+  color: '#f7f4ed',
+  padding: '16px 32px',
+  borderRadius: '8px',
+  textDecoration: 'none',
+  display: 'inline-block',
+  fontWeight: '600' as const,
+  fontSize: '16px',
+  margin: '4px 0 8px',
 };

@@ -1,5 +1,5 @@
-import { Button, Link, Text } from '@react-email/components';
-import { EmailLayout, buttonStyle, fallbackLinkStyle } from './components/layout';
+import { Button, Text } from '@react-email/components';
+import { EmailLayout, ctaButtonStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { QuoteCard } from './components/cards';
 import { HostInviteFooter } from './components/footer';
@@ -12,7 +12,7 @@ interface Props {
   inviteUrl: string;
   message?: string;
   expiresAt?: string;
-  /** Featured property photo, shown as a banner above the heading. */
+  /** Featured property photo, shown as a banner below the copy. */
   heroImageUrl?: string;
   /** True when the recipient already hosts; hides the "become a host" aside. */
   recipientIsHost?: boolean;
@@ -31,14 +31,30 @@ export default function InvitationSentEmail({
   recipientIsHost = false,
   hostOnboardingUrl,
 }: Props) {
-  const headline = hostName
-    ? `${hostName} has invited you to ${propertyName}`
-    : `You're invited to ${propertyName}`;
+  // hostName arrives as a real full name or not at all; first name keeps the
+  // headline personal and tight.
+  const hostFirstName = hostName?.trim().split(/\s+/)[0];
+
+  const preview = hostFirstName
+    ? `Plan your visit with ${hostFirstName} at ${propertyName}`
+    : `Plan your visit to ${propertyName}`;
+
+  const heading = hostFirstName ? (
+    <>
+      Plan your visit with <span style={nameStyle}>{hostFirstName}</span> at{' '}
+      <span style={nameStyle}>{propertyName}</span>
+    </>
+  ) : (
+    <>
+      Plan your visit to <span style={nameStyle}>{propertyName}</span>
+    </>
+  );
+
   return (
     <EmailLayout
-      preview={headline}
-      heading={headline}
-      hero={<EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />}
+      preview={preview}
+      heading={heading}
+      logoPlacement="footer"
       footerAside={
         <HostInviteFooter
           recipientIsHost={recipientIsHost}
@@ -46,33 +62,24 @@ export default function InvitationSentEmail({
         />
       }
     >
-      <Text>Hi {guestName},</Text>
+      <Button style={ctaButtonStyle} href={inviteUrl}>
+        Pick your dates
+      </Button>
       <Text>
-        {hostName ? (
-          <>
-            <strong>{hostName}</strong> has invited you to stay at{' '}
-            <strong>{propertyName}</strong>.
-          </>
-        ) : (
-          <>
-            You&apos;ve been invited to request a visit at{' '}
-            <strong>{propertyName}</strong>.
-          </>
-        )}
+        Hi {guestName} —{' '}
+        {hostFirstName ? <strong>{hostFirstName}</strong> : 'your host'} set
+        aside a spot for you at <strong>{propertyName}</strong>. Choose the dates
+        that work for you and we&apos;ll send your request along — it only takes
+        a minute, and nothing&apos;s held until you pick them.
       </Text>
       {message && <QuoteCard attribution={hostName}>{message}</QuoteCard>}
+      <EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />
       {expiresAt && (
-        <Text>This invitation expires on {expiresAt}.</Text>
+        <Text style={finePrint}>This invitation expires on {expiresAt}.</Text>
       )}
-      <Button style={buttonStyle} href={inviteUrl}>
-        View house & request a visit
-      </Button>
-      <Text style={{ fontSize: '12px', color: '#8a8273', marginTop: '16px' }}>
-        Or copy this link:{' '}
-        <Link href={inviteUrl} style={fallbackLinkStyle}>
-          {inviteUrl}
-        </Link>
-      </Text>
     </EmailLayout>
   );
 }
+
+const nameStyle = { color: '#a2773e' };
+const finePrint = { fontSize: '12px', color: '#8a8273', marginTop: '16px' };

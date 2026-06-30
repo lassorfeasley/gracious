@@ -1,5 +1,5 @@
-import { Button, Link, Text } from '@react-email/components';
-import { EmailLayout, buttonStyle, fallbackLinkStyle } from './components/layout';
+import { Button, Text } from '@react-email/components';
+import { EmailLayout, ctaButtonStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { QuoteCard } from './components/cards';
 import { HostInviteFooter } from './components/footer';
@@ -12,7 +12,7 @@ interface Props {
   inviteUrl: string;
   message?: string;
   expiresAt?: string;
-  /** Featured property photo, shown as a banner above the heading. */
+  /** Featured property photo, shown as a banner below the copy. */
   heroImageUrl?: string;
   /** Which nudge this is (1 = first reminder … 3 = last call). */
   step: 1 | 2 | 3;
@@ -35,27 +35,39 @@ export default function InviteReminderEmail({
   hostOnboardingUrl,
 }: Props) {
   const isFinal = step >= 3;
-  const headline = isFinal
-    ? `Last reminder: your invite to ${propertyName}`
-    : `Your invite to ${propertyName} is waiting`;
+  // hostName arrives as a real full name or not at all; first name keeps the
+  // headline personal and tight.
+  const hostFirstName = hostName?.trim().split(/\s+/)[0];
 
-  const lead = hostName ? (
+  const preview = isFinal
+    ? `Last chance to plan your visit to ${propertyName}`
+    : hostFirstName
+      ? `Plan your visit with ${hostFirstName} at ${propertyName}`
+      : `Plan your visit to ${propertyName}`;
+
+  const heading = isFinal ? (
     <>
-      <strong>{hostName}</strong> invited you to stay at{' '}
-      <strong>{propertyName}</strong>
+      Last chance to plan your visit to{' '}
+      <span style={nameStyle}>{propertyName}</span>
+    </>
+  ) : hostFirstName ? (
+    <>
+      Plan your visit with <span style={nameStyle}>{hostFirstName}</span> at{' '}
+      <span style={nameStyle}>{propertyName}</span>
     </>
   ) : (
     <>
-      You&apos;ve been invited to request a visit at{' '}
-      <strong>{propertyName}</strong>
+      Plan your visit to <span style={nameStyle}>{propertyName}</span>
     </>
   );
 
+  const host = hostFirstName ? <strong>{hostFirstName}</strong> : 'your host';
+
   return (
     <EmailLayout
-      preview={headline}
-      heading={headline}
-      hero={<EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />}
+      preview={preview}
+      heading={heading}
+      logoPlacement="footer"
       footerAside={
         <HostInviteFooter
           recipientIsHost={recipientIsHost}
@@ -63,29 +75,31 @@ export default function InviteReminderEmail({
         />
       }
     >
-      <Text>Hi {guestName},</Text>
-      <Text>
-        Just a friendly nudge — {lead}, and we haven&apos;t heard back yet.
-      </Text>
-      {message && <QuoteCard attribution={hostName}>{message}</QuoteCard>}
+      <Button style={ctaButtonStyle} href={inviteUrl}>
+        Pick your dates
+      </Button>
       {isFinal ? (
         <Text>
-          This is the last reminder we&apos;ll send. Whenever you&apos;re ready,
+          Hi {guestName} — this is the last reminder we&apos;ll send about your
+          invite to <strong>{propertyName}</strong>. Whenever you&apos;re ready,
           picking your dates only takes a minute.
         </Text>
       ) : (
-        <Text>Pick your dates whenever you&apos;re ready — it only takes a minute.</Text>
+        <Text>
+          Hi {guestName} — {host} invited you to{' '}
+          <strong>{propertyName}</strong> and we haven&apos;t heard back yet.
+          Choose the dates that work for you whenever you&apos;re ready; it only
+          takes a minute.
+        </Text>
       )}
-      {expiresAt && <Text>This invitation expires on {expiresAt}.</Text>}
-      <Button style={buttonStyle} href={inviteUrl}>
-        View house &amp; request a visit
-      </Button>
-      <Text style={{ fontSize: '12px', color: '#8a8273', marginTop: '16px' }}>
-        Or copy this link:{' '}
-        <Link href={inviteUrl} style={fallbackLinkStyle}>
-          {inviteUrl}
-        </Link>
-      </Text>
+      {message && <QuoteCard attribution={hostName}>{message}</QuoteCard>}
+      <EmailHero propertyName={propertyName} imageUrl={heroImageUrl} />
+      {expiresAt && (
+        <Text style={finePrint}>This invitation expires on {expiresAt}.</Text>
+      )}
     </EmailLayout>
   );
 }
+
+const nameStyle = { color: '#a2773e' };
+const finePrint = { fontSize: '12px', color: '#8a8273', marginTop: '16px' };
