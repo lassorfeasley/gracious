@@ -48,7 +48,11 @@ export function HostCalendarSection({
           {calendarFeedUrl && <CalendarSyncButton feedUrl={calendarFeedUrl} />}
         </div>
         <TabsContent value="calendar" className="mt-6">
-          <HouseCalendar monthsToShow={2} visitHrefBase={visitHrefBase} />
+          <HouseCalendar
+            monthsToShow={2}
+            visitHrefBase={visitHrefBase}
+            openOnFirstVisit
+          />
         </TabsContent>
         <TabsContent value="timeline" className="mt-6">
           <HostVisitTimeline

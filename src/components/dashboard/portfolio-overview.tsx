@@ -74,7 +74,7 @@ export function PortfolioOverview({
   );
 }
 
-function HouseCard({ house }: { house: PortfolioHouse }) {
+export function HouseCard({ house }: { house: PortfolioHouse }) {
   const { property, roomCount, upcomingCount, nextVisit } = house;
   const meta = `${roomCount} ${roomCount === 1 ? 'room' : 'rooms'}`;
 

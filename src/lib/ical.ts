@@ -165,6 +165,54 @@ export function generatePropertyFeedIcs(
   return value;
 }
 
+export interface AccountFeedVisit extends FeedVisit {
+  propertyName: string;
+  propertyAddress: string | null;
+}
+
+/**
+ * A subscribable VCALENDAR of every confirmed visit across *all* of a host's
+ * homes. Same per-visit UID scheme as the property feed (so a visit that also
+ * appears in a single-home feed reconciles to the same event), but each title
+ * carries the home name so a host watching one combined calendar can tell their
+ * houses apart at a glance.
+ */
+export function generateAccountFeedIcs(
+  visits: AccountFeedVisit[],
+  calName = 'All homes — Gracious'
+): string {
+  if (visits.length === 0) {
+    return [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Gracious//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      `X-WR-CALNAME:${calName}`,
+      'END:VCALENDAR',
+    ].join('\r\n');
+  }
+
+  const events: EventAttributes[] = visits.map((visit) => ({
+    uid: `visit-${visit.id}@gracious.host`,
+    start: dateTuple(visit.checkIn, VISIT_CHECK_IN_HOUR),
+    end: dateTuple(visit.checkOut, VISIT_CHECK_OUT_HOUR),
+    title: `${visit.guestName} at ${visit.propertyName}`,
+    description: feedEventDescription(visit),
+    location: visit.propertyAddress ?? visit.propertyName,
+    status: 'CONFIRMED',
+    busyStatus: 'BUSY',
+    calName,
+    organizer: { name: 'Gracious', email: 'hello@gracious.host' },
+  }));
+
+  const { error, value } = createEvents(events);
+  if (error || !value) {
+    throw new Error('Failed to generate calendar feed');
+  }
+  return value;
+}
+
 /** Host-facing label for an invited (not-yet-accepted) guest. */
 function invitationGuestLabel(invitation: InvitationWithDetails): string {
   const name = [invitation.guest_first_name, invitation.guest_last_name]

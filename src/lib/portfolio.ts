@@ -6,6 +6,7 @@ import type { TimelineRow, TimelineStay } from '@/components/visit-timeline';
 
 export interface PortfolioCalendarVisit {
   id: string;
+  propertyId: string;
   guestName: string;
   checkIn: string;
   checkOut: string;
@@ -14,6 +15,7 @@ export interface PortfolioCalendarVisit {
 
 export interface PortfolioCalendarBlock {
   id: string;
+  propertyId: string;
   start_date: string;
   end_date: string;
 }
@@ -91,6 +93,7 @@ export async function getPortfolioData(
         if (!visitsById.has(b.id)) {
           visitsById.set(b.id, {
             id: b.id,
+            propertyId: property.id,
             guestName: b.guestName,
             checkIn: b.checkIn,
             checkOut: b.checkOut,
@@ -101,6 +104,7 @@ export async function getPortfolioData(
       for (const bl of avail.blocks) {
         calendarBlocks.push({
           id: bl.id,
+          propertyId: property.id,
           start_date: bl.start_date,
           end_date: bl.end_date,
         });
@@ -113,6 +117,7 @@ export async function getPortfolioData(
     for (const b of houseVisits) {
       calendarVisits.push({
         ...b,
+        propertyId: property.id,
         guestName: `${b.guestName} · ${property.name}`,
       });
     }

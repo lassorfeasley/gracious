@@ -13,11 +13,13 @@ export function HouseCalendar({
   monthsToShow = 2,
   disabled,
   visitHrefBase,
+  openOnFirstVisit,
 }: {
   allowedRanges?: DateRange[];
   monthsToShow?: number;
   disabled?: boolean;
   visitHrefBase?: string;
+  openOnFirstVisit?: boolean;
 }) {
   const {
     checkIn,
@@ -45,6 +47,7 @@ export function HouseCalendar({
       activeField={activeField}
       onActiveFieldChange={setActiveField}
       visitHrefBase={visitHrefBase}
+      openOnFirstVisit={openOnFirstVisit}
     />
   );
 }

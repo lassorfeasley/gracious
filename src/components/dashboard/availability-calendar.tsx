@@ -87,6 +87,12 @@ interface AvailabilityCalendarProps {
    */
   rooms?: CalendarRoom[];
   roomAvailability?: Record<string, RoomAvailability>;
+  /**
+   * Open on the first month that has a visit, even when selectable. Used by the
+   * host home/room profiles so they land on the next month with a booking
+   * instead of an empty current month.
+   */
+  openOnFirstVisit?: boolean;
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -643,6 +649,7 @@ export function AvailabilityCalendar({
   visitHrefBase,
   rooms,
   roomAvailability,
+  openOnFirstVisit = false,
 }: AvailabilityCalendarProps) {
   // Open on the first month that actually has dates to request a visit — the earliest
   // invited window (or an already-selected check-in), never a past month — so
@@ -652,6 +659,21 @@ export function AvailabilityCalendar({
     const candidates: Date[] = [];
     if (value?.checkIn) candidates.push(parseISO(value.checkIn));
     for (const r of allowedRanges) candidates.push(parseISO(r.start));
+    // Open on the first month that actually has a visit when the calendar is
+    // display-only (e.g. the dashboard schedule) or when explicitly requested
+    // (host home/room profiles), so you don't land on an empty current month.
+    if (!selectable || openOnFirstVisit) {
+      const rm = !!(rooms && rooms.length > 0 && roomAvailability);
+      if (rm) {
+        for (const r of rooms!) {
+          for (const v of roomAvailability![r.id]?.visits ?? []) {
+            candidates.push(parseISO(v.checkIn));
+          }
+        }
+      } else {
+        for (const v of visits) candidates.push(parseISO(v.checkIn));
+      }
+    }
     const target = candidates
       .map((d) => startOfMonth(d))
       .filter((m) => !isBefore(m, monthFloor))

@@ -85,8 +85,12 @@ export function HostPageLayout({
         )}
       >
         <div className="min-w-0">
-          {leading}
-          <div className={cn('divide-y', leading && 'mt-2')}>{children}</div>
+          {leading && (
+            <div className="border-b border-border/60 pb-8">{leading}</div>
+          )}
+          <div className={cn('divide-y', leading && '[&>section:first-child]:pt-10')}>
+            {children}
+          </div>
         </div>
         {/* Desktop only; mobile docks the same card to the bottom of the screen. */}
         <aside

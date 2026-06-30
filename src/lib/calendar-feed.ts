@@ -25,14 +25,32 @@ function sign(data: string): string {
     .digest('base64url');
 }
 
-/** Tamper-proof token identifying a property feed. */
-export function makeCalendarFeedToken(propertyId: string): string {
-  const payload = `property:${propertyId}`;
+/**
+ * What a feed token resolves to: a single property, or a host's whole account
+ * (every home they own or co-manage), aggregated into one calendar.
+ */
+export type CalendarFeedTarget =
+  | { kind: 'property'; propertyId: string }
+  | { kind: 'account'; userId: string };
+
+function encodeToken(payload: string): string {
   const token = `${payload}:${sign(payload)}`;
   return Buffer.from(token).toString('base64url');
 }
 
-export function parseCalendarFeedToken(token: string): { propertyId: string } | null {
+/** Tamper-proof token identifying a property feed. */
+export function makeCalendarFeedToken(propertyId: string): string {
+  return encodeToken(`property:${propertyId}`);
+}
+
+/** Tamper-proof token identifying a host's all-homes feed. */
+export function makeAccountCalendarFeedToken(userId: string): string {
+  return encodeToken(`account:${userId}`);
+}
+
+export function parseCalendarFeedToken(
+  token: string
+): CalendarFeedTarget | null {
   try {
     const decoded = Buffer.from(token, 'base64url').toString('utf8');
     const lastSep = decoded.lastIndexOf(':');
@@ -40,8 +58,8 @@ export function parseCalendarFeedToken(token: string): { propertyId: string } | 
 
     const payload = decoded.slice(0, lastSep);
     const signature = decoded.slice(lastSep + 1);
-    const [kind, propertyId] = payload.split(':');
-    if (kind !== 'property' || !propertyId || !signature) return null;
+    const [kind, id] = payload.split(':');
+    if (!kind || !id || !signature) return null;
 
     const expected = sign(payload);
     const sigBuf = Buffer.from(signature);
@@ -49,7 +67,9 @@ export function parseCalendarFeedToken(token: string): { propertyId: string } | 
     if (sigBuf.length !== expBuf.length) return null;
     if (!crypto.timingSafeEqual(sigBuf, expBuf)) return null;
 
-    return { propertyId };
+    if (kind === 'property') return { kind: 'property', propertyId: id };
+    if (kind === 'account') return { kind: 'account', userId: id };
+    return null;
   } catch {
     return null;
   }
@@ -58,4 +78,9 @@ export function parseCalendarFeedToken(token: string): { propertyId: string } | 
 /** Absolute https URL of a property's calendar feed. */
 export function propertyCalendarFeedUrl(propertyId: string): string {
   return `${appUrl()}/api/calendar/${makeCalendarFeedToken(propertyId)}.ics`;
+}
+
+/** Absolute https URL of a host's combined all-homes calendar feed. */
+export function accountCalendarFeedUrl(userId: string): string {
+  return `${appUrl()}/api/calendar/${makeAccountCalendarFeedToken(userId)}.ics`;
 }

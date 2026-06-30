@@ -57,6 +57,9 @@ interface InviteGuestDialogProps {
   /** When true, manual visit uses the surrounding VisitProvider. */
   useParentVisitContext?: boolean;
   trigger?: ReactNode;
+  /** Controlled open state. When provided, no trigger is rendered. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 type StepKey = 'guest' | 'type' | 'dates' | 'rooms' | 'details' | 'review';
@@ -77,10 +80,18 @@ export function InviteGuestDialog({
   preselectedRoomIds,
   useParentVisitContext = false,
   trigger,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: InviteGuestDialogProps) {
   const router = useRouter();
   const parentVisit = useOptionalVisit();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setUncontrolledOpen(next);
+    controlledOnOpenChange?.(next);
+  };
   const [mode, setMode] = useState<'invite' | 'manual'>('invite');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
@@ -371,14 +382,16 @@ export function InviteGuestDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button size="sm" disabled={rooms.length === 0}>
-            <UserPlus className="mr-1 h-4 w-4" />
-            Invite a guest
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button size="sm" disabled={rooms.length === 0}>
+              <UserPlus className="mr-1 h-4 w-4" />
+              Invite a guest
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
 
       {open &&
         mode === 'manual' &&

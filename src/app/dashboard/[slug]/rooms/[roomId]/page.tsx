@@ -13,6 +13,7 @@ import { SectionNav } from '@/components/dashboard/section-nav';
 import { InviteGuestDialog } from '@/components/dashboard/invite-guest-dialog';
 import { RoomEditDialog } from '@/components/dashboard/room-edit-dialog';
 import { PhotoMosaic } from '@/components/photo-gallery';
+import { PlaceholderImage } from '@/components/placeholder-image';
 import { Button } from '@/components/ui/button';
 import {
   RoomHero,
@@ -127,9 +128,13 @@ export default async function RoomProfilePage({
               <PhotoMosaic
                 photos={roomImages ?? []}
                 emptyState={
-                  <p className="text-sm text-muted-foreground">
-                    Add photos to showcase this room
-                  </p>
+                  <PlaceholderImage
+                    type="room"
+                    name={room.name}
+                    seed={room.id}
+                    className="absolute inset-0"
+                    iconClassName="h-16 w-16"
+                  />
                 }
                 manageAction={
                   <RoomEditDialog

@@ -75,7 +75,7 @@ export default async function OverviewPage({
       `id, status, invitation_id, guest_name, guest_email, relationship, guest:users!guest_user_id(name, email, avatar_url), invitation:invitations(guest_name, guest_first_name, guest_last_name, guest_email), dates:visit_dates(check_in, check_out)`
     )
     .eq('property_id', property.id)
-    .in('status', ['approved', 'requested']);
+    .eq('status', 'approved');
 
   const normalized = (visits ?? []).map((b) => {
     const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
