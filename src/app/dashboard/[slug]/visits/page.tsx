@@ -3,13 +3,8 @@ import { getDashboardProperty } from '@/lib/dashboard-property';
 import { getInvitationRoomAvailability } from '@/lib/guest-availability';
 import { ComposePageActions } from '@/components/dashboard/compose-page-actions';
 import { DashboardContainer } from '@/components/dashboard/dashboard-container';
-import {
-  VisitsHub,
-  type VisitTab,
-  type VisitItem,
-  type InviteItem,
-} from '@/components/dashboard/visits-hub';
-import type { VisitStatus, Invitation } from '@/types/database';
+import { VisitsHub, type VisitTab } from '@/components/dashboard/visits-hub';
+import { loadVisitsHubData } from '@/lib/visits-hub-data';
 
 export const metadata = { title: 'Visits' };
 
@@ -42,115 +37,7 @@ export default async function VisitsPage({
     .eq('property_id', property.id)
     .order('display_order');
 
-  const { data: invitations } = await supabase
-    .from('invitations')
-    .select('*, invitation_windows(start_date, end_date)')
-    .eq('property_id', property.id)
-    .order('created_at', { ascending: false });
-
-  const { data: visitRows } = await supabase
-    .from('visits')
-    .select(
-      `
-      id, status, invitation_id, guest_name, guest_email, relationship, party_size, notes,
-      guest:users!guest_user_id(name, email, avatar_url),
-      dates:visit_dates(check_in, check_out),
-      visit_rooms(room:rooms(name)),
-      invitation:invitations(token, guest_name, guest_first_name, guest_last_name, guest_email)
-    `
-    )
-    .eq('property_id', property.id)
-    .order('created_at', { ascending: false });
-
-  // Batch-fetch avatars by email so account-holding guests show their photo
-  // even on rows where there's no guest_user_id join (manual visits, invites).
-  const emailSet = new Set<string>();
-  for (const b of visitRows ?? []) {
-    if (b.guest_email) emailSet.add(b.guest_email.toLowerCase());
-  }
-  for (const inv of invitations ?? []) {
-    if (inv.guest_email) emailSet.add(inv.guest_email.toLowerCase());
-  }
-  const avatarByEmail = new Map<string, string | null>();
-  if (emailSet.size > 0) {
-    const { data: members } = await supabase
-      .from('users')
-      .select('email, avatar_url')
-      .in('email', Array.from(emailSet));
-    for (const m of members ?? []) {
-      avatarByEmail.set(m.email.toLowerCase(), m.avatar_url);
-    }
-  }
-
-  const visits: VisitItem[] = (visitRows ?? [])
-    .map((b): VisitItem | null => {
-      const dates = Array.isArray(b.dates) ? b.dates[0] : b.dates;
-      if (!dates?.check_in || !dates?.check_out) return null;
-      const guest = (Array.isArray(b.guest) ? b.guest[0] : b.guest) as
-        | { name: string | null; email: string; avatar_url: string | null }
-        | null;
-      const inv = Array.isArray(b.invitation) ? b.invitation[0] : b.invitation;
-      // Invite-flow visits store only guest_user_id, and RLS hides the guest's
-      // users row from the host — so the guest's name/email come off the
-      // invitation (which the host can read) rather than the user join.
-      const invName =
-        inv?.guest_name ||
-        [inv?.guest_first_name, inv?.guest_last_name]
-          .filter(Boolean)
-          .join(' ') ||
-        null;
-      const guestName =
-        guest?.name ??
-        b.guest_name ??
-        invName ??
-        guest?.email?.split('@')[0] ??
-        b.guest_email?.split('@')[0] ??
-        inv?.guest_email?.split('@')[0] ??
-        'Guest';
-      const rooms =
-        b.visit_rooms?.map((br) => {
-          const room = Array.isArray(br.room) ? br.room[0] : br.room;
-          return room?.name ?? 'Room';
-        }) ?? [];
-      const email = guest?.email ?? b.guest_email ?? inv?.guest_email ?? null;
-      return {
-        id: b.id,
-        guestName,
-        email,
-        avatarUrl:
-          guest?.avatar_url ??
-          (email ? (avatarByEmail.get(email.toLowerCase()) ?? null) : null),
-        relationship: b.relationship ?? null,
-        status: b.status as VisitStatus,
-        checkIn: dates.check_in,
-        checkOut: dates.check_out,
-        partySize: b.party_size,
-        rooms,
-        isManual: !b.invitation_id,
-        token: inv?.token ?? null,
-        notes: b.notes,
-      };
-    })
-    .filter((v): v is VisitItem => v !== null);
-
-  const invites: InviteItem[] = (
-    (invitations ?? []) as (Invitation & {
-      invitation_windows?: { start_date: string; end_date: string }[];
-    })[]
-  ).map((inv) => ({
-    id: inv.id,
-    guestName: inv.guest_name ?? inv.guest_email,
-    email: inv.guest_email,
-    avatarUrl: avatarByEmail.get(inv.guest_email.toLowerCase()) ?? null,
-    relationship: inv.relationship ?? null,
-    status: inv.status,
-    type: inv.type,
-    token: inv.token,
-    expiresAt: inv.expires_at,
-    windows: (inv.invitation_windows ?? [])
-      .map((w) => ({ start: w.start_date, end: w.end_date }))
-      .sort((a, b) => a.start.localeCompare(b.start)),
-  }));
+  const { visits, invites } = await loadVisitsHubData([property]);
 
   const roomAvailability = await getInvitationRoomAvailability(
     (rooms ?? []).map((r) => r.id),
@@ -204,12 +91,11 @@ export default async function VisitsPage({
       )}
 
       <VisitsHub
-        slug={slug}
         today={today}
         initialTab={initialTab}
         visits={visits}
         invites={invites}
-        propertyName={property.name}
+        returnPath={`/dashboard/${slug}/visits`}
       />
     </DashboardContainer>
   );

@@ -1,36 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Users,
   Home,
-  Settings,
   ChevronDown,
-  LogOut,
   Plus,
   Check,
-  Luggage,
-  Shield,
   LayoutGrid,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
 import type { Property } from '@/types/database';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Wordmark } from '@/components/brand/wordmark';
+import { AccountMenu } from '@/components/dashboard/account-menu';
 
 interface DashboardTopNavProps {
   properties: Property[];
-  currentProperty: Property;
+  /** The home being viewed, when on a home-scoped page. Omitted on the account
+   * landing (`/dashboard`) and account settings, where no single home is active. */
+  currentProperty?: Property;
   userEmail?: string;
   userId?: string;
   showAdminLink?: boolean;
@@ -44,19 +41,10 @@ export function DashboardTopNav({
   showAdminLink = false,
 }: DashboardTopNavProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const base = `/dashboard/${currentProperty.slug}`;
-  const settingsHref = `${base}/settings`;
-
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  }
+  const base = currentProperty ? `/dashboard/${currentProperty.slug}` : null;
 
   function isActive(href: string) {
-    return pathname.startsWith(`${base}/${href}`);
+    return base ? pathname.startsWith(`${base}/${href}`) : false;
   }
 
   function navLinkClass(active: boolean) {
@@ -76,118 +64,81 @@ export function DashboardTopNav({
         </Link>
 
         <nav className="ml-auto flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                aria-label="Switch home"
-                className={navLinkClass(isActive('overview'))}
-              >
-                <Home className="h-4 w-4 shrink-0" />
-                <span className="hidden max-w-[200px] truncate sm:inline">
-                  {currentProperty.name}
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              {properties.length > 1 && (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard">
-                      <LayoutGrid className="mr-2 h-4 w-4" />
-                      All homes
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              {properties.map((p) => (
-                <DropdownMenuItem key={p.id} asChild>
+          {properties.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label="Switch home"
+                  className={navLinkClass(isActive('overview'))}
+                >
+                  {currentProperty ? (
+                    <Home className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <LayoutGrid className="h-4 w-4 shrink-0" />
+                  )}
+                  <span className="hidden max-w-[200px] truncate sm:inline">
+                    {currentProperty ? currentProperty.name : 'All homes'}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuItem asChild>
                   <Link
-                    href={`/dashboard/${p.slug}/overview`}
+                    href="/dashboard"
                     className="flex items-center justify-between"
                   >
-                    <span>{p.name}</span>
-                    {p.id === currentProperty.id && (
+                    <span className="flex items-center">
+                      <LayoutGrid className="mr-2 h-4 w-4" />
+                      All homes
+                    </span>
+                    {!currentProperty && (
                       <Check className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Link>
                 </DropdownMenuItem>
-              ))}
-              {userId && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/add-home">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add another home
+                <DropdownMenuSeparator />
+                {properties.map((p) => (
+                  <DropdownMenuItem key={p.id} asChild>
+                    <Link
+                      href={`/dashboard/${p.slug}/overview`}
+                      className="flex items-center justify-between"
+                    >
+                      <span>{p.name}</span>
+                      {p.id === currentProperty?.id && (
+                        <Check className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </Link>
                   </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Link
-            href={`${base}/visits`}
-            aria-label="Visits"
-            className={navLinkClass(isActive('visits'))}
-          >
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Visits</span>
-          </Link>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Settings and account"
-                className={cn(
-                  'text-muted-foreground hover:text-foreground',
-                  isActive('settings') && 'bg-muted text-foreground'
+                ))}
+                {userId && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/add-home">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add another home
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <DropdownMenuItem asChild>
-                <Link href={settingsHref}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/my-visits">
-                  <Luggage className="mr-2 h-4 w-4" />
-                  My visits
-                </Link>
-              </DropdownMenuItem>
-              {showAdminLink && (
-                <DropdownMenuItem asChild>
-                  <Link href="/admin">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Admin
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              {userEmail && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
-                    {userEmail}
-                  </DropdownMenuLabel>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {properties.length > 0 && (
+            <Link
+              href="/dashboard/visits"
+              aria-label="Visits"
+              className={navLinkClass(pathname.includes('/visits'))}
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Visits</span>
+            </Link>
+          )}
+
+          <AccountMenu userEmail={userEmail} showAdminLink={showAdminLink} />
         </nav>
       </div>
     </header>

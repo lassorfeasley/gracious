@@ -16,6 +16,11 @@ import { PropertyEditDialog } from '@/components/dashboard/property-edit-dialog'
 import { GuestInformationSection } from '@/components/dashboard/guest-information-section';
 import { PropertyMap } from '@/components/dashboard/property-map';
 import { SectionNav } from '@/components/dashboard/section-nav';
+import { EditableHomeName } from '@/components/dashboard/editable-home-name';
+import {
+  HomeManagersSection,
+  type HomeManager,
+} from '@/components/dashboard/home-managers-section';
 import { PhotoMosaic } from '@/components/photo-gallery';
 import { PlaceholderImage } from '@/components/placeholder-image';
 import { PersonAvatar } from '@/components/ui/person-avatar';
@@ -42,7 +47,7 @@ export default async function OverviewPage({
       ? {
           remaining: usage.remaining,
           limit: usage.limit,
-          settingsPath: `/dashboard/${slug}/settings`,
+          settingsPath: `/dashboard/settings`,
         }
       : undefined;
 
@@ -68,6 +73,21 @@ export default async function OverviewPage({
     .order('display_order');
 
   const notes = (propertyNotes ?? []) as PropertyNote[];
+
+  const { data: managersRaw } = isPropertyOwner
+    ? await supabase
+        .from('property_managers')
+        .select('id, user:users(email, name)')
+        .eq('property_id', property.id)
+    : { data: null };
+
+  const managers: HomeManager[] = (managersRaw ?? []).map((m) => {
+    const u = Array.isArray(m.user) ? m.user[0] : m.user;
+    return {
+      id: m.id as string,
+      user: u as { email: string; name: string | null },
+    };
+  });
 
   const { data: visits } = await supabase
     .from('visits')
@@ -140,6 +160,7 @@ export default async function OverviewPage({
     { id: 'amenities', label: 'Amenities' },
     { id: 'guest-info', label: 'Guest info' },
     { id: 'upcoming', label: 'Visits' },
+    ...(isPropertyOwner ? [{ id: 'managers', label: 'Managers' }] : []),
   ];
 
   return (
@@ -147,9 +168,7 @@ export default async function OverviewPage({
       {/* Title */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            {property.name}
-          </h1>
+          <EditableHomeName propertyId={property.id} name={property.name} />
           {property.address && (
             <p className="mt-2 flex items-center gap-1.5 text-base text-muted-foreground">
               <MapPin className="h-4 w-4 shrink-0" />
@@ -435,6 +454,14 @@ export default async function OverviewPage({
           </ul>
         )}
       </section>
+
+      {isPropertyOwner && (
+        <HomeManagersSection
+          propertyId={property.id}
+          propertyName={property.name}
+          managers={managers}
+        />
+      )}
       </HostPageShell>
     </DashboardContainer>
   );

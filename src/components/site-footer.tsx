@@ -27,18 +27,7 @@ export function SiteFooter({ name }: { name?: string }) {
           )}
         </div>
 
-        <div className="flex flex-col items-start gap-3 sm:items-end sm:text-right">
-          <LegalFooterLinks />
-          <p className="text-xs text-muted-foreground">
-            © {year} Gracious ·{' '}
-            <a
-              href="/llms.txt"
-              className="transition-colors hover:text-foreground hover:underline underline-offset-4"
-            >
-              llms.txt
-            </a>
-          </p>
-        </div>
+        <LegalFooterLinks year={year} />
       </div>
     </footer>
   );

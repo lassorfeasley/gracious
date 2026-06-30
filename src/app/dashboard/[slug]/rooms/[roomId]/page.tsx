@@ -42,7 +42,7 @@ export default async function RoomProfilePage({
       ? {
           remaining: usage.remaining,
           limit: usage.limit,
-          settingsPath: `/dashboard/${slug}/settings`,
+          settingsPath: `/dashboard/settings`,
         }
       : undefined;
 

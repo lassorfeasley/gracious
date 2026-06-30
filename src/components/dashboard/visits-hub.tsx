@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Check,
+  Home,
   Link2,
   Mail,
   MessageSquareText,
@@ -60,6 +61,10 @@ export type VisitTab =
 
 export interface VisitItem {
   id: string;
+  /** The home this visit belongs to — so cards link and label correctly even
+   * when the hub aggregates across multiple homes. */
+  slug: string;
+  propertyName: string;
   guestName: string;
   email: string | null;
   avatarUrl: string | null;
@@ -76,6 +81,10 @@ export interface VisitItem {
 
 export interface InviteItem {
   id: string;
+  slug: string;
+  propertyName: string;
+  /** Room names this invite is scoped to (empty = whole home). */
+  rooms: string[];
   guestName: string;
   email: string;
   avatarUrl: string | null;
@@ -89,12 +98,15 @@ export interface InviteItem {
 }
 
 interface VisitsHubProps {
-  slug: string;
   today: string;
   initialTab: VisitTab;
   visits: VisitItem[];
   invites: InviteItem[];
-  propertyName?: string | null;
+  /** Where billing/upgrade flows should return to. */
+  returnPath?: string;
+  /** Homes to offer as a filter. When more than one, a house picker and
+   * per-card house tags appear (the account-wide, all-homes view). */
+  houses?: { slug: string; name: string }[];
 }
 
 const TAB_ORDER: VisitTab[] = [
@@ -211,19 +223,67 @@ function formatVisitDate(date: string): string {
   return format(parseISO(date), 'EEE, MMM d');
 }
 
+const ALL_HOUSES = 'all';
+const ALL_ROOMS = 'all';
+
 export function VisitsHub({
-  slug,
   today,
   initialTab,
   visits,
   invites,
-  propertyName,
+  returnPath = '/dashboard/visits',
+  houses = [],
 }: VisitsHubProps) {
   const router = useRouter();
   const [tab, setTab] = useState<VisitTab>(initialTab);
   const [query, setQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [house, setHouse] = useState<string>(ALL_HOUSES);
+  const [room, setRoom] = useState<string>(ALL_ROOMS);
+
+  const showHouse = houses.length > 1;
+
+  // House filter narrows first; the room picker's options come from whatever's
+  // left, so rooms always belong to the home in view.
+  const houseScopedVisits = useMemo(
+    () =>
+      house === ALL_HOUSES ? visits : visits.filter((v) => v.slug === house),
+    [visits, house]
+  );
+  const houseScopedInvites = useMemo(
+    () =>
+      house === ALL_HOUSES ? invites : invites.filter((i) => i.slug === house),
+    [invites, house]
+  );
+
+  const roomOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const v of houseScopedVisits) for (const r of v.rooms) names.add(r);
+    for (const i of houseScopedInvites) for (const r of i.rooms) names.add(r);
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [houseScopedVisits, houseScopedInvites]);
+
+  // A room selection can go stale when the house filter changes; fall back to
+  // "all rooms" rather than showing an empty list.
+  const activeRoom = room !== ALL_ROOMS && roomOptions.includes(room)
+    ? room
+    : ALL_ROOMS;
+
+  const scopedVisits = useMemo(
+    () =>
+      activeRoom === ALL_ROOMS
+        ? houseScopedVisits
+        : houseScopedVisits.filter((v) => v.rooms.includes(activeRoom)),
+    [houseScopedVisits, activeRoom]
+  );
+  const scopedInvites = useMemo(
+    () =>
+      activeRoom === ALL_ROOMS
+        ? houseScopedInvites
+        : houseScopedInvites.filter((i) => i.rooms.includes(activeRoom)),
+    [houseScopedInvites, activeRoom]
+  );
 
   // Approve / decline state is held here so request cards work in any tab
   // (e.g. "All" as well as "Requested").
@@ -237,47 +297,47 @@ export function VisitsHub({
   } | null>(null);
 
   const counts: Record<VisitTab, number> = useMemo(() => {
-    const approved = visits.filter((v) => v.status === 'approved');
+    const approved = scopedVisits.filter((v) => v.status === 'approved');
     return {
-      all: visits.length,
-      requested: visits.filter((v) => v.status === 'requested').length,
+      all: scopedVisits.length,
+      requested: scopedVisits.filter((v) => v.status === 'requested').length,
       upcoming: approved.filter((v) => v.checkOut >= today).length,
       past: approved.filter((v) => v.checkOut < today).length,
       // "Inactive" collects everything terminal: cancelled/declined visits plus
       // expired/revoked invitations (invites that never became a visit).
       cancelled:
-        visits.filter(
+        scopedVisits.filter(
           (v) => v.status === 'cancelled' || v.status === 'declined'
         ).length +
-        invites.filter(
+        scopedInvites.filter(
           (i) => i.status === 'expired' || i.status === 'revoked'
         ).length,
       // Only invitations the guest hasn't acted on yet. Accepted invites become
       // visits (shown in the other tabs).
-      invited: invites.filter((i) => i.status === 'pending').length,
+      invited: scopedInvites.filter((i) => i.status === 'pending').length,
     };
-  }, [visits, invites, today]);
+  }, [scopedVisits, scopedInvites, today]);
 
   const visibleVisits = useMemo(() => {
     const approved = (v: VisitItem) => v.status === 'approved';
     let list: VisitItem[];
     switch (tab) {
       case 'requested':
-        list = visits.filter((v) => v.status === 'requested');
+        list = scopedVisits.filter((v) => v.status === 'requested');
         break;
       case 'upcoming':
-        list = visits.filter((v) => approved(v) && v.checkOut >= today);
+        list = scopedVisits.filter((v) => approved(v) && v.checkOut >= today);
         break;
       case 'past':
-        list = visits.filter((v) => approved(v) && v.checkOut < today);
+        list = scopedVisits.filter((v) => approved(v) && v.checkOut < today);
         break;
       case 'cancelled':
-        list = visits.filter(
+        list = scopedVisits.filter(
           (v) => v.status === 'cancelled' || v.status === 'declined'
         );
         break;
       case 'all':
-        list = visits;
+        list = scopedVisits;
         break;
       default:
         list = [];
@@ -289,7 +349,7 @@ export function VisitsHub({
         (!hasDateFilter ||
           overlapsDateRange(dateFrom, dateTo, v.checkIn, v.checkOut))
     );
-  }, [tab, visits, today, query, dateFrom, dateTo]);
+  }, [tab, scopedVisits, today, query, dateFrom, dateTo]);
 
   const visibleInvites = useMemo(() => {
     const forTab = (i: InviteItem) => {
@@ -299,7 +359,7 @@ export function VisitsHub({
       return false;
     };
     const hasDateFilter = !!dateFrom || !!dateTo;
-    return invites.filter(
+    return scopedInvites.filter(
       (i) =>
         forTab(i) &&
         matchesQuery(query, i.guestName, i.email) &&
@@ -308,7 +368,7 @@ export function VisitsHub({
             overlapsDateRange(dateFrom, dateTo, w.start, w.end)
           ))
     );
-  }, [tab, invites, query, dateFrom, dateTo]);
+  }, [tab, scopedInvites, query, dateFrom, dateTo]);
 
   function selectTab(next: VisitTab) {
     setTab(next);
@@ -363,6 +423,18 @@ export function VisitsHub({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="relative w-full min-w-0 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search ${TAB_LABEL[tab].toLowerCase()}…`}
+              className="pl-9"
+              aria-label="Search visits"
+            />
+          </div>
+
           <Select
             value={tab}
             onValueChange={(value) => selectTab(value as VisitTab)}
@@ -399,17 +471,51 @@ export function VisitsHub({
             </SelectContent>
           </Select>
 
-          <div className="relative w-full min-w-0 flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${TAB_LABEL[tab].toLowerCase()}…`}
-              className="pl-9"
-              aria-label="Search visits"
-            />
-          </div>
+          {showHouse && (
+            <Select
+              value={house}
+              onValueChange={(value) => {
+                setHouse(value);
+                setRoom(ALL_ROOMS);
+              }}
+            >
+              <SelectTrigger
+                className="h-9 w-full sm:w-[min(100%,12rem)]"
+                aria-label="Filter by home"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_HOUSES}>All homes</SelectItem>
+                {houses.map((h) => (
+                  <SelectItem key={h.slug} value={h.slug}>
+                    {h.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {roomOptions.length > 0 && (
+            <Select value={activeRoom} onValueChange={setRoom}>
+              <SelectTrigger
+                className="h-9 w-full sm:w-[min(100%,12rem)]"
+                aria-label="Filter by room"
+              >
+                <SelectValue placeholder="All rooms">
+                  {activeRoom === ALL_ROOMS ? 'All rooms' : activeRoom}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_ROOMS}>All rooms</SelectItem>
+                {roomOptions.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           <div className="flex items-end gap-2">
             <div className="flex flex-col gap-1">
@@ -475,9 +581,9 @@ export function VisitsHub({
             {visibleVisits.map((visit) => (
               <VisitCard
                 key={visit.id}
-                slug={slug}
                 visit={visit}
                 today={today}
+                showHouse={showHouse}
                 loading={loading === visit.id}
                 onApprove={() => handleAction(visit.id, 'approve')}
                 onDecline={() => setDeclineId(visit.id)}
@@ -485,11 +591,7 @@ export function VisitsHub({
               />
             ))}
             {visibleInvites.map((inv) => (
-              <InviteCard
-                key={inv.id}
-                invite={inv}
-                propertyName={propertyName}
-              />
+              <InviteCard key={inv.id} invite={inv} showHouse={showHouse} />
             ))}
           </div>
         )}
@@ -499,7 +601,7 @@ export function VisitsHub({
         onOpenChange={setUpgradeOpen}
         used={limitPayload?.used}
         limit={limitPayload?.limit}
-        returnPath={`/dashboard/${slug}/visits`}
+        returnPath={returnPath}
       />
 
       <Dialog open={!!declineId} onOpenChange={() => setDeclineId(null)}>
@@ -746,6 +848,17 @@ function CardShell({
   );
 }
 
+/** Which home a card belongs to — shown only in the account-wide, all-homes
+ * view where cards from different homes are mixed together. */
+function HouseTag({ name }: { name: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <Home className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">{name}</span>
+    </div>
+  );
+}
+
 function DateBox({
   checkIn,
   checkOut,
@@ -776,24 +889,24 @@ function DateBox({
 }
 
 function VisitCard({
-  slug,
   visit,
   today,
+  showHouse,
   loading,
   onApprove,
   onDecline,
   onCancel,
 }: {
-  slug: string;
   visit: VisitItem;
   today: string;
+  showHouse?: boolean;
   loading: boolean;
   onApprove: () => void;
   onDecline: () => void;
   onCancel: () => void;
 }) {
   const badge = visitStatusMeta(visit, today);
-  const href = `/dashboard/${slug}/visits/${visit.id}`;
+  const href = `/dashboard/${visit.slug}/visits/${visit.id}`;
   const firstName = visit.guestName.split(/\s+/)[0] || visit.guestName;
   const state = visitStateMeta(visit, today);
   const canCancel = visit.status === 'approved' && visit.checkOut >= today;
@@ -880,6 +993,7 @@ function VisitCard({
         <DateBox checkIn={visit.checkIn} checkOut={visit.checkOut} />
       }
     >
+      {showHouse && <HouseTag name={visit.propertyName} />}
       <div className="flex items-center gap-3">
         <PersonAvatar
           name={visit.guestName}
@@ -904,11 +1018,12 @@ function VisitCard({
 
 function InviteCard({
   invite,
-  propertyName,
+  showHouse,
 }: {
   invite: InviteItem;
-  propertyName?: string | null;
+  showHouse?: boolean;
 }) {
+  const propertyName = invite.propertyName;
   const badge = INVITE_STATUS_META[invite.status];
   const state = inviteStateMeta(invite.status);
   // guestName falls back to the email when there's no real name on the invite;
@@ -995,6 +1110,7 @@ function InviteCard({
         )
       }
     >
+      {showHouse && <HouseTag name={invite.propertyName} />}
       <div className="flex items-center gap-3">
         <PersonAvatar
           name={invite.guestName}
