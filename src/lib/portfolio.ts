@@ -29,11 +29,23 @@ export interface PortfolioHouse {
   nextVisit: { guestName: string; checkIn: string; checkOut: string } | null;
 }
 
+/** A confirmed upcoming (or in-progress) visit, for the "Next up" strip. */
+export interface PortfolioArrival {
+  id: string;
+  guestName: string;
+  houseName: string;
+  slug: string;
+  checkIn: string;
+  checkOut: string;
+}
+
 export interface PortfolioData {
   houses: PortfolioHouse[];
   timelineRows: TimelineRow[];
   calendarVisits: PortfolioCalendarVisit[];
   calendarBlocks: PortfolioCalendarBlock[];
+  /** The next few confirmed visits across all homes, soonest first. */
+  nextArrivals: PortfolioArrival[];
 }
 
 /**
@@ -72,6 +84,7 @@ export async function getPortfolioData(
   const timelineRows: TimelineRow[] = [];
   const calendarVisits: PortfolioCalendarVisit[] = [];
   const calendarBlocks: PortfolioCalendarBlock[] = [];
+  const allArrivals: PortfolioArrival[] = [];
 
   for (const property of properties) {
     const propertyRooms = roomsByProperty.get(property.id) ?? [];
@@ -164,6 +177,17 @@ export async function getPortfolioData(
       .filter((b) => !b.pending && b.checkOut >= today)
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
 
+    for (const v of upcoming) {
+      allArrivals.push({
+        id: v.id,
+        guestName: v.guestName,
+        houseName: property.name,
+        slug: property.slug,
+        checkIn: v.checkIn,
+        checkOut: v.checkOut,
+      });
+    }
+
     houses.push({
       property,
       rooms: propertyRooms,
@@ -180,5 +204,9 @@ export async function getPortfolioData(
     });
   }
 
-  return { houses, timelineRows, calendarVisits, calendarBlocks };
+  const nextArrivals = allArrivals
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+    .slice(0, 3);
+
+  return { houses, timelineRows, calendarVisits, calendarBlocks, nextArrivals };
 }

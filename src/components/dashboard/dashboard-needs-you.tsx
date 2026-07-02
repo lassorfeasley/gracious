@@ -9,8 +9,8 @@ import {
   X,
   Mail,
   Link2,
-  CheckCircle2,
   MessageSquareText,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ArrowRight,
@@ -18,6 +18,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PersonAvatar } from '@/components/ui/person-avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { VisitProvider } from '@/components/guest/visit-context';
+import { HostPageSidebar } from '@/components/dashboard/host-page-sidebar';
+import type { InviteHouse } from '@/components/dashboard/dashboard-invite-action';
 import { getInviteUrl } from '@/lib/invite-url';
 import { INVITATION_TYPE_LABELS } from '@/lib/invitation-types';
 import { formatDateRange } from '@/lib/dates';
@@ -83,16 +92,19 @@ function actionHint(item: StackItem): string {
   if (item.kind === 'visit') {
     return 'Approve the visit to confirm it, or decline the request.';
   }
-  return 'Send them a personal note with a link to their invite, then mark it done.';
+  return 'A personal note goes further than an automated email — send them the link, then mark it done.';
 }
 
 
 export function DashboardNeedsYou({
   requestedVisits,
   pendingInvitations,
+  houses = [],
 }: {
   requestedVisits: ActionQueueVisit[];
   pendingInvitations: ActionQueueInvite[];
+  /** Homes the host can invite guests to — powers the empty state. */
+  houses?: InviteHouse[];
 }) {
   const router = useRouter();
 
@@ -153,44 +165,178 @@ export function DashboardNeedsYou({
     }
   }
 
-  if (total === 0 || remaining.length === 0) {
-    return (
-      <section>
-        <CaughtUp cleared={total > 0} />
-      </section>
-    );
-  }
-
   return (
     <section>
-      <CardStack
-        remaining={remaining}
-        index={safeIndex}
-        exitingId={exitingId}
-        loadingId={loadingId}
-        onPrev={goPrev}
-        onNext={goNext}
-        onDismiss={dismiss}
-        onAction={handleAction}
-        onCopy={copyLink}
-      />
+      {total > 0 && (
+        <QueueHeader total={total} cleared={total - remaining.length} />
+      )}
+      {total === 0 || remaining.length === 0 ? (
+        <InviteSpotlight houses={houses} cleared={total > 0} />
+      ) : (
+        <CardStack
+          remaining={remaining}
+          index={safeIndex}
+          exitingId={exitingId}
+          loadingId={loadingId}
+          onPrev={goPrev}
+          onNext={goNext}
+          onDismiss={dismiss}
+          onAction={handleAction}
+          onCopy={copyLink}
+        />
+      )}
     </section>
   );
 }
 
-function CaughtUp({ cleared }: { cleared: boolean }) {
+/**
+ * Names the queue and makes progress feel like progress: a count pill and a
+ * bar that fills as the host clears the deck. "7 pending things" is the most
+ * important fact on the page — it shouldn't read like pagination.
+ */
+function QueueHeader({ total, cleared }: { total: number; cleared: number }) {
+  const remaining = total - cleared;
+  const percent = total > 0 ? Math.round((cleared / total) * 100) : 100;
+
   return (
-    <div className="mt-5 flex flex-col items-center justify-center gap-3 rounded-2xl border bg-card px-6 py-12 text-center shadow-sm">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40">
-        <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-500" />
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">Needs you</h2>
+          <span
+            className={cn(
+              'rounded-full px-2.5 py-1 text-xs font-semibold',
+              remaining > 0
+                ? 'bg-warning/15 text-warning-foreground'
+                : 'bg-primary/10 text-primary'
+            )}
+          >
+            {remaining > 0
+              ? `${remaining} waiting`
+              : 'All clear'}
+          </span>
+        </div>
+        {cleared > 0 && remaining > 0 && (
+          <p className="text-sm tabular-nums text-muted-foreground">
+            {cleared} of {total} done
+          </p>
+        )}
       </div>
-      <div>
+      <div
+        role="progressbar"
+        aria-valuenow={cleared}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label="Tasks cleared"
+        className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted"
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The empty state of the action queue doubles as an invite prompt: once
+ * there's nothing to confirm, the natural next job is filling the calendar.
+ * Mirrors the CardStack layout — copy on the left, the sidebar-style invite
+ * card on the right — so the section keeps its shape as the deck empties.
+ */
+function InviteSpotlight({
+  houses,
+  cleared,
+}: {
+  houses: InviteHouse[];
+  cleared: boolean;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const house =
+    houses.find((h) => h.id === selectedId) ??
+    houses.find((h) => h.rooms.length > 0) ??
+    houses[0];
+
+  if (!house) {
+    return (
+      <div className="mt-5 rounded-3xl border border-primary/10 bg-primary/[0.04] px-5 py-8 sm:px-8">
         <p className="font-medium">
           {cleared ? 'Nicely done — that’s everyone.' : 'You’re all caught up.'}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           No visits or invitations need your attention right now.
         </p>
+      </div>
+    );
+  }
+
+  const requestableRooms = house.rooms.map((r) => ({
+    id: r.id,
+    name: r.name,
+    max_occupancy: r.max_occupancy,
+  }));
+
+  return (
+    <div className="mt-5 rounded-3xl border border-primary/10 bg-primary/[0.04] px-5 py-8 sm:px-8">
+      <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+        {/* Explanatory copy */}
+        <div className="order-2 lg:order-1">
+          <p className="text-sm font-medium text-muted-foreground">
+            {cleared
+              ? 'Nicely done — that’s everyone.'
+              : 'You’re all caught up.'}
+          </p>
+          <h3 className="mt-3 text-2xl font-semibold leading-tight">
+            Who would you like to host next?
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Pick dates and send an invite — your guest gets a link to view the
+            house and request their visit.
+          </p>
+
+          {houses.length > 1 && (
+            <div className="mt-6">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    {house.name}
+                    <ChevronDown className="ml-1 h-4 w-4 opacity-70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {houses.map((h) => (
+                    <DropdownMenuItem
+                      key={h.id}
+                      disabled={h.rooms.length === 0}
+                      onSelect={() => setSelectedId(h.id)}
+                    >
+                      {h.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar-style invite card, right-aligned like the deck */}
+        <div className="order-1 lg:order-2 lg:justify-self-end">
+          <div className="w-full max-w-md rounded-2xl bg-card sm:w-[26rem]">
+            <VisitProvider
+              key={house.id}
+              rooms={requestableRooms}
+              roomAvailability={house.roomAvailability}
+              defaultGuests={1}
+            >
+              <HostPageSidebar
+                propertyId={house.id}
+                rooms={house.rooms}
+                roomAvailability={house.roomAvailability}
+              />
+            </VisitProvider>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -239,7 +385,7 @@ function CardStack({
   const hasReachedOut = reachedOut.has(current.id);
 
   return (
-    <div className="mt-5 border-y py-8">
+    <div className="mt-5 rounded-3xl border border-primary/10 bg-primary/[0.04] px-5 py-8 sm:px-8">
       <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
         {/* Explanatory copy + actions */}
         <div className="order-2 lg:order-1">
