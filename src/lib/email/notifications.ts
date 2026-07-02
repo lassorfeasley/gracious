@@ -53,6 +53,28 @@ async function hostInviteFooterProps(
   }
 }
 
+/**
+ * The property owner's display name, for personalizing guest emails
+ * ("Sam confirmed your visit"). Best-effort — undefined on any failure so
+ * templates fall back to neutral copy.
+ */
+async function propertyOwnerName(
+  admin: AdminClient,
+  ownerId: string | null | undefined
+): Promise<string | undefined> {
+  if (!ownerId) return undefined;
+  try {
+    const { data } = await admin
+      .from('users')
+      .select('first_name, last_name')
+      .eq('id', ownerId)
+      .maybeSingle();
+    return formatPersonName(data ? { ...data, email: null } : null);
+  } catch {
+    return undefined;
+  }
+}
+
 async function getUserPrefs(
   userId: string
 ): Promise<NotificationPrefs | null> {
@@ -193,7 +215,9 @@ export async function notifyInviteReminder(
 
   const isFinal = step >= FINAL_INVITE_REMINDER_STEP;
   const subject = isFinal
-    ? `Last reminder: your invite to ${inv.property.name}`
+    ? hostName
+      ? `Last reminder: ${hostName} invited you to ${inv.property.name}`
+      : `Last reminder: your invite to ${inv.property.name}`
     : hostName
       ? `Reminder: ${hostName} invited you to ${inv.property.name}`
       : `Reminder: you're invited to ${inv.property.name}`;
@@ -444,12 +468,16 @@ export async function notifyVisitApproved(visitId: string) {
 
   const admin = createAdminClient();
   const hostFooter = await hostInviteFooterProps(admin, visit.guest.email);
+  const hostName = await propertyOwnerName(admin, visit.property.owner_id);
 
   await enqueueEmail({
     to: visit.guest.email,
-    subject: `Your visit at ${visit.property.name} is confirmed`,
+    subject: hostName
+      ? `${hostName} confirmed your visit at ${visit.property.name}`
+      : `Your visit at ${visit.property.name} is confirmed`,
     react: VisitApprovedEmail({
       guestName: visit.guest.name ?? 'there',
+      hostName,
       propertyName: visit.property.name,
       checkInDate: visit.dates.check_in,
       checkOutDate: visit.dates.check_out,
@@ -494,11 +522,15 @@ export async function notifyVisitDeclined(
   const visit = await getVisitWithDetails(visitId);
   if (!visit || !visit.guest.email || !visit.invitation) return;
 
+  const admin = createAdminClient();
+  const hostName = await propertyOwnerName(admin, visit.property.owner_id);
+
   await enqueueEmail({
     to: visit.guest.email,
-    subject: `Visit request declined — ${visit.property.name}`,
+    subject: `Those dates didn't work out — ${visit.property.name}`,
     react: VisitDeclinedEmail({
       guestName: visit.guest.name ?? 'there',
+      hostName,
       propertyName: visit.property.name,
       dates: formatDateRange(visit.dates.check_in, visit.dates.check_out),
       message: declineMessage,
@@ -558,6 +590,15 @@ export async function notifyVisitCancelled(
       });
     }
   } else if (visit.notify_guest && visit.guest.email) {
+    // If their invitation is still usable, the cancellation shouldn't read as
+    // a dead end — offer the path back to new dates.
+    const inv = visit.invitation;
+    const invitationStillOpen =
+      !!inv &&
+      inv.status !== 'revoked' &&
+      inv.status !== 'expired' &&
+      (!inv.expires_at || new Date(inv.expires_at) > new Date());
+
     // Guest copy is mandatory — they must know their visit was cancelled.
     await enqueueEmail({
       to: visit.guest.email,
@@ -568,6 +609,7 @@ export async function notifyVisitCancelled(
         propertyName: visit.property.name,
         dates,
         cancelledBy: 'owner',
+        inviteUrl: invitationStillOpen ? inviteUrl(inv.token) : undefined,
       }),
     });
   }
@@ -689,12 +731,14 @@ export async function notifyPostVisit(visit: VisitWithDetails) {
 
   const admin = createAdminClient();
   const hostFooter = await hostInviteFooterProps(admin, visit.guest.email);
+  const hostName = await propertyOwnerName(admin, visit.property.owner_id);
 
   await enqueueEmail({
     to: visit.guest.email,
-    subject: `Thanks for staying at ${visit.property.name}`,
+    subject: `Thanks for visiting ${visit.property.name}`,
     react: PostVisitThankYouEmail({
       guestName: visit.guest.name ?? 'there',
+      hostName,
       propertyName: visit.property.name,
       profileUrl: visit.invitation
         ? inviteUrl(visit.invitation.token)

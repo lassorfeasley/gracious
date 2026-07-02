@@ -285,7 +285,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       },
       {
         label: 'Last reminder',
-        subject: `Last reminder: your invite to ${SAMPLE.propertyName}`,
+        subject: `Last reminder: ${SAMPLE.ownerName} invited you to ${SAMPLE.propertyName}`,
         element: (
           <InviteReminderEmail
             guestName={SAMPLE.guestName}
@@ -476,10 +476,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'With photo',
-        subject: `Your visit at ${SAMPLE.propertyName} is confirmed`,
+        subject: `${SAMPLE.ownerName} confirmed your visit at ${SAMPLE.propertyName}`,
         element: (
           <VisitApprovedEmail
             guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
             checkOutDate={SAMPLE.checkOutDate}
@@ -501,10 +502,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
       },
       {
         label: 'No photo (branded)',
-        subject: `Your visit at ${SAMPLE.propertyName} is confirmed`,
+        subject: `${SAMPLE.ownerName} confirmed your visit at ${SAMPLE.propertyName}`,
         element: (
           <VisitApprovedEmail
             guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
             propertyName={SAMPLE.propertyName}
             checkInDate={SAMPLE.checkInDate}
             checkOutDate={SAMPLE.checkOutDate}
@@ -543,10 +545,11 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: `Visit request declined — ${SAMPLE.propertyName}`,
+        subject: `Those dates didn't work out — ${SAMPLE.propertyName}`,
         element: (
           <VisitDeclinedEmail
             guestName={SAMPLE.guestName}
+            hostName={SAMPLE.ownerName}
             propertyName={SAMPLE.propertyName}
             dates={SAMPLE.dates}
             message="So sorry — we have family in town those dates. Would love to host you later in the summer!"
@@ -599,6 +602,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
             propertyName={SAMPLE.propertyName}
             dates={SAMPLE.dates}
             cancelledBy="owner"
+            inviteUrl={SAMPLE.inviteUrl}
           />
         ),
       },
@@ -798,7 +802,7 @@ export const AUTOMATED_MESSAGES: AutomatedMessage[] = [
     variants: [
       {
         label: 'Default',
-        subject: `Thanks for staying at ${SAMPLE.propertyName}`,
+        subject: `Thanks for visiting ${SAMPLE.propertyName}`,
         element: (
           <PostVisitThankYouEmail
             guestName={SAMPLE.guestName}

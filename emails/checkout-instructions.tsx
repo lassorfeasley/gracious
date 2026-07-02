@@ -31,9 +31,7 @@ export default function CheckoutInstructionsEmail({
         are a few things to take care of before you go.
       </Text>
 
-      <FactsCard
-        facts={[{ label: '↑ Checkout time', value: checkoutTime }]}
-      />
+      <FactsCard facts={[{ label: 'Checkout time', value: checkoutTime }]} />
 
       {checkoutInstructions && (
         <EmailSection title="Before you go">

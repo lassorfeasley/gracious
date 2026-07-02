@@ -44,8 +44,8 @@ export default function VisitReminderEmail({
 }: Props) {
   const heading =
     daysUntil <= 1
-      ? 'Your trip starts tomorrow!'
-      : `Your trip is in ${daysUntil} days`;
+      ? 'Your visit starts tomorrow!'
+      : `Your visit is in ${daysUntil} days`;
 
   return (
     <EmailLayout

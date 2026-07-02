@@ -1,5 +1,5 @@
-import { Text } from '@react-email/components';
-import { EmailLayout } from './components/layout';
+import { Button, Text } from '@react-email/components';
+import { EmailLayout, buttonStyle } from './components/layout';
 
 interface Props {
   recipientName: string;
@@ -7,6 +7,11 @@ interface Props {
   propertyName: string;
   dates: string;
   cancelledBy: 'guest' | 'owner';
+  /**
+   * Guest variant only: when their invitation is still open, link them to
+   * request new dates so the cancellation isn't a dead end.
+   */
+  inviteUrl?: string;
   unsubscribeUrl?: string;
 }
 
@@ -16,6 +21,7 @@ export default function VisitCancelledEmail({
   propertyName,
   dates,
   cancelledBy,
+  inviteUrl,
   unsubscribeUrl,
 }: Props) {
   const isOwnerRecipient = cancelledBy === 'guest';
@@ -36,6 +42,17 @@ export default function VisitCancelledEmail({
           Your visit at <strong>{propertyName}</strong> ({dates}) has been
           cancelled by the host.
         </Text>
+      )}
+      {!isOwnerRecipient && inviteUrl && (
+        <>
+          <Text>
+            Your invitation is still open — you&apos;re welcome to request
+            different dates whenever you like.
+          </Text>
+          <Button style={buttonStyle} href={inviteUrl}>
+            Pick new dates
+          </Button>
+        </>
       )}
     </EmailLayout>
   );

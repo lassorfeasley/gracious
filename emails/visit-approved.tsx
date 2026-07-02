@@ -2,11 +2,13 @@ import { Button, Text } from '@react-email/components';
 import { EmailLayout, buttonStyle } from './components/layout';
 import { EmailHero } from './components/hero';
 import { EmailCalendarLinks } from './components/calendar-links';
-import { EmailSection, FactsCard, VisitDatesCard } from './components/cards';
+import { EmailSection, FactsCard, QuoteCard, VisitDatesCard } from './components/cards';
 import { HostInviteFooter } from './components/footer';
 
 interface Props {
   guestName: string;
+  /** The host who approved; omit to fall back to neutral copy. */
+  hostName?: string;
   propertyName: string;
   /** yyyy-MM-dd */
   checkInDate: string;
@@ -25,7 +27,7 @@ interface Props {
   /** Optional personal note from the host. */
   hostNote?: string;
   profileUrl?: string;
-  /** Featured property photo, shown as a banner above the heading. */
+  /** Featured property photo, shown as a banner below the copy. */
   heroImageUrl?: string;
   /** Pre-filled add-to-calendar links. */
   googleCalendarUrl?: string;
@@ -37,16 +39,29 @@ interface Props {
 }
 
 export default function VisitApprovedEmail(props: Props) {
+  const hostFirstName = props.hostName?.trim().split(/\s+/)[0];
+
+  const preview = hostFirstName
+    ? `${hostFirstName} confirmed your visit to ${props.propertyName}`
+    : `Your visit to ${props.propertyName} is confirmed`;
+
+  const heading = hostFirstName ? (
+    <>
+      <span style={nameStyle}>{hostFirstName}</span> confirmed your visit to{' '}
+      <span style={nameStyle}>{props.propertyName}</span>
+    </>
+  ) : (
+    <>
+      Your visit to <span style={nameStyle}>{props.propertyName}</span> is
+      confirmed
+    </>
+  );
+
   return (
     <EmailLayout
-      preview={`Your visit at ${props.propertyName} is confirmed`}
-      heading="Your visit is confirmed!"
-      hero={
-        <EmailHero
-          propertyName={props.propertyName}
-          imageUrl={props.heroImageUrl}
-        />
-      }
+      preview={preview}
+      heading={heading}
+      logoPlacement="footer"
       footerAside={
         <HostInviteFooter
           recipientIsHost={props.recipientIsHost ?? false}
@@ -54,18 +69,19 @@ export default function VisitApprovedEmail(props: Props) {
         />
       }
     >
-      <Text>Hi {props.guestName},</Text>
       <Text>
-        Your visit at <strong>{props.propertyName}</strong> has been approved.
+        Hi {props.guestName} — you&apos;re all set. Everything you need for
+        your visit is below.
       </Text>
 
       {props.hostNote && (
-        <EmailSection title="A note from your host">
-          <Text style={{ margin: '0', whiteSpace: 'pre-wrap' }}>
-            {props.hostNote}
-          </Text>
-        </EmailSection>
+        <QuoteCard attribution={props.hostName}>{props.hostNote}</QuoteCard>
       )}
+
+      <EmailHero
+        propertyName={props.propertyName}
+        imageUrl={props.heroImageUrl}
+      />
 
       <VisitDatesCard
         checkInDate={props.checkInDate}
@@ -128,3 +144,5 @@ export default function VisitApprovedEmail(props: Props) {
     </EmailLayout>
   );
 }
+
+const nameStyle = { color: '#a2773e' };

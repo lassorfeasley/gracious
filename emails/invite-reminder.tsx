@@ -40,16 +40,26 @@ export default function InviteReminderEmail({
   const hostFirstName = hostName?.trim().split(/\s+/)[0];
 
   const preview = isFinal
-    ? `Last chance to plan your visit to ${propertyName}`
+    ? hostFirstName
+      ? `Last chance to plan your visit with ${hostFirstName} at ${propertyName}`
+      : `Last chance to plan your visit to ${propertyName}`
     : hostFirstName
       ? `Plan your visit with ${hostFirstName} at ${propertyName}`
       : `Plan your visit to ${propertyName}`;
 
   const heading = isFinal ? (
-    <>
-      Last chance to plan your visit to{' '}
-      <span style={nameStyle}>{propertyName}</span>
-    </>
+    hostFirstName ? (
+      <>
+        Last chance to plan your visit with{' '}
+        <span style={nameStyle}>{hostFirstName}</span> at{' '}
+        <span style={nameStyle}>{propertyName}</span>
+      </>
+    ) : (
+      <>
+        Last chance to plan your visit to{' '}
+        <span style={nameStyle}>{propertyName}</span>
+      </>
+    )
   ) : hostFirstName ? (
     <>
       Plan your visit with <span style={nameStyle}>{hostFirstName}</span> at{' '}
@@ -80,7 +90,14 @@ export default function InviteReminderEmail({
       </Button>
       {isFinal ? (
         <Text>
-          Hi {guestName} — this is the last reminder we&apos;ll send about your
+          Hi {guestName} — this is the last reminder we&apos;ll send about{' '}
+          {hostFirstName ? (
+            <>
+              <strong>{hostFirstName}</strong>&apos;s
+            </>
+          ) : (
+            'your'
+          )}{' '}
           invite to <strong>{propertyName}</strong>. Whenever you&apos;re ready,
           picking your dates only takes a minute.
         </Text>

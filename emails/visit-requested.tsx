@@ -59,7 +59,12 @@ export default function VisitRequestedEmail({
           Approve
         </Button>
         <Button
-          style={{ ...buttonStyle, backgroundColor: '#fff', color: '#111', border: '1px solid #ddd' }}
+          style={{
+            ...buttonStyle,
+            backgroundColor: '#fdfcf8',
+            color: '#221e19',
+            border: '1px solid #e4ddd0',
+          }}
           href={declineUrl}
         >
           Decline

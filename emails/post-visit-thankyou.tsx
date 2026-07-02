@@ -23,10 +23,12 @@ export default function PostVisitThankYouEmail({
   recipientIsHost = false,
   hostOnboardingUrl,
 }: Props) {
+  const hostFirstName = hostName?.trim().split(/\s+/)[0];
   return (
     <EmailLayout
       preview={`Thanks for visiting ${propertyName}`}
       heading="Thanks for visiting"
+      logoPlacement="footer"
       unsubscribeUrl={unsubscribeUrl}
       footerAside={
         <HostInviteFooter
@@ -35,14 +37,17 @@ export default function PostVisitThankYouEmail({
         />
       }
     >
-      <Text>Hi {guestName},</Text>
       <Text>
-        Thank you for visiting <strong>{propertyName}</strong>. We hope you
-        had a wonderful time and made some great memories.
-      </Text>
-      <Text>
-        {hostName ? `${hostName} would` : 'We would'} love to host you again
-        whenever you&apos;d like to come back.
+        Hi {guestName} — thanks for visiting <strong>{propertyName}</strong>.
+        {hostFirstName ? (
+          <>
+            {' '}
+            <strong>{hostFirstName}</strong> would
+          </>
+        ) : (
+          " We'd"
+        )}{' '}
+        love to host you again whenever you&apos;d like to come back.
       </Text>
       {profileUrl && (
         <Button style={buttonStyle} href={profileUrl}>
